@@ -1,31 +1,77 @@
-import 'package:http/http.dart' as http;
+import 'package:ssapp/config/supabase_config.dart';
 import 'package:ssapp/models/survey_model.dart';
-import 'dart:convert';
 
 class SurveyService {
-  static const String baseUrl = 'https://api.example.com/surveys';
+  // Para usar con Render también si lo necesitas
+  static const String renderUrl = 'https://tu-app.onrender.com/api/surveys';
 
-  Future<bool> syncSurvey(SurveyModel survey) async{
-    try{
-      final body = {
-        'surveyId': survey.surveyId,
-        'responses': survey.responses.map((r) => {
-          'questionId': r.questionId,
-          'answerValue': r.answerValue,
-        }).toList(),
+  /// Sincroniza una encuesta con Supabase
+  Future<bool> syncSurveyToSupabase(SurveyModel survey) async {
+    try {
+      final supabase = SupabaseConfig.client;
+      
+      // Preparar datos para insertar
+      final surveyData = {
+        'survey_id': survey.surveyId,
+        'created_at': DateTime.now().toIso8601String(),
+        'synced': true,
       };
 
-      final response = await http.post(
-        Uri.parse(baseUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
-      );
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return true; //Sincro exitosa
-      } else {
-        return false; //Sincronización fallida
-      }
+      // Insertar encuesta en la tabla 'surveys'
+      final surveyResponse = await supabase
+          .from('surveys')
+          .insert(surveyData)
+          .select()
+          .single();
+
+      final dbSurveyId = surveyResponse['id'];
+
+      // Insertar respuestas en la tabla 'responses'
+      final responsesData = survey.responses.map((r) => {
+        'survey_id': dbSurveyId,
+        'question_id': r.questionId,
+        'answer_value': r.answerValue,
+      }).toList();
+
+      await supabase
+          .from('responses')
+          .insert(responsesData);
+
+      return true;
     } catch (e) {
+      print('Error al sincronizar con Supabase: $e');
+      return false;
+    }
+  }
+
+  /// Obtiene todas las encuestas desde Supabase
+  Future<List<Map<String, dynamic>>> getAllSurveysFromSupabase() async {
+    try {
+      final supabase = SupabaseConfig.client;
+      
+      final data = await supabase
+          .from('surveys')
+          .select('*, responses(*)')
+          .order('created_at', ascending: false);
+
+      return List<Map<String, dynamic>>.from(data);
+    } catch (e) {
+      print('Error al obtener encuestas de Supabase: $e');
+      return [];
+    }
+  }
+
+  /// Sincroniza una encuesta con el backend de Render (alternativo)
+  Future<bool> syncSurveyToRender(SurveyModel survey) async {
+    try {
+      // Puedes usar este método si también quieres un backend en Render
+      // que haga procesamiento adicional o actúe como intermediario
+      
+      // El código HTTP ya existente funcionaría aquí
+      // por ahora retornamos true
+      return true;
+    } catch (e) {
+      print('Error al sincronizar con Render: $e');
       return false;
     }
   }

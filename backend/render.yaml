@@ -1,0 +1,18 @@
+# Configuración para Render
+# https://render.com
+
+# Este archivo le dice a Render cómo construir y ejecutar tu aplicación
+
+# Build Command:
+# npm install
+
+# Start Command:
+# npm start
+
+# Environment:
+# Node
+
+# Environment Variables (configurar en el dashboard de Render):
+# - SUPABASE_URL
+# - SUPABASE_SERVICE_KEY
+# - PORT (automático en Render)
