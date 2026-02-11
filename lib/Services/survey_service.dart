@@ -1,7 +1,23 @@
+import 'package:flutter/foundation.dart';
 import 'package:ssapp/config/supabase_config.dart';
 import 'package:ssapp/models/survey_model.dart';
 
-class SurveyService {
+class SurveyService extends ChangeNotifier {
+  List<Map<String, dynamic>> _surveys = [];
+  
+  /// Obtiene estadísticas de las encuestas
+  Map<String, dynamic> getStatistics() {
+    return {
+      'totalSurveys': _surveys.length,
+      'lastSync': DateTime.now(),
+    };
+  }
+  
+  /// Carga todas las encuestas
+  Future<void> loadSurveys() async {
+    _surveys = await getAllSurveysFromSupabase();
+    notifyListeners();
+  }
   // Para usar con Render también si lo necesitas
   static const String renderUrl = 'https://tu-app.onrender.com/api/surveys';
 

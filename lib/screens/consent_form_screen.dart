@@ -23,7 +23,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
   final _educationController = TextEditingController();
 
   DateTime? _dateOfBirth;
-  Gender _gender = Gender.male;
+  String _gender = 'Masculino';
   bool _consentGiven = false;
   bool _isLoading = false;
 
@@ -68,13 +68,21 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
     final patientService = context.read<PatientService>();
     final patient = await patientService.createPatient(
       name: _nameController.text.trim(),
-      dateOfBirth: _dateOfBirth!,
       gender: _gender,
+      birthDate: _dateOfBirth!,
     );
 
     if (!mounted) return;
 
-    context.push('/survey/${patient.id}?surveyType=${widget.surveyType ?? "bdi"}');
+    if (patient != null) {
+      context.push('/survey/${patient.patientId}?surveyType=${widget.surveyType ?? "bdi"}');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error al crear paciente')),
+      );
+    }
+    
+    setState(() => _isLoading = false);
   }
 
   @override
@@ -126,8 +134,8 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                   ),
                 ),
                 SizedBox(height: AppSpacing.md),
-                DropdownButtonFormField<Gender>(
-                  initialValue: _gender,
+                DropdownButtonFormField<String>(
+                  value: _gender,
                   decoration: InputDecoration(
                     labelText: 'Sexo',
                     prefixIcon: Icon(Icons.wc, color: Theme.of(context).colorScheme.primary),
@@ -136,9 +144,8 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                     ),
                   ),
                   items: const [
-                    DropdownMenuItem(value: Gender.male, child: Text('Masculino')),
-                    DropdownMenuItem(value: Gender.female, child: Text('Femenino')),
-                    DropdownMenuItem(value: Gender.other, child: Text('Otro')),
+                    DropdownMenuItem(value: 'Masculino', child: Text('Masculino')),
+                    DropdownMenuItem(value: 'Femenino', child: Text('Femenino')),
                   ],
                   onChanged: (value) {
                     if (value != null) setState(() => _gender = value);

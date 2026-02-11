@@ -1,7 +1,48 @@
+import 'package:flutter/foundation.dart';
 import 'package:ssapp/config/supabase_config.dart';
 import 'package:ssapp/models/patient_model.dart';
 
-class PatientService {
+class PatientService extends ChangeNotifier {
+  List<PatientModel> _patients = [];
+  
+  List<PatientModel> get patients => _patients;
+  
+  /// Crea un nuevo paciente
+  Future<PatientModel?> createPatient({
+    required String name,
+    required String gender,
+    required DateTime birthDate,
+  }) async {
+    try {
+      final patientId = DateTime.now().millisecondsSinceEpoch;
+      final patient = PatientModel(
+        patientId: patientId,
+        name: name,
+        gender: gender,
+        birthDate: birthDate,
+        synced: false,
+      );
+      
+      // Sincronizar con Supabase
+      final success = await syncPatientToSupabase(patient);
+      if (success) {
+        patient.synced = true;
+        _patients.add(patient);
+        notifyListeners();
+        return patient;
+      }
+      return null;
+    } catch (e) {
+      print('Error al crear paciente: $e');
+      return null;
+    }
+  }
+  
+  /// Carga todos los pacientes
+  Future<void> loadPatients() async {
+    _patients = await getAllPatientsFromSupabase();
+    notifyListeners();
+  }
   /// Sincroniza un paciente con Supabase
   Future<bool> syncPatientToSupabase(PatientModel patient) async {
     try {
