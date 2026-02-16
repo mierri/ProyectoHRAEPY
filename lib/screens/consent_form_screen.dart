@@ -1,10 +1,9 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' as material show Navigator, Icons;
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
-import 'package:ssapp/models/patient_model.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/Services/patient_service.dart';
-import 'package:ssapp/utils/theme.dart';
 import 'package:provider/provider.dart';
+import 'package:ssapp/utils/theme.dart';
 
 class ConsentFormScreen extends StatefulWidget {
   final String? surveyType;
@@ -16,12 +15,7 @@ class ConsentFormScreen extends StatefulWidget {
 }
 
 class _ConsentFormScreenState extends State<ConsentFormScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _maritalStatusController = TextEditingController();
-  final _occupationController = TextEditingController();
-  final _educationController = TextEditingController();
-
   DateTime? _dateOfBirth;
   String _gender = 'Masculino';
   bool _consentGiven = false;
@@ -30,170 +24,254 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _maritalStatusController.dispose();
-    _occupationController.dispose();
-    _educationController.dispose();
     super.dispose();
   }
 
-  Future<void> _selectDate() async {
-    final date = await showDatePicker(
+  void _showError(String message) {
+    showToast(
       context: context,
-      initialDate: DateTime.now().subtract(const Duration(days: 365 * 30)),
-      firstDate: DateTime(1900),
-      lastDate: DateTime.now(),
+      builder: (context, overlay) => SurfaceCard(
+        child: Basic(
+          leading: Icon(
+            material.Icons.error_outline,
+            color: LightModeColors.lightError,
+          ),
+          title: const Text('Error'),
+          subtitle: Text(message),
+          trailing: OutlineButton(
+            size: ButtonSize.small,
+            onPressed: () => overlay.close(),
+            child: const Text('Cerrar'),
+          ),
+          trailingAlignment: Alignment.center,
+        ),
+      ),
+      location: ToastLocation.bottomCenter,
     );
-    if (date != null) {
-      setState(() => _dateOfBirth = date);
+  }
+
+  Color _getSurveyColor() {
+    switch (widget.surveyType) {
+      case 'bai':
+        return LightModeColors.lightTertiary;
+      case 'bdi':
+      default:
+        return LightModeColors.lightPrimary;
     }
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_nameController.text.trim().isEmpty) {
+      _showError('Por favor ingrese el nombre completo');
+      return;
+    }
     if (_dateOfBirth == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor selecciona la fecha de nacimiento')),
-      );
+      _showError('Por favor seleccione la fecha de nacimiento');
       return;
     }
     if (!_consentGiven) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Debe aceptar el consentimiento informado')),
-      );
+      _showError('Debe aceptar el consentimiento informado para continuar');
       return;
     }
 
     setState(() => _isLoading = true);
 
-    final patientService = context.read<PatientService>();
-    final patient = await patientService.createPatient(
-      name: _nameController.text.trim(),
-      gender: _gender,
-      birthDate: _dateOfBirth!,
-    );
-
-    if (!mounted) return;
-
-    if (patient != null) {
-      context.push('/survey/${patient.patientId}?surveyType=${widget.surveyType ?? "bdi"}');
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error al crear paciente')),
+    try {
+      final patientService = context.read<PatientService>();
+      final patient = await patientService.createPatient(
+        name: _nameController.text.trim(),
+        birthDate: _dateOfBirth!,
+        gender: _gender,
       );
+
+      if (!mounted) return;
+
+      if (patient != null) {
+        context.push('/survey/${patient.patientId}?surveyType=${widget.surveyType ?? "bdi"}');
+      } else {
+        _showError('No se pudo crear el registro del paciente. Por favor intente nuevamente.');
+      }
+    } catch (e) {
+      if (mounted) {
+        _showError('Ocurrió un error: ${e.toString()}');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
-    
-    setState(() => _isLoading = false);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Consentimiento Informado'),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: AppSpacing.paddingLg,
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      headers: [
+        AppBar(
+          title: const Text('Consentimiento Informado'),
+          leading: [
+            IconButton(
+              icon: const Icon(material.Icons.arrow_back),
+              onPressed: () => material.Navigator.of(context).pop(),
+              variance: ButtonVariance.ghost,
+            ),
+          ],
+        ),
+      ],
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ConsentInfoCard(surveyType: widget.surveyType),
+            const Gap(24),
+
+            const Text('Datos del Paciente').textLarge().bold(),
+            const Gap(16),
+
+            // Nombre completo
+            const Text('Nombre completo').medium(),
+            const Gap(5),
+            TextField(
+              controller: _nameController,
+              placeholder: const Text('Nombre completo'),
+            ),
+            const Gap(16),
+
+            // Fecha de nacimiento
+            const Text('Fecha de Nacimiento').medium(),
+            const Gap(5),
+            DatePicker(
+              value: _dateOfBirth,
+              mode: PromptMode.dialog,
+              dialogTitle: const Text('Fecha de Nacimiento'),
+              stateBuilder: (date) {
+                if (date.isAfter(DateTime.now())) {
+                  return DateState.disabled;
+                }
+                return DateState.enabled;
+              },
+              onChanged: (value) {
+                setState(() {
+                  _dateOfBirth = value;
+                });
+              },
+            ),
+            const Gap(16),
+
+            // Sexo - usando Radio buttons simples
+            const Text('Sexo').medium(),
+            const Gap(5),
+            Column(
               children: [
-                ConsentInfoCard(surveyType: widget.surveyType),
-                SizedBox(height: AppSpacing.xl),
-                Text('Datos del Paciente', style: context.textStyles.titleLarge),
-                SizedBox(height: AppSpacing.md),
-                TextFormField(
-                  controller: _nameController,
-                  decoration: InputDecoration(
-                    labelText: 'Nombre completo',
-                    prefixIcon: Icon(Icons.person_outline, color: Theme.of(context).colorScheme.primary),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                  ),
-                  validator: (value) => value?.isEmpty ?? true ? 'Campo requerido' : null,
-                ),
-                SizedBox(height: AppSpacing.md),
-                InkWell(
-                  onTap: _selectDate,
-                  child: InputDecorator(
-                    decoration: InputDecoration(
-                      labelText: 'Fecha de nacimiento',
-                      prefixIcon: Icon(Icons.calendar_today, color: Theme.of(context).colorScheme.primary),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                      ),
-                    ),
-                    child: Text(
-                      _dateOfBirth == null
-                          ? 'Seleccionar fecha'
-                          : DateFormat('dd/MM/yyyy').format(_dateOfBirth!),
-                      style: context.textStyles.bodyMedium,
-                    ),
-                  ),
-                ),
-                SizedBox(height: AppSpacing.md),
-                DropdownButtonFormField<String>(
-                  value: _gender,
-                  decoration: InputDecoration(
-                    labelText: 'Sexo',
-                    prefixIcon: Icon(Icons.wc, color: Theme.of(context).colorScheme.primary),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'Masculino', child: Text('Masculino')),
-                    DropdownMenuItem(value: 'Femenino', child: Text('Femenino')),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) setState(() => _gender = value);
-                  },
-                ),
-                SizedBox(height: AppSpacing.md),
-                CheckboxListTile(
-                  value: _consentGiven,
-                  onChanged: (value) => setState(() => _consentGiven = value ?? false),
-                  title: Text(
-                    'Acepto participar voluntariamente en esta evaluación y consiento el uso de mis datos para fines de investigación.',
-                    style: context.textStyles.bodyMedium,
-                  ),
-                  contentPadding: EdgeInsets.zero,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  activeColor: Theme.of(context).colorScheme.primary,
-                ),
-                SizedBox(height: AppSpacing.xl),
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: FilledButton(
-                    onPressed: _isLoading ? null : _submit,
-                    style: FilledButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                      ),
-                    ),
-                    child: _isLoading
-                        ? SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Theme.of(context).colorScheme.onPrimary,
-                            ),
-                          )
-                        : Text(
-                            'Continuar con la encuesta',
-                            style: context.textStyles.titleMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onPrimary,
-                            ),
+                GestureDetector(
+                  onTap: () => setState(() => _gender = 'Masculino'),
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: Row(
+                        children: [
+                          Radio(
+                            value: _gender == 'Masculino',
                           ),
+                          const Gap(8),
+                          const Text('Masculino'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const Gap(8),
+                GestureDetector(
+                  onTap: () => setState(() => _gender = 'Femenino'),
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: Row(
+                        children: [
+                          Radio(
+                            value: _gender == 'Femenino',
+                          ),
+                          const Gap(8),
+                          const Text('Femenino'),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
+            const Gap(16),
+
+            // Checkbox de consentimiento
+            GestureDetector(
+              onTap: () => setState(() => _consentGiven = !_consentGiven),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Checkbox(
+                    state: _consentGiven ? CheckboxState.checked : CheckboxState.unchecked,
+                    onChanged: (state) => setState(() => _consentGiven = state == CheckboxState.checked),
+                  ),
+                  const Gap(8),
+                  Expanded(
+                    child: const Text(
+                      'Acepto participar voluntariamente en esta evaluación y consiento el uso de mis datos para fines de investigación.',
+                    ).small(),
+                  ),
+                ],
+              ),
+            ),
+            const Gap(32),
+
+            // Botón de submit
+            SizedBox(
+              width: double.infinity,
+              child: GestureDetector(
+                onTap: _isLoading ? null : _submit,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: _isLoading
+                        ? _getSurveyColor().withValues(alpha: 0.5)
+                        : _getSurveyColor(),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: _isLoading
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const Gap(8),
+                            const Text(
+                              'Procesando...',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        )
+                      : const Text(
+                          'Continuar con la encuesta',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -215,49 +293,46 @@ class ConsentInfoCard extends StatelessWidget {
     }
   }
 
+  Color _getSurveyColor() {
+    switch (surveyType) {
+      case 'bai':
+        return LightModeColors.lightTertiary;
+      case 'bdi':
+      default:
+        return LightModeColors.lightPrimary;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: AppSpacing.paddingLg,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.info_outline,
-                color: Theme.of(context).colorScheme.onPrimaryContainer,
-              ),
-              SizedBox(width: AppSpacing.sm),
-              Text(
-                'Información Importante',
-                style: context.textStyles.titleMedium?.semiBold.copyWith(
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+    final color = _getSurveyColor();
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  material.Icons.info_outline,
+                  color: color,
                 ),
-              ),
-            ],
-          ),
-          SizedBox(height: AppSpacing.md),
-          Text(
-            _getSurveyDescription(),
-            style: context.textStyles.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onPrimaryContainer,
-              height: 1.5,
+                const Gap(8),
+                const Text('Información Importante').semiBold(),
+              ],
             ),
-          ),
-          SizedBox(height: AppSpacing.md),
-          Text(
-            '• Su participación es completamente voluntaria\n• Toda la información será tratada con confidencialidad\n• Los resultados serán utilizados para mejorar la atención psicológica',
-            style: context.textStyles.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onPrimaryContainer,
-              height: 1.6,
-            ),
-          ),
-        ],
+            const Gap(16),
+            Text(_getSurveyDescription()).muted(),
+            const Gap(16),
+            const Text(
+              '• Su participación es completamente voluntaria\n'
+              '• Toda la información será tratada con confidencialidad\n'
+              '• Los resultados serán utilizados para mejorar la atención psicológica',
+            ).small().muted(),
+          ],
+        ),
       ),
     );
   }

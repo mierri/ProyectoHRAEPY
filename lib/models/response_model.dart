@@ -14,4 +14,16 @@ class ResponseModel extends HiveObject{
     required this.questionId,
     required this.answerValue,
   });
+
+  // Métodos para sincronización con backend
+  Map<String, dynamic> toJson() => {
+    'question_id': questionId,
+    'answer_value': answerValue,
+  };
+
+  factory ResponseModel.fromJson(Map<String, dynamic> json) => ResponseModel(
+    questionId: json['question_id'],
+    answerValue: json['answer_value'],
+  );
 }
+

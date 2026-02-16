@@ -19,7 +19,8 @@ class SurveyModelAdapter extends TypeAdapter<SurveyModel> {
     return SurveyModel(
       surveyId: fields[0] as int,
       responses: (fields[2] as List).cast<ResponseModel>(),
-      surveyName: fields[3] as String,
+      surveyType: fields[4] as int,
+      patientId: fields[3] as int?,
       synced: fields[1] as bool,
     );
   }
@@ -27,7 +28,7 @@ class SurveyModelAdapter extends TypeAdapter<SurveyModel> {
   @override
   void write(BinaryWriter writer, SurveyModel obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(5)
       ..writeByte(0)
       ..write(obj.surveyId)
       ..writeByte(1)
@@ -35,7 +36,9 @@ class SurveyModelAdapter extends TypeAdapter<SurveyModel> {
       ..writeByte(2)
       ..write(obj.responses)
       ..writeByte(3)
-      ..write(obj.surveyName);
+      ..write(obj.patientId)
+      ..writeByte(4)
+      ..write(obj.surveyType);
   }
 
   @override

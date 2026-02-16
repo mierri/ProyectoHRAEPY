@@ -1,55 +1,116 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' as material show Icons;
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:ssapp/components/action_card.dart';
-import 'package:ssapp/components/stat_card.dart';
-import 'package:ssapp/components/welcome_card.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/Services/patient_service.dart';
 import 'package:ssapp/Services/survey_service.dart';
 import 'package:ssapp/utils/theme.dart';
 
-class DashboardScreen extends StatelessWidget {
+import '../components/welcome_card.dart';
+
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Auto-sincronizar al cargar el dashboard
+    _autoSync();
+  }
+
+  Future<void> _autoSync() async {
+    // Esperar un momento para que la UI cargue
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    if (!mounted) return;
+
+    try {
+      final patientService = context.read<PatientService>();
+      final surveyService = context.read<SurveyService>();
+
+      // Intentar sincronizar en segundo plano (sin bloquear UI)
+      final syncedPatients = await patientService.syncPendingPatients();
+      final syncedSurveys = await surveyService.syncPendingSurveys();
+
+      // Solo mostrar toast si se sincronizó algo
+      if ((syncedPatients > 0 || syncedSurveys > 0) && mounted) {
+        showToast(
+          context: context,
+          builder: (context, overlay) => SurfaceCard(
+            child: Basic(
+              title: const Text('Sincronización automática'),
+              subtitle: Text('$syncedPatients pacientes y $syncedSurveys encuestas sincronizadas'),
+              leading: Icon(
+                material.Icons.cloud_done,
+                color: LightModeColors.lightTertiary,
+              ),
+              trailingAlignment: Alignment.center,
+            ),
+          ),
+          location: ToastLocation.bottomCenter,
+        );
+      }
+    } catch (e) {
+      // Silenciosamente ignorar errores de auto-sync
+      print('Auto-sync falló (probablemente sin internet): $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.health_and_safety_rounded,
-              color: Theme.of(context).colorScheme.primary,
-              size: 28,
-            ),
-            const SizedBox(width: 8),
-            const Text('HRAEPY - Sistema de Evaluación'),
-          ],
-        ),
-        centerTitle: true,
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: AppSpacing.paddingLg,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      headers: [
+        AppBar(
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              const WelcomeCard(
-                userName: 'Evaluador',
-                subtitle: 'Sistema de aplicación de encuestas y visualización de resultados',
+              Icon(
+                material.Icons.health_and_safety_rounded,
+                color: LightModeColors.lightPrimary,
               ),
-              SizedBox(height: AppSpacing.lg),
-              Text(
-                'Acciones rápidas',
-                style: context.textStyles.titleLarge?.bold,
-              ),
-              SizedBox(height: AppSpacing.md),
-              const QuickActionsGrid(),
-              SizedBox(height: AppSpacing.xl),
-              const StatisticsSection(),
+              const Gap(8),
+              const Text('HRAEPY - Sistema de Evaluación').medium(),
             ],
           ),
+          trailing: [
+            OutlineButton(
+              density: ButtonDensity.icon,
+              onPressed: () {
+                context.push('/settings');
+              },
+              child: const Icon(material.Icons.settings),
+            ),
+            OutlineButton(
+              density: ButtonDensity.icon,
+              onPressed: () {
+                // TODO: Agregar funcionalidad de notificaciones
+              },
+              child: const Icon(material.Icons.notifications_outlined),
+            ),
+          ],
+        ),
+      ],
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const WelcomeCard(
+              userName: 'Evaluador',
+              subtitle: 'Sistema de aplicación de encuestas y visualización de resultados',
+            ),
+            const Gap(24),
+            const Text('Acciones rápidas').textLarge().bold(),
+            const Gap(16),
+            const QuickActionsGrid(),
+            const Gap(32),
+            const StatisticsSection(),
+          ],
         ),
       ),
     );
@@ -63,29 +124,29 @@ class QuickActionsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final actions = [
-      ActionCard(
-        icon: Icons.add_circle_outline,
+      _ActionCardData(
+        icon: material.Icons.add_circle_outline,
         title: 'Nueva Encuesta',
         description: 'Aplicar encuesta a paciente',
-        color: Theme.of(context).colorScheme.primary,
+        color: LightModeColors.lightPrimary,
         onTap: () => context.push('/new-survey'),
       ),
-      ActionCard(
-        icon: Icons.list_alt,
+      _ActionCardData(
+        icon: material.Icons.list_alt,
         title: 'Ver Encuestas',
         description: 'Historial completo',
-        color: Theme.of(context).colorScheme.secondary,
+        color: LightModeColors.lightSecondary,
         onTap: () => context.push('/surveys'),
       ),
-      ActionCard(
-        icon: Icons.analytics_outlined,
+      _ActionCardData(
+        icon: material.Icons.analytics_outlined,
         title: 'Reportes',
         description: 'Estadísticas y análisis',
-        color: Theme.of(context).colorScheme.tertiary,
+        color: LightModeColors.lightTertiary,
         onTap: () => context.push('/reports'),
       ),
-      ActionCard(
-        icon: Icons.people_outline,
+      _ActionCardData(
+        icon: material.Icons.people_outline,
         title: 'Pacientes',
         description: 'Gestionar pacientes',
         color: LightModeColors.lightSecondary,
@@ -98,12 +159,77 @@ class QuickActionsGrid extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        crossAxisSpacing: AppSpacing.md,
-        mainAxisSpacing: AppSpacing.md,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
         childAspectRatio: 1.1,
       ),
       itemCount: actions.length,
-      itemBuilder: (context, index) => actions[index],
+      itemBuilder: (context, index) => _ActionCard(data: actions[index]),
+    );
+  }
+}
+
+class _ActionCardData {
+  final IconData icon;
+  final String title;
+  final String description;
+  final Color color;
+  final VoidCallback onTap;
+
+  _ActionCardData({
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.color,
+    required this.onTap,
+  });
+}
+
+class _ActionCard extends StatelessWidget {
+  final _ActionCardData data;
+
+  const _ActionCard({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: data.onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: data.color.withValues(alpha: 0.6),
+            width: 2.0,
+          ),
+        ),
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  data.icon,
+                  size: 48,
+                  color: data.color,
+                ),
+                const Gap(8),
+                Text(
+                  data.title,
+                  textAlign: TextAlign.center,
+                ).semiBold(),
+                const Gap(4),
+                Text(
+                  data.description,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ).small().muted(),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -121,55 +247,96 @@ class StatisticsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Estadísticas generales',
-          style: context.textStyles.titleLarge?.bold,
-        ),
-        SizedBox(height: AppSpacing.md),
+        const Text('Estadísticas generales').textLarge().bold(),
+        const Gap(16),
         Row(
           children: [
             Expanded(
-              child: StatCard(
-                icon: Icons.assignment_turned_in,
-                value: '${stats['completed']}',
+              child: _StatCard(
+                icon: material.Icons.cloud_done,
+                value: '${stats['synced']}',
                 label: 'Sincronizadas',
-                color: Colors.green.shade600,
+                color: const Color(0xFF43A047), // green.shade600
               ),
             ),
-            SizedBox(width: AppSpacing.md),
+            const Gap(16),
             Expanded(
-              child: StatCard(
-                icon: Icons.people,
+              child: _StatCard(
+                icon: material.Icons.people,
                 value: '${patientService.patients.length}',
                 label: 'Pacientes',
-                color: Theme.of(context).colorScheme.primary,
+                color: LightModeColors.lightPrimary,
               ),
             ),
           ],
         ),
-        SizedBox(height: AppSpacing.md),
+        const Gap(16),
         Row(
           children: [
             Expanded(
-              child: StatCard(
-                icon: Icons.pending_actions,
-                value: '${stats['incomplete']}',
+              child: _StatCard(
+                icon: material.Icons.cloud_upload,
+                value: '${stats['pending']}',
                 label: 'Pendientes',
-                color: Colors.orange.shade600,
+                color: const Color(0xFFFB8C00), // orange.shade600
               ),
             ),
-            SizedBox(width: AppSpacing.md),
+            const Gap(16),
             Expanded(
-              child: StatCard(
-                icon: Icons.assessment,
+              child: _StatCard(
+                icon: material.Icons.assessment,
                 value: '${stats['total']}',
-                label: 'Total',
-                color: Theme.of(context).colorScheme.secondary,
+                label: 'Total Encuestas',
+                color: LightModeColors.lightSecondary,
               ),
             ),
           ],
         ),
       ],
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color color;
+
+  const _StatCard({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withValues(alpha: 0.5),
+          width: 1.5,
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 32),
+          const Gap(8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          Text(label).small().muted(),
+        ],
+      ),
     );
   }
 }

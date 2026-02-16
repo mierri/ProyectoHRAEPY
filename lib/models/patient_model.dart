@@ -2,7 +2,7 @@ import 'package:hive/hive.dart';
 part 'patient_model.g.dart';
 
 @HiveType(typeId: 2)
-class PatientModel extends HiveObject{
+class PatientModel extends HiveObject {
   @HiveField(0)
   int patientId;
   @HiveField(1)
@@ -43,7 +43,7 @@ class PatientModel extends HiveObject{
   int get age {
     final now = DateTime.now();
     int age = now.year - birthDate.year;
-    if (now.month < birthDate.month || 
+    if (now.month < birthDate.month ||
         (now.month == birthDate.month && now.day < birthDate.day)) {
       age--;
     }

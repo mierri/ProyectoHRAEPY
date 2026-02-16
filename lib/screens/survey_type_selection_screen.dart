@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' as material show Icons;
 import 'package:go_router/go_router.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/utils/theme.dart';
 
 enum SurveyType {
@@ -38,18 +39,18 @@ extension SurveyTypeExtension on SurveyType {
   IconData get icon {
     switch (this) {
       case SurveyType.bai:
-        return Icons.psychology_outlined;
+        return material.Icons.psychology_outlined;
       case SurveyType.bdi:
-        return Icons.favorite_outline;
+        return material.Icons.favorite_outline;
     }
   }
 
-  Color getColor(BuildContext context) {
+  Color getColor() {
     switch (this) {
       case SurveyType.bai:
-        return Theme.of(context).colorScheme.tertiary;
+        return LightModeColors.lightTertiary;
       case SurveyType.bdi:
-        return Theme.of(context).colorScheme.primary;
+        return LightModeColors.lightPrimary;
     }
   }
 }
@@ -60,43 +61,44 @@ class SurveyTypeSelectionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Seleccionar Tipo de Encuesta'),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: AppSpacing.paddingLg,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Tipos de Encuestas Disponibles',
-                style: context.textStyles.headlineSmall?.bold,
+      headers: [
+        AppBar(
+          title: const Text('Seleccionar Tipo de Encuesta'),
+          leading: [
+            IconButton(
+              icon: const Icon(material.Icons.arrow_back),
+              onPressed: () => context.pop(),
+              variance: ButtonVariance.ghost,
+            ),
+          ],
+        ),
+      ],
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Tipos de Encuestas Disponibles').textLarge().bold(),
+            const Gap(8),
+            const Text(
+              'Selecciona el tipo de evaluación que deseas aplicar',
+            ).muted(),
+            const Gap(32),
+            ...SurveyType.values.map((type) => Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: SurveyTypeCard(
+                surveyType: type,
+                onTap: () => context.push('/consent-form?surveyType=${type.name}'),
               ),
-              SizedBox(height: AppSpacing.sm),
-              Text(
-                'Selecciona el tipo de evaluación que deseas aplicar',
-                style: context.textStyles.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-              SizedBox(height: AppSpacing.xl),
-              ...SurveyType.values.map((type) => Padding(
-                padding: EdgeInsets.only(bottom: AppSpacing.md),
-                child: SurveyTypeCard(
-                  surveyType: type,
-                  onTap: () => context.push('/consent-form?surveyType=${type.name}'),
-                ),
-              )),
-            ],
-          ),
+            )),
+          ],
         ),
       ),
     );
   }
 }
 
-class SurveyTypeCard extends StatelessWidget {
+class SurveyTypeCard extends StatefulWidget {
   final SurveyType surveyType;
   final VoidCallback onTap;
 
@@ -107,72 +109,121 @@ class SurveyTypeCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final color = surveyType.getColor(context);
+  State<SurveyTypeCard> createState() => _SurveyTypeCardState();
+}
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        side: BorderSide(
-          color: color.withValues(alpha: 0.3),
-          width: 1.5,
-        ),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        child: Padding(
-          padding: AppSpacing.paddingLg,
-          child: Row(
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                ),
-                child: Icon(
-                  surveyType.icon,
-                  size: 32,
-                  color: color,
-                ),
-              ),
-              SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      surveyType.code,
-                      style: context.textStyles.titleLarge?.bold.copyWith(
-                        color: color,
-                      ),
+class _SurveyTypeCardState extends State<SurveyTypeCard> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  bool _isPressed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.97).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleTapDown(TapDownDetails details) {
+    setState(() => _isPressed = true);
+    _controller.forward();
+  }
+
+  void _handleTapUp(TapUpDetails details) {
+    setState(() => _isPressed = false);
+    _controller.reverse();
+  }
+
+  void _handleTapCancel() {
+    setState(() => _isPressed = false);
+    _controller.reverse();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = widget.surveyType.getColor();
+
+    return GestureDetector(
+      onTap: widget.onTap,
+      onTapDown: _handleTapDown,
+      onTapUp: _handleTapUp,
+      onTapCancel: _handleTapCancel,
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _isPressed ? color : color.withValues(alpha: 0.6),
+              width: 2.0,
+            ),
+            boxShadow: _isPressed
+                ? [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    )
+                  ]
+                : null,
+          ),
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Row(
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: _isPressed ? 0.2 : 0.1),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    SizedBox(height: AppSpacing.xs),
-                    Text(
-                      surveyType.englishName,
-                      style: context.textStyles.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    child: Icon(
+                      widget.surveyType.icon,
+                      size: 32,
+                      color: color,
                     ),
                   ),
-                  SizedBox(height: AppSpacing.xs),
-                  Text(
-                    surveyType.spanishName,
-                      style: context.textStyles.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                  const Gap(16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.surveyType.code,
+                          style: TextStyle(
+                            color: color,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const Gap(4),
+                        Text(widget.surveyType.englishName).small().muted(),
+                        const Gap(2),
+                        Text(widget.surveyType.spanishName).small().muted(),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    color: color,
+                    size: 20,
+                  ),
+                ],
               ),
-              Icon(
-                Icons.arrow_forward_ios,
-                color: color,
-                size: 20,
-              ),
-            ],
+            ),
           ),
         ),
       ),

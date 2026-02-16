@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' as material show BoxDecoration, LinearGradient, Alignment, Colors;
+import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/utils/theme.dart';
 
 /// A welcome card widget for the dashboard
@@ -16,32 +17,35 @@ class WelcomeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: AppSpacing.paddingLg,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
+      padding: const EdgeInsets.all(24.0),
+      decoration: material.BoxDecoration(
+        gradient: material.LinearGradient(
           colors: [
-            Theme.of(context).colorScheme.primary,
-            Theme.of(context).colorScheme.secondary,
+            LightModeColors.lightPrimary,
+            LightModeColors.lightSecondary,
           ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          begin: material.Alignment.topLeft,
+          end: material.Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(AppRadius.lg),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             '¡Hola, $userName!',
-            style: context.textStyles.headlineMedium?.copyWith(
-              color: Colors.white,
+            style: const TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: material.Colors.white,
             ),
           ),
-          SizedBox(height: AppSpacing.sm),
+          const Gap(8),
           Text(
             subtitle,
-            style: context.textStyles.bodyMedium?.copyWith(
-              color: Colors.white.withValues(alpha: 0.9),
+            style: TextStyle(
+              fontSize: 14,
+              color: material.Colors.white.withValues(alpha: 0.9),
             ),
           ),
         ],
@@ -49,3 +53,4 @@ class WelcomeCard extends StatelessWidget {
     );
   }
 }
+

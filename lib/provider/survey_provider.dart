@@ -82,6 +82,8 @@ class SurveyProvider {
           
           final newSurvey = SurveyModel(
             surveyId: surveyData['survey_id'],
+            surveyType: surveyData['survey_type'] ?? 1, // 1=BDI por defecto
+            patientId: surveyData['patient_id'],
             responses: responses,
             synced: true,
           );
