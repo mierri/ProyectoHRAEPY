@@ -10,10 +10,13 @@ class SurveyModel extends HiveObject{
   bool synced;
   @HiveField(2)
   List<ResponseModel> responses;
+  @HiveField(3)
+  String surveyName;
 
   SurveyModel({
     required this.surveyId,
     required this.responses,
+    required this.surveyName,
     this.synced = false,
 
   });
