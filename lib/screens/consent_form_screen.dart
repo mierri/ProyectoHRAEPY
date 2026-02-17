@@ -144,7 +144,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
             DatePicker(
               value: _dateOfBirth,
               mode: PromptMode.dialog,
-              dialogTitle: const Text('Fecha de Nacimiento'),
+              placeholder: const Text('Seleccione una fecha'),
               stateBuilder: (date) {
                 if (date.isAfter(DateTime.now())) {
                   return DateState.disabled;

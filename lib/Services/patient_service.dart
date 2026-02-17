@@ -29,7 +29,7 @@ class PatientService extends ChangeNotifier {
       try {
         box = await Hive.openBox<PatientModel>('patients');
       } catch (e) {
-        print('⚠️ Error al abrir Hive box, limpiando datos antiguos: $e');
+        print('Error al abrir Hive box, limpiando datos antiguos: $e');
         await Hive.deleteBoxFromDisk('patients');
         box = await Hive.openBox<PatientModel>('patients');
       }
@@ -44,36 +44,26 @@ class PatientService extends ChangeNotifier {
         patient.synced = true;
         await patient.save(); // Actualizar en Hive
         notifyListeners();
-        print('✅ Paciente sincronizado con Supabase');
       } else {
-        print('⚠️ Paciente guardado localmente, pendiente de sincronización');
+        print('Paciente guardado localmente, pendiente de sincronización');
       }
 
       return patient;
     } catch (e) {
-      print('❌ Error al crear paciente: $e');
       return null;
     }
   }
-  
-  /// Carga todos los pacientes (desde Hive y Supabase)
+
   Future<void> loadPatients() async {
     try {
-      // Cargar desde Supabase
       final supabasePatients = await getAllPatientsFromSupabase();
-
-      // Cargar desde Hive
       final hivePatients = await _getLocalPatients();
-
-      // Combinar: priorizar Supabase, agregar los de Hive que no estén
       final Map<int, PatientModel> patientsMap = {};
 
-      // Agregar pacientes de Supabase
       for (var patient in supabasePatients) {
         patientsMap[patient.patientId] = patient;
       }
 
-      // Agregar pacientes locales que no estén en Supabase
       for (var patient in hivePatients) {
         if (!patientsMap.containsKey(patient.patientId)) {
           patientsMap[patient.patientId] = patient;
@@ -85,8 +75,6 @@ class PatientService extends ChangeNotifier {
 
       notifyListeners();
     } catch (e) {
-      print('Error al cargar pacientes: $e');
-      // Si falla Supabase, al menos cargar los locales
       _patients = await _getLocalPatients();
       notifyListeners();
     }
@@ -99,23 +87,20 @@ class PatientService extends ChangeNotifier {
       try {
         box = await Hive.openBox<PatientModel>('patients');
       } catch (e) {
-        print('⚠️ Error al abrir Hive box, limpiando datos antiguos: $e');
         await Hive.deleteBoxFromDisk('patients');
         box = await Hive.openBox<PatientModel>('patients');
       }
 
       return box.values.toList();
     } catch (e) {
-      print('Error al cargar pacientes locales: $e');
       return [];
     }
   }
-  /// Sincroniza un paciente con Supabase
+
   Future<bool> syncPatientToSupabase(PatientModel patient) async {
     try {
       final supabase = SupabaseConfig.client;
-      
-      // Insertar o actualizar el paciente (upsert)
+
       await supabase
           .from('patients')
           .upsert(patient.toJson())
@@ -124,12 +109,10 @@ class PatientService extends ChangeNotifier {
 
       return true;
     } catch (e) {
-      print('Error al sincronizar paciente con Supabase: $e');
       return false;
     }
   }
 
-  /// Obtiene todos los pacientes desde Supabase
   Future<List<PatientModel>> getAllPatientsFromSupabase() async {
     try {
       final supabase = SupabaseConfig.client;
@@ -143,12 +126,10 @@ class PatientService extends ChangeNotifier {
           .map((json) => PatientModel.fromJson(json))
           .toList();
     } catch (e) {
-      print('Error al obtener pacientes de Supabase: $e');
       return [];
     }
   }
 
-  /// Obtiene un paciente por ID
   Future<PatientModel?> getPatientById(int patientId) async {
     try {
       final supabase = SupabaseConfig.client;
@@ -161,12 +142,10 @@ class PatientService extends ChangeNotifier {
 
       return PatientModel.fromJson(data);
     } catch (e) {
-      print('Error al obtener paciente: $e');
       return null;
     }
   }
 
-  /// Busca pacientes por nombre
   Future<List<PatientModel>> searchPatientsByName(String query) async {
     try {
       final supabase = SupabaseConfig.client;
@@ -181,12 +160,10 @@ class PatientService extends ChangeNotifier {
           .map((json) => PatientModel.fromJson(json))
           .toList();
     } catch (e) {
-      print('Error al buscar pacientes: $e');
       return [];
     }
   }
 
-  /// Actualiza un paciente
   Future<bool> updatePatient(PatientModel patient) async {
     try {
       final supabase = SupabaseConfig.client;
@@ -198,12 +175,10 @@ class PatientService extends ChangeNotifier {
 
       return true;
     } catch (e) {
-      print('Error al actualizar paciente: $e');
       return false;
     }
   }
 
-  /// Elimina un paciente
   Future<bool> deletePatient(int patientId) async {
     try {
       final supabase = SupabaseConfig.client;
@@ -215,12 +190,10 @@ class PatientService extends ChangeNotifier {
 
       return true;
     } catch (e) {
-      print('Error al eliminar paciente: $e');
       return false;
     }
   }
 
-  /// Obtiene las encuestas de un paciente
   Future<List<Map<String, dynamic>>> getPatientSurveys(int patientId) async {
     try {
       final supabase = SupabaseConfig.client;
@@ -233,12 +206,10 @@ class PatientService extends ChangeNotifier {
 
       return List<Map<String, dynamic>>.from(data);
     } catch (e) {
-      print('Error al obtener encuestas del paciente: $e');
       return [];
     }
   }
 
-  /// Sincroniza pacientes pendientes con Supabase
   Future<int> syncPendingPatients() async {
     int syncedCount = 0;
 
@@ -246,11 +217,8 @@ class PatientService extends ChangeNotifier {
       final pendingPatients = _patients.where((p) => !p.synced).toList();
 
       if (pendingPatients.isEmpty) {
-        print('✅ No hay pacientes pendientes de sincronización');
         return 0;
       }
-
-      print('📤 Sincronizando ${pendingPatients.length} pacientes pendientes...');
 
       for (var patient in pendingPatients) {
         final success = await syncPatientToSupabase(patient);
@@ -258,17 +226,15 @@ class PatientService extends ChangeNotifier {
           patient.synced = true;
           await patient.save();
           syncedCount++;
-          print('✅ Paciente ${patient.name} sincronizado');
         } else {
-          print('⚠️ No se pudo sincronizar paciente ${patient.name}');
+          print('No se pudo sincronizar paciente ${patient.name}');
         }
       }
 
       notifyListeners();
-      print('✅ Sincronización completada: $syncedCount/${ pendingPatients.length} pacientes');
 
     } catch (e) {
-      print('❌ Error al sincronizar pacientes pendientes: $e');
+      print('Error al sincronizar pacientes pendientes: $e');
     }
 
     return syncedCount;

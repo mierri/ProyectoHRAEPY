@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:ssapp/screens/consent_form_screen.dart';
 import 'package:ssapp/screens/dashboard_screen.dart';
 import 'package:ssapp/screens/placeholder_screen.dart';
+import 'package:ssapp/screens/reports_screen.dart';
 import 'package:ssapp/screens/settings_screen.dart';
 import 'package:ssapp/screens/survey_screen.dart';
 import 'package:ssapp/screens/surveys_list_screen.dart';
@@ -18,7 +19,7 @@ import 'package:ssapp/Services/survey_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Inicializar Supabase
   await SupabaseConfig.initialize();
   
@@ -101,10 +102,7 @@ final GoRouter _router = GoRouter(
     ),
     GoRoute(
       path: '/reports',
-      builder: (context, state) => const PlaceholderScreen(
-        title: 'Reportes',
-        message: 'Aquí verás estadísticas y análisis de las encuestas',
-      ),
+      builder: (context, state) => const ReportsScreen(),
     ),
     GoRoute(
       path: '/patients',

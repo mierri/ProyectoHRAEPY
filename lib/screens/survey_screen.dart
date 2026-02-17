@@ -51,9 +51,6 @@ class _SurveyScreenState extends State<SurveyScreen> {
   @override
   void initState() {
     super.initState();
-    // Debug: Verify survey type
-    print('🔍 Survey Type: ${widget.surveyType}');
-    print('🔍 Survey Type ID: $_surveyTypeId');
   }
 
   Future<void> _saveSurvey() async {
@@ -109,14 +106,10 @@ class _SurveyScreenState extends State<SurveyScreen> {
         );
       }).toList();
 
-      // Validate we have all 21 responses
       if (responses.length != 21) {
         throw Exception('Faltan respuestas. Por favor, responda todas las preguntas.');
       }
 
-      // Create survey model
-      // surveyId: timestamp único de esta instancia
-      // surveyType: 1 = BDI, 2 = BAI
       final survey = SurveyModel(
         surveyId: DateTime.now().millisecondsSinceEpoch,
         surveyType: _surveyTypeId,
@@ -125,32 +118,19 @@ class _SurveyScreenState extends State<SurveyScreen> {
         synced: false,
       );
 
-      // Debug: Verify what we're saving
-      print('💾 Saving survey:');
-      print('   Survey ID: ${survey.surveyId}');
-      print('   Survey Type: ${survey.surveyType} (1=BDI, 2=BAI)');
-      print('   Patient ID: ${survey.patientId}');
-      print('   Responses: ${survey.responses.length}');
-
-      // Save to Hive first (local storage)
       Box<SurveyModel> box;
       try {
         box = await Hive.openBox<SurveyModel>('surveys');
       } catch (e) {
-        // Si hay error al abrir (probablemente datos viejos incompatibles),
-        // eliminar y recrear la box
-        print('Error al abrir Hive box, limpiando datos antiguos: $e');
         await Hive.deleteBoxFromDisk('surveys');
         box = await Hive.openBox<SurveyModel>('surveys');
       }
 
       await box.add(survey);
-      print('✅ Encuesta guardada en Hive');
 
       // Try to sync with Supabase (with timeout to prevent freezing)
       if (mounted) {
         try {
-          print('🔄 Intentando sincronizar con Supabase...');
           final surveyService = context.read<SurveyService>();
 
           // Add timeout to prevent hanging
@@ -158,7 +138,6 @@ class _SurveyScreenState extends State<SurveyScreen> {
               .timeout(
                 const Duration(seconds: 10),
                 onTimeout: () {
-                  print('⏱️ Timeout en sincronización, continuando sin sync');
                   return false;
                 },
               );
@@ -166,44 +145,32 @@ class _SurveyScreenState extends State<SurveyScreen> {
           if (wasSynced) {
             survey.synced = true;
             await survey.save();
-            print('✅ Encuesta sincronizada con Supabase');
           } else {
-            print('⚠️ Encuesta NO sincronizada (quedará pendiente)');
+            print('No se pudo sincronizar con Supabase');
           }
         } catch (e) {
-          print('⚠️ Error en sincronización: $e');
           wasSynced = false;
         }
       }
 
-      print('🎉 Proceso de guardado completado');
-
-      // Close loading dialog
       if (mounted) {
-        print('🚪 Cerrando diálogo de loading...');
         Navigator.of(context).pop();
-        print('✅ Diálogo cerrado');
       }
 
       // Small delay to ensure dialog is closed
       await Future.delayed(const Duration(milliseconds: 100));
 
       if (mounted) {
-        print('🎊 Mostrando diálogo de completación...');
         _showCompletionDialog(wasSynced);
       }
     } catch (e, stackTrace) {
-      print('❌ ERROR AL GUARDAR ENCUESTA: $e');
       print('Stack trace: $stackTrace');
 
-      // Close loading dialog
       if (mounted) {
-        print('🚪 Cerrando diálogo de loading (error)...');
         try {
           Navigator.of(context).pop();
-          print('✅ Diálogo cerrado (error)');
         } catch (popError) {
-          print('⚠️ Error al cerrar diálogo: $popError');
+          print('Error al cerrar diálogo: $popError');
         }
       }
 
@@ -211,14 +178,12 @@ class _SurveyScreenState extends State<SurveyScreen> {
         showToast(
           context: context,
           builder: (context, overlay) => _buildErrorToast(overlay, 'Error: ${e.toString()}'),
-          location: ToastLocation.bottomCenter,
+          location: ToastLocation.topCenter,
         );
       }
     } finally {
       if (mounted) {
-        print('🔚 Finally: Reseteando _isSaving...');
         setState(() => _isSaving = false);
-        print('✅ _isSaving = false');
       }
     }
   }
@@ -229,15 +194,12 @@ class _SurveyScreenState extends State<SurveyScreen> {
       _selectedOptionIndex = optionIndex;
     });
 
-    // Show confirmation toast
     showToast(
       context: context,
       builder: (context, overlay) => _buildSelectionToast(overlay),
-      location: ToastLocation.bottomCenter,
+      location: ToastLocation.topCenter,
     );
 
-    // Auto-advance after a short delay, EXCEPT for the last question
-    // For the last question, user must press "Finalizar" button
     if (_currentQuestionIndex < _questions.length - 1) {
       Future.delayed(const Duration(milliseconds: 600), () {
         if (mounted) {
@@ -252,10 +214,8 @@ class _SurveyScreenState extends State<SurveyScreen> {
       setState(() {
         _currentQuestionIndex++;
         _selectedOptionIndex = null;
-        // Check if this question was already answered
         final questionNumber = _currentQuestionIndex + 1;
         if (_responses.containsKey(questionNumber)) {
-          // Find the option index for the saved response
           final savedScore = _responses[questionNumber];
           final question = _questions[_currentQuestionIndex];
           for (int i = 0; i < question.options.length; i++) {
@@ -294,12 +254,8 @@ class _SurveyScreenState extends State<SurveyScreen> {
   }
 
   void _showCompletionDialog(bool wasSynced) {
-    print('📝 Calculando score...');
-    // Calculate score
     final totalScore = _responses.values.fold<int>(0, (sum, score) => sum + score);
-    print('📊 Score total: $totalScore');
 
-    print('🎨 Mostrando dialog...');
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -403,7 +359,6 @@ class _SurveyScreenState extends State<SurveyScreen> {
                       Expanded(
                         child: OutlineButton(
                           onPressed: () {
-                            print('🚫 Usuario seleccionó NO ver resultados');
                             Navigator.of(context).pop();
                             context.go('/new-survey');
                           },
@@ -414,7 +369,6 @@ class _SurveyScreenState extends State<SurveyScreen> {
                       Expanded(
                         child: PrimaryButton(
                           onPressed: () {
-                            print('✅ Usuario seleccionó SÍ ver resultados');
                             Navigator.of(context).pop();
                             _showResultDialog(totalScore);
                           },
@@ -430,13 +384,10 @@ class _SurveyScreenState extends State<SurveyScreen> {
         ),
       ),
     );
-    print('✅ Dialog mostrado');
   }
 
   void _showResultDialog(int totalScore) {
-    print('📈 Mostrando resultados con score: $totalScore');
 
-    // Determine level based on survey type and score
     final String level;
     final String levelDescription;
     final Color levelColor;
@@ -628,7 +579,6 @@ class _SurveyScreenState extends State<SurveyScreen> {
                       width: double.infinity,
                       child: PrimaryButton(
                         onPressed: () {
-                          print('✅ Cerrando resultados, volviendo a selección');
                           Navigator.of(context).pop();
                           context.go('/new-survey');
                         },
@@ -643,7 +593,6 @@ class _SurveyScreenState extends State<SurveyScreen> {
         ),
       ),
     );
-    print('✅ Dialog de resultados mostrado');
   }
 
   Widget _buildSelectionToast(ToastOverlay overlay) {
