@@ -108,13 +108,12 @@ class SurveyService extends ChangeNotifier {
       }
 
       // Luego agregar encuestas de Supabase que no estén en Hive
-      // Si está en Hive, mantener la de Hive porque tiene el survey_type correcto
+      // Ahora Supabase ya tiene el campo survey_type
       for (var survey in supabaseSurveys) {
         final surveyId = survey['survey_id'] as int;
         if (!surveysMap.containsKey(surveyId)) {
-          // Para encuestas de Supabase sin Hive, intentar inferir tipo
-          // o asumir BDI por defecto
-          survey['survey_type'] = 1; // Default BDI para encuestas viejas
+          // Leer survey_type desde Supabase, si no existe usar BDI como default
+          survey['survey_type'] = survey['survey_type'] ?? 1;
           surveysMap[surveyId] = survey;
         }
       }
@@ -192,6 +191,7 @@ class SurveyService extends ChangeNotifier {
       final surveyData = {
         'survey_id': survey.surveyId,
         'patient_id': survey.patientId,
+        'survey_type': survey.surveyType, // ¡IMPORTANTE! Guardar el tipo de encuesta
         'synced': true,
       };
 
@@ -236,9 +236,7 @@ class SurveyService extends ChangeNotifier {
           .select('*, responses(*)')
           .order('created_at', ascending: false);
 
-      // Convertir y agregar survey_type
-      // Como no tenemos survey_type en Supabase, solo retornamos los datos
-      // El tipo se determinará desde Hive para encuestas locales
+      // El survey_type ahora se incluye en los datos desde Supabase
       return List<Map<String, dynamic>>.from(data);
     } catch (e) {
       print('Error al obtener encuestas de Supabase: $e');

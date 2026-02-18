@@ -8,9 +8,11 @@ import 'package:ssapp/models/survey_model.dart';
 import 'package:provider/provider.dart';
 import 'package:ssapp/screens/consent_form_screen.dart';
 import 'package:ssapp/screens/dashboard_screen.dart';
+import 'package:ssapp/screens/patients_screen.dart';
 import 'package:ssapp/screens/placeholder_screen.dart';
 import 'package:ssapp/screens/reports_screen.dart';
 import 'package:ssapp/screens/settings_screen.dart';
+import 'package:ssapp/screens/survey_results_screen.dart';
 import 'package:ssapp/screens/survey_screen.dart';
 import 'package:ssapp/screens/surveys_list_screen.dart';
 import 'package:ssapp/screens/survey_type_selection_screen.dart';
@@ -101,15 +103,28 @@ final GoRouter _router = GoRouter(
       builder: (context, state) => const SurveysListScreen(),
     ),
     GoRoute(
+      path: '/survey-result/:surveyId',
+      builder: (context, state) {
+        final surveyIdStr = state.pathParameters['surveyId'];
+        final surveyId = int.tryParse(surveyIdStr ?? '');
+
+        if (surveyId == null) {
+          return const PlaceholderScreen(
+            title: 'Error',
+            message: 'ID de encuesta inválido',
+          );
+        }
+
+        return SurveyResultsScreen(surveyId: surveyId);
+      },
+    ),
+    GoRoute(
       path: '/reports',
       builder: (context, state) => const ReportsScreen(),
     ),
     GoRoute(
       path: '/patients',
-      builder: (context, state) => const PlaceholderScreen(
-        title: 'Pacientes',
-        message: 'Aquí podrás gestionar la información de los pacientes',
-      ),
+      builder: (context, state) => const PatientsScreen(),
     ),
     GoRoute(
       path: '/settings',

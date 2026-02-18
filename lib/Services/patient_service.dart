@@ -181,6 +181,7 @@ class PatientService extends ChangeNotifier {
 
   Future<bool> deletePatient(int patientId) async {
     try {
+      // Eliminar de Supabase
       final supabase = SupabaseConfig.client;
       
       await supabase
@@ -188,8 +189,28 @@ class PatientService extends ChangeNotifier {
           .delete()
           .eq('patient_id', patientId);
 
+      // Eliminar de la lista local
+      _patients.removeWhere((p) => p.patientId == patientId);
+
+      // Eliminar de Hive
+      try {
+        final box = await Hive.openBox<PatientModel>('patients');
+        final keys = box.keys.toList();
+        for (var key in keys) {
+          final patient = box.get(key);
+          if (patient?.patientId == patientId) {
+            await box.delete(key);
+            break;
+          }
+        }
+      } catch (e) {
+        print('Error al eliminar de Hive: $e');
+      }
+
+      notifyListeners();
       return true;
     } catch (e) {
+      print('Error al eliminar paciente: $e');
       return false;
     }
   }

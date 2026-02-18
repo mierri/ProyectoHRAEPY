@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 import 'dart:math' as math;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:csv/csv.dart';
 import 'package:web/web.dart' as web;
 import 'dart:convert';
 import 'dart:typed_data';
@@ -394,12 +393,21 @@ class _ReportsScreenState extends State<ReportsScreen> {
         ]);
       }
 
-      // Convertir a CSV
-      String csv = const ListToCsvConverter().convert(rows);
+      // Convert to CSV format manually with proper escaping
+      String csvString = '';
+      for (var row in rows) {
+        csvString += '${row.map((cell) {
+          final cellStr = cell.toString();
+          // Escape quotes and wrap in quotes if contains comma, quote, or newline
+          if (cellStr.contains(',') || cellStr.contains('"') || cellStr.contains('\n')) {
+            return '"${cellStr.replaceAll('"', '""')}"';
+          }
+          return cellStr;
+        }).join(',')}\n';
+      }
 
-      // Descargar archivo con BOM para UTF-8 (para que Excel/SPSS reconozca los acentos)
       final bom = [0xEF, 0xBB, 0xBF]; // UTF-8 BOM
-      final csvBytes = utf8.encode(csv);
+      final csvBytes = utf8.encode(csvString);
       final bytes = Uint8List.fromList(bom + csvBytes);
 
       // Crear blob y descargar con package:web

@@ -67,7 +67,7 @@ class SurveyTypeSelectionScreen extends StatelessWidget {
           leading: [
             IconButton(
               icon: const Icon(material.Icons.arrow_back),
-              onPressed: () => context.pop(),
+              onPressed: () => context.go('/'),
               variance: ButtonVariance.ghost,
             ),
           ],

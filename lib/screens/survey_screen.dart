@@ -639,7 +639,31 @@ class _SurveyScreenState extends State<SurveyScreen> {
           leading: [
             IconButton(
               icon: const Icon(material.Icons.arrow_back),
-              onPressed: () => context.pop(),
+              onPressed: () {
+                // Mostrar diálogo de confirmación antes de salir
+                showDialog(
+                  context: context,
+                  builder: (dialogContext) => AlertDialog(
+                    title: const Text('¿Salir de la encuesta?'),
+                    content: const Text(
+                      'Si sales ahora, perderás el progreso de la encuesta. ¿Estás seguro?',
+                    ),
+                    actions: [
+                      OutlineButton(
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                        child: const Text('Cancelar'),
+                      ),
+                      DestructiveButton(
+                        onPressed: () {
+                          Navigator.of(dialogContext).pop();
+                          context.go('/');
+                        },
+                        child: const Text('Salir'),
+                      ),
+                    ],
+                  ),
+                );
+              },
               variance: ButtonVariance.ghost,
             ),
           ],

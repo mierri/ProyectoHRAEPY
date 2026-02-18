@@ -28,7 +28,7 @@ app.get('/health', (req, res) => {
 // Crear nueva encuesta
 app.post('/api/surveys', async (req, res) => {
   try {
-    const { survey_id, patient_id, responses } = req.body;
+    const { survey_id, patient_id, survey_type, responses } = req.body;
 
     // Validación básica
     if (!survey_id || !responses || !Array.isArray(responses)) {
@@ -58,6 +58,7 @@ app.post('/api/surveys', async (req, res) => {
       .insert({
         survey_id,
         patient_id: patient_id || null,
+        survey_type: survey_type || 1, // 1=BDI-II, 2=BAI
         created_at: new Date().toISOString(),
         synced: true
       })
