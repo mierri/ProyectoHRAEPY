@@ -8,6 +8,7 @@ import 'package:ssapp/models/survey_model.dart';
 import 'package:provider/provider.dart';
 import 'package:ssapp/screens/consent_form_screen.dart';
 import 'package:ssapp/screens/dashboard_screen.dart';
+import 'package:ssapp/screens/moca_test_screen.dart';
 import 'package:ssapp/screens/patients_screen.dart';
 import 'package:ssapp/screens/placeholder_screen.dart';
 import 'package:ssapp/screens/reports_screen.dart';
@@ -92,6 +93,13 @@ final GoRouter _router = GoRouter(
         }
 
         final surveyType = state.uri.queryParameters['surveyType'] ?? 'bdi';
+
+        // Route to MoCA test screen if survey type is moca
+        if (surveyType == 'moca') {
+          return MocaTestScreen(patientId: patientId);
+        }
+
+        // Otherwise, use the standard survey screen for BDI/BAI
         return SurveyScreen(
           patientId: patientId,
           surveyType: surveyType,
