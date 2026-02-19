@@ -654,20 +654,40 @@ class _PatientDetailsDialog extends StatelessWidget {
       return bTime.compareTo(aTime);
     });
 
-    return AlertDialog(
-      title: Row(
-        children: [
-          Icon(
-            material.Icons.person,
-            color: LightModeColors.lightPrimary,
-          ),
-          const Gap(12),
-          const Expanded(child: Text('Detalles del Paciente')),
-        ],
-      ),
-      content: SizedBox(
-        width: 600,
-        child: SingleChildScrollView(
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: 450,
+          maxHeight: 600,
+        ),
+        child: SurfaceCard(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Title
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                child: Row(
+                  children: [
+                    Icon(
+                      material.Icons.person,
+                      color: LightModeColors.lightPrimary,
+                    ),
+                    const Gap(12),
+                    const Expanded(
+                      child: Text(
+                        'Detalles del Paciente',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              // Content
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -893,34 +913,47 @@ class _PatientDetailsDialog extends StatelessWidget {
                     ),
                   );
                 }),
+              ],
+                  ),
+                ),
+              ),
+              // Actions
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    OutlineButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('Cerrar'),
+                    ),
+                    const Gap(8),
+                    OutlineButton(
+                      onPressed: () => _showDeleteConfirmation(context),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            material.Icons.delete_outline,
+                            size: 18,
+                            color: LightModeColors.lightError,
+                          ),
+                          const Gap(8),
+                          Text(
+                            'Eliminar',
+                            style: TextStyle(color: LightModeColors.lightError),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
       ),
-      actions: [
-        OutlineButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cerrar'),
-        ),
-        OutlineButton(
-          onPressed: () => _showDeleteConfirmation(context),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                material.Icons.delete_outline,
-                size: 18,
-                color: LightModeColors.lightError,
-              ),
-              const Gap(8),
-              Text(
-                'Eliminar',
-                style: TextStyle(color: LightModeColors.lightError),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 

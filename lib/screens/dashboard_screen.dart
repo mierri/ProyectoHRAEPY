@@ -52,11 +52,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               trailingAlignment: Alignment.center,
             ),
           ),
-          location: ToastLocation.bottomCenter,
+          location: ToastLocation.topCenter,
         );
       }
     } catch (e) {
-      // Silenciosamente ignorar errores de auto-sync
       print('Auto-sync falló (probablemente sin internet): $e');
     }
   }
@@ -84,13 +83,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 context.push('/settings');
               },
               child: const Icon(material.Icons.settings),
-            ),
-            OutlineButton(
-              density: ButtonDensity.icon,
-              onPressed: () {
-                // TODO: Agregar funcionalidad de notificaciones
-              },
-              child: const Icon(material.Icons.notifications_outlined),
             ),
           ],
         ),
