@@ -46,7 +46,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => PatientService()),
       ],
       child: ShadcnApp.router(
-        title: 'HRAEPY - Sistema de Evaluación',
+        title: 'Sistema de Evaluación',
         debugShowCheckedModeBanner: false,
         themeMode: ThemeMode.system,
         routerConfig: _router,

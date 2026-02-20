@@ -5,6 +5,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/Services/patient_service.dart';
 import 'package:ssapp/Services/survey_service.dart';
 import 'package:ssapp/utils/theme.dart';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
 
 import '../components/welcome_card.dart';
 
@@ -69,11 +70,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                material.Icons.health_and_safety_rounded,
+                Symbols.digital_wellbeing_rounded,
                 color: LightModeColors.lightPrimary,
               ),
               const Gap(8),
-              const Text('HRAEPY - Sistema de Evaluación').medium(),
+              const Text('Sistema de Evaluación').medium(),
             ],
           ),
           trailing: [
