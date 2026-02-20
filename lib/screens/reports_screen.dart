@@ -1,5 +1,5 @@
-import 'dart:js_interop';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart' as material;
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/Services/survey_service.dart';
@@ -7,7 +7,10 @@ import 'package:provider/provider.dart';
 import 'dart:math' as math;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:web/web.dart' as web;
+import 'package:printing/printing.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'dart:io';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -70,14 +73,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
               ),
             )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Selector de tipo de encuesta
                   SurfaceCard(
                     child: Padding(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       child: Row(
                         children: [
                           const Text('Tipo de Encuesta:').semiBold(),
@@ -120,33 +123,30 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   const Gap(24),
 
                   // Botones de exportación
-                  Row(
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
                     children: [
-                      Expanded(
-                        child: OutlineButton(
-                          onPressed: surveys.isEmpty ? null : () => _exportToSPSS(context, surveys, surveyService),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(material.Icons.table_chart, size: 20),
-                              const Gap(8),
-                              const Text('Descargar datos SPSS (.csv)'),
-                            ],
-                          ),
+                      OutlineButton(
+                        onPressed: surveys.isEmpty ? null : () => _exportToSPSS(context, surveys, surveyService),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(material.Icons.table_chart, size: 16),
+                            const Gap(6),
+                            const Text('Exportar CSV'),
+                          ],
                         ),
                       ),
-                      const Gap(16),
-                      Expanded(
-                        child: PrimaryButton(
-                          onPressed: surveys.isEmpty ? null : () => _generatePDFReport(context, surveys, surveyService, stats),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(material.Icons.picture_as_pdf, size: 20),
-                              const Gap(8),
-                              const Text('Generar Reporte PDF'),
-                            ],
-                          ),
+                      PrimaryButton(
+                        onPressed: surveys.isEmpty ? null : () => _generatePDFReport(context, surveys, surveyService, stats),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(material.Icons.picture_as_pdf, size: 16),
+                            const Gap(6),
+                            const Text('Generar PDF'),
+                          ],
                         ),
                       ),
                     ],
@@ -156,90 +156,80 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   // Medidas de tendencia central
                   Text('Medidas de Tendencia Central',
                     style: TextStyle(
-                      fontSize: 28,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const Gap(16),
-                  Row(
+                  const Gap(12),
+                  GridView.count(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    childAspectRatio: 2.2,
                     children: [
-                      Expanded(
-                        child: _StatCard(
-                          title: 'Media',
-                          value: stats['mean']!.toStringAsFixed(1),
-                          icon: material.Icons.analytics,
-                          color: const Color(0xFF3B82F6),
-                        ),
+                      _StatCard(
+                        title: 'Media',
+                        value: stats['mean']!.toStringAsFixed(1),
+                        icon: material.Icons.analytics,
+                        color: const Color(0xFF3B82F6),
                       ),
-                      const Gap(16),
-                      Expanded(
-                        child: _StatCard(
-                          title: 'Mediana',
-                          value: stats['median']!.toStringAsFixed(1),
-                          icon: material.Icons.show_chart,
-                          color: const Color(0xFF10B981),
-                        ),
+                      _StatCard(
+                        title: 'Mediana',
+                        value: stats['median']!.toStringAsFixed(1),
+                        icon: material.Icons.show_chart,
+                        color: const Color(0xFF10B981),
                       ),
-                      const Gap(16),
-                      Expanded(
-                        child: _StatCard(
-                          title: 'Moda',
-                          value: stats['mode']!.toStringAsFixed(0),
-                          icon: material.Icons.timeline,
-                          color: const Color(0xFF8B5CF6),
-                        ),
+                      _StatCard(
+                        title: 'Moda',
+                        value: stats['mode']!.toStringAsFixed(0),
+                        icon: material.Icons.timeline,
+                        color: const Color(0xFF8B5CF6),
                       ),
-                      const Gap(16),
-                      Expanded(
-                        child: _StatCard(
-                          title: 'Desv. Estándar',
-                          value: stats['stdDev']!.toStringAsFixed(2),
-                          icon: material.Icons.scatter_plot,
-                          color: const Color(0xFFF59E0B),
-                        ),
+                      _StatCard(
+                        title: 'Desv. Estándar',
+                        value: stats['stdDev']!.toStringAsFixed(2),
+                        icon: material.Icons.scatter_plot,
+                        color: const Color(0xFFF59E0B),
+                      ),
+                    ],
+                  ),
+                  const Gap(16),
+
+                  // Rango y otros datos
+                  GridView.count(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    childAspectRatio: 3.0,
+                    children: [
+                      _InfoCard(
+                        title: 'Total de Encuestas',
+                        value: surveys.length.toString(),
+                      ),
+                      _InfoCard(
+                        title: 'Puntaje Mínimo',
+                        value: stats['min']!.toInt().toString(),
+                      ),
+                      _InfoCard(
+                        title: 'Puntaje Máximo',
+                        value: stats['max']!.toInt().toString(),
+                      ),
+                      _InfoCard(
+                        title: 'Rango',
+                        value: (stats['max']! - stats['min']!).toInt().toString(),
                       ),
                     ],
                   ),
                   const Gap(24),
 
-                  // Rango y otros datos
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _InfoCard(
-                          title: 'Total de Encuestas',
-                          value: surveys.length.toString(),
-                        ),
-                      ),
-                      const Gap(16),
-                      Expanded(
-                        child: _InfoCard(
-                          title: 'Puntaje Mínimo',
-                          value: stats['min']!.toInt().toString(),
-                        ),
-                      ),
-                      const Gap(16),
-                      Expanded(
-                        child: _InfoCard(
-                          title: 'Puntaje Máximo',
-                          value: stats['max']!.toInt().toString(),
-                        ),
-                      ),
-                      const Gap(16),
-                      Expanded(
-                        child: _InfoCard(
-                          title: 'Rango',
-                          value: (stats['max']! - stats['min']!).toInt().toString(),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Gap(32),
-
                   // Gráficas
                   Text('Distribución de Resultados',
                     style: TextStyle(
-                      fontSize: 28,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -366,7 +356,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   // Exportar datos a CSV (compatible con SPSS)
-  void _exportToSPSS(BuildContext context, List<Map<String, dynamic>> surveys, SurveyService surveyService) {
+  Future<void> _exportToSPSS(BuildContext context, List<Map<String, dynamic>> surveys, SurveyService surveyService) async {
     try {
       final surveyTypeName = _selectedSurveyType == 1 ? 'BDI-II' : 'BAI';
 
@@ -410,14 +400,20 @@ class _ReportsScreenState extends State<ReportsScreen> {
       final csvBytes = utf8.encode(csvString);
       final bytes = Uint8List.fromList(bom + csvBytes);
 
-      // Crear blob y descargar con package:web
-      final blob = web.Blob([bytes.toJS].toJS);
-      final url = web.URL.createObjectURL(blob);
-      final anchor = web.document.createElement('a') as web.HTMLAnchorElement;
-      anchor.href = url;
-      anchor.download = 'datos_${surveyTypeName}_${DateTime.now().millisecondsSinceEpoch}.csv';
-      anchor.click();
-      web.URL.revokeObjectURL(url);
+      final fileName = 'datos_${surveyTypeName}_${DateTime.now().millisecondsSinceEpoch}.csv';
+
+      if (kIsWeb) {
+        // Descarga en web usando printing (universally available)
+        await Printing.sharePdf(bytes: bytes, filename: fileName);
+      } else {
+        // En móvil/desktop: guardar en temp y compartir
+        final dir = await getTemporaryDirectory();
+        final file = File('${dir.path}/$fileName');
+        await file.writeAsBytes(bytes);
+        await SharePlus.instance.share(
+          ShareParams(files: [XFile(file.path)], text: 'Exportar datos CSV'),
+        );
+      }
 
       // Mostrar confirmación
       showToast(
@@ -676,17 +672,22 @@ class _ReportsScreenState extends State<ReportsScreen> {
         ),
       );
 
-      // Guardar y descargar PDF (compatible con web)
+      // Guardar y descargar PDF (compatible con todas las plataformas)
       final pdfBytes = await pdf.save();
+      final fileName = 'reporte_${surveyTypeName}_${DateTime.now().millisecondsSinceEpoch}.pdf';
 
-      // Crear blob y descargar con package:web
-      final blob = web.Blob([pdfBytes.toJS].toJS, web.BlobPropertyBag(type: 'application/pdf'));
-      final url = web.URL.createObjectURL(blob);
-      final anchor = web.document.createElement('a') as web.HTMLAnchorElement;
-      anchor.href = url;
-      anchor.download = 'reporte_${surveyTypeName}_${DateTime.now().millisecondsSinceEpoch}.pdf';
-      anchor.click();
-      web.URL.revokeObjectURL(url);
+      if (kIsWeb) {
+        // En web usar printing para descargar
+        await Printing.sharePdf(bytes: pdfBytes, filename: fileName);
+      } else {
+        // En móvil/desktop: guardar en temp y compartir
+        final dir = await getTemporaryDirectory();
+        final file = File('${dir.path}/$fileName');
+        await file.writeAsBytes(pdfBytes);
+        await SharePlus.instance.share(
+          ShareParams(files: [XFile(file.path)], text: 'Reporte PDF'),
+        );
+      }
 
       // Mostrar confirmación
       if (context.mounted) {
@@ -822,33 +823,40 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return SurfaceCard(
       child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
           children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(icon, color: color, size: 24),
-                ),
-                const Spacer(),
-              ],
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: color, size: 18),
             ),
-            const Gap(16),
-            Text(value,
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.foreground,
+            const Gap(10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(value,
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.foreground,
+                    ),
+                  ),
+                  Text(title,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Theme.of(context).colorScheme.mutedForeground,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
             ),
-            const Gap(4),
-            Text(title).muted(),
           ],
         ),
       ),
@@ -868,18 +876,26 @@ class _InfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return OutlinedContainer(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(value,
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
               color: Theme.of(context).colorScheme.foreground,
             ),
           ),
-          const Gap(4),
-          Text(title).muted().small(),
+          const Gap(2),
+          Text(title,
+            style: TextStyle(
+              fontSize: 11,
+              color: Theme.of(context).colorScheme.mutedForeground,
+            ),
+            textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );
