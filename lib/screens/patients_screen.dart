@@ -7,6 +7,7 @@ import 'package:ssapp/Services/patient_service.dart';
 import 'package:ssapp/Services/survey_service.dart';
 import 'package:ssapp/models/patient_model.dart';
 import 'package:ssapp/utils/theme.dart';
+import 'package:ssapp/utils/toast_helper.dart';
 
 class PatientsScreen extends StatefulWidget {
   const PatientsScreen({super.key});
@@ -315,36 +316,24 @@ class _PatientsScreenState extends State<PatientsScreen> {
             PrimaryButton(
               onPressed: () async {
                 if (nameController.text.isEmpty) {
-                  showToast(
-                    context: context,
-                    builder: (context, overlay) => SurfaceCard(
-                      child: Basic(
-                        title: const Text('Campo requerido'),
-                        subtitle: const Text('Por favor ingrese el nombre del paciente'),
-                        leading: Icon(
-                          material.Icons.warning,
-                          color: LightModeColors.lightError,
-                        ),
-                      ),
-                    ),
+                  showCenteredToast(
+                    context,
+                    title: 'Campo requerido',
+                    subtitle: 'Por favor ingrese el nombre del paciente',
+                    icon: material.Icons.warning,
+                    iconColor: LightModeColors.lightError,
                     location: ToastLocation.topCenter,
                   );
                   return;
                 }
 
                 if (selectedBirthDate == null) {
-                  showToast(
-                    context: context,
-                    builder: (context, overlay) => SurfaceCard(
-                      child: Basic(
-                        title: const Text('Campo requerido'),
-                        subtitle: const Text('Por favor seleccione la fecha de nacimiento'),
-                        leading: Icon(
-                          material.Icons.warning,
-                          color: LightModeColors.lightError,
-                        ),
-                      ),
-                    ),
+                  showCenteredToast(
+                    context,
+                    title: 'Campo requerido',
+                    subtitle: 'Por favor seleccione la fecha de nacimiento',
+                    icon: material.Icons.warning,
+                    iconColor: LightModeColors.lightError,
                     location: ToastLocation.topCenter,
                   );
                   return;
@@ -362,33 +351,21 @@ class _PatientsScreenState extends State<PatientsScreen> {
                   Navigator.of(context).pop();
 
                   if (patient != null) {
-                    showToast(
-                      context: context,
-                      builder: (context, overlay) => SurfaceCard(
-                        child: Basic(
-                          title: const Text('Paciente creado'),
-                          subtitle: Text('${patient.name} agregado exitosamente'),
-                          leading: Icon(
-                            material.Icons.check_circle,
-                            color: LightModeColors.lightTertiary,
-                          ),
-                        ),
-                      ),
+                    showCenteredToast(
+                      context,
+                      title: 'Paciente creado',
+                      subtitle: '${patient.name} agregado exitosamente',
+                      icon: material.Icons.check_circle,
+                      iconColor: LightModeColors.lightTertiary,
                       location: ToastLocation.bottomCenter,
                     );
                   } else {
-                    showToast(
-                      context: context,
-                      builder: (context, overlay) => SurfaceCard(
-                        child: Basic(
-                          title: const Text('Error'),
-                          subtitle: const Text('No se pudo crear el paciente'),
-                          leading: Icon(
-                            material.Icons.error,
-                            color: LightModeColors.lightError,
-                          ),
-                        ),
-                      ),
+                    showCenteredToast(
+                      context,
+                      title: 'Error',
+                      subtitle: 'No se pudo crear el paciente',
+                      icon: material.Icons.error,
+                      iconColor: LightModeColors.lightError,
                       location: ToastLocation.bottomCenter,
                     );
                   }
@@ -1129,51 +1106,33 @@ class _PatientDetailsDialog extends StatelessWidget {
         Navigator.of(parentContext).pop(); // Cerrar diálogo de detalles
 
         if (success) {
-          showToast(
-            context: parentContext,
-            builder: (context, overlay) => SurfaceCard(
-              child: Basic(
-                title: const Text('Paciente eliminado'),
-                subtitle: Text('${patient.name} ha sido eliminado exitosamente'),
-                leading: Icon(
-                  material.Icons.check_circle,
-                  color: LightModeColors.lightTertiary,
-                ),
-              ),
-            ),
+          showCenteredToast(
+            parentContext,
+            title: 'Paciente eliminado',
+            subtitle: '${patient.name} ha sido eliminado exitosamente',
+            icon: material.Icons.check_circle,
+            iconColor: LightModeColors.lightTertiary,
             location: ToastLocation.bottomCenter,
           );
         } else {
-          showToast(
-            context: parentContext,
-            builder: (context, overlay) => SurfaceCard(
-              child: Basic(
-                title: const Text('Error'),
-                subtitle: const Text('No se pudo eliminar el paciente'),
-                leading: Icon(
-                  material.Icons.error,
-                  color: LightModeColors.lightError,
-                ),
-              ),
-            ),
+          showCenteredToast(
+            parentContext,
+            title: 'Error',
+            subtitle: 'No se pudo eliminar el paciente',
+            icon: material.Icons.error,
+            iconColor: LightModeColors.lightError,
             location: ToastLocation.bottomCenter,
           );
         }
       }
     } catch (e) {
       if (parentContext.mounted) {
-        showToast(
-          context: parentContext,
-          builder: (context, overlay) => SurfaceCard(
-            child: Basic(
-              title: const Text('Error'),
-              subtitle: Text('Ocurrió un error: $e'),
-              leading: Icon(
-                material.Icons.error,
-                color: LightModeColors.lightError,
-              ),
-            ),
-          ),
+        showCenteredToast(
+          parentContext,
+          title: 'Error',
+          subtitle: 'Ocurrió un error: $e',
+          icon: material.Icons.error,
+          iconColor: LightModeColors.lightError,
           location: ToastLocation.bottomCenter,
         );
       }

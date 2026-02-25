@@ -8,6 +8,7 @@ import 'package:ssapp/models/response_model.dart';
 import 'package:ssapp/models/survey_model.dart';
 import 'package:ssapp/Services/survey_service.dart';
 import 'package:ssapp/utils/theme.dart';
+import 'package:ssapp/utils/toast_helper.dart';
 
 class SurveyScreen extends StatefulWidget {
   final int patientId;
@@ -175,9 +176,12 @@ class _SurveyScreenState extends State<SurveyScreen> {
       }
 
       if (mounted) {
-        showToast(
-          context: context,
-          builder: (context, overlay) => _buildErrorToast(overlay, 'Error: ${e.toString()}'),
+        showCenteredToast(
+          context,
+          title: 'Error al guardar',
+          subtitle: 'Error: ${e.toString()}',
+          icon: material.Icons.error_outline,
+          iconColor: LightModeColors.lightError,
           location: ToastLocation.topCenter,
         );
       }
@@ -194,9 +198,11 @@ class _SurveyScreenState extends State<SurveyScreen> {
       _selectedOptionIndex = optionIndex;
     });
 
-    showToast(
-      context: context,
-      builder: (context, overlay) => _buildSelectionToast(overlay),
+    showCenteredToast(
+      context,
+      title: 'Respuesta guardada',
+      icon: material.Icons.check_circle,
+      iconColor: LightModeColors.lightPrimary,
       location: ToastLocation.topCenter,
     );
 
@@ -595,37 +601,6 @@ class _SurveyScreenState extends State<SurveyScreen> {
     );
   }
 
-  Widget _buildSelectionToast(ToastOverlay overlay) {
-    return SurfaceCard(
-      child: Basic(
-        title: const Text('Respuesta guardada'),
-        leading: Icon(
-          material.Icons.check_circle,
-          color: LightModeColors.lightPrimary,
-        ),
-        trailingAlignment: Alignment.center,
-      ),
-    );
-  }
-
-  Widget _buildErrorToast(ToastOverlay overlay, String error) {
-    return SurfaceCard(
-      child: Basic(
-        title: const Text('Error al guardar'),
-        subtitle: Text(error),
-        leading: Icon(
-          material.Icons.error_outline,
-          color: LightModeColors.lightError,
-        ),
-        trailing: PrimaryButton(
-          size: ButtonSize.small,
-          onPressed: () => overlay.close(),
-          child: const Text('Cerrar'),
-        ),
-        trailingAlignment: Alignment.center,
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -778,48 +753,31 @@ class _SurveyScreenState extends State<SurveyScreen> {
                       ),
                     );
                   }),
-                  const Gap(32),
-                  // Page indicator
-                  Center(
-                    child: OutlinedContainer(
-                      borderRadius: BorderRadius.circular(8),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            material.Icons.description_outlined,
-                            size: 18,
-                            color: _surveyColor,
-                          ),
-                          const Gap(8),
-                          Text(
-                            'Pregunta ${_currentQuestionIndex + 1} de ${_questions.length}',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: LightModeColors.lightOnSurface,
-                            ),
-                          ),
-                          const Gap(8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: _surveyColor.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              '${(progress * 100).toInt()}%',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: _surveyColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  const Gap(24),
+                  // Pagination
+                  _SurveyPagination(
+                    currentIndex: _currentQuestionIndex,
+                    totalQuestions: _questions.length,
+                    responses: _responses,
+                    questions: _questions,
+                    surveyColor: _surveyColor,
+                    onPageChanged: (index) {
+                      setState(() {
+                        _currentQuestionIndex = index;
+                        _selectedOptionIndex = null;
+                        final questionNumber = index + 1;
+                        if (_responses.containsKey(questionNumber)) {
+                          final savedScore = _responses[questionNumber];
+                          final q = _questions[index];
+                          for (int i = 0; i < q.options.length; i++) {
+                            if (q.options[i].score == savedScore) {
+                              _selectedOptionIndex = i;
+                              break;
+                            }
+                          }
+                        }
+                      });
+                    },
                   ),
                 ],
               ),
@@ -908,6 +866,109 @@ class _SurveyScreenState extends State<SurveyScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _SurveyPagination extends StatelessWidget {
+  final int currentIndex;
+  final int totalQuestions;
+  final Map<int, int> responses;
+  final List<SurveyQuestion> questions;
+  final Color surveyColor;
+  final ValueChanged<int> onPageChanged;
+
+  const _SurveyPagination({
+    required this.currentIndex,
+    required this.totalQuestions,
+    required this.responses,
+    required this.questions,
+    required this.surveyColor,
+    required this.onPageChanged,
+  });
+
+  static const _answered = Color(0xFF16A34A);
+  static const _unanswered = Color(0xFFDC2626);
+
+  @override
+  Widget build(BuildContext context) {
+    final answeredCount = responses.length;
+    final unansweredCount = totalQuestions - answeredCount;
+
+    return Column(
+      children: [
+        // Legend
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _LegendDot(color: _answered, label: '$answeredCount respondidas'),
+            const Gap(16),
+            _LegendDot(color: _unanswered, label: '$unansweredCount sin responder'),
+          ],
+        ),
+        const Gap(10),
+        // Question grid buttons
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 6,
+          runSpacing: 6,
+          children: List.generate(totalQuestions, (i) {
+            final questionNumber = i + 1;
+            final isAnswered = responses.containsKey(questionNumber);
+            final isCurrent = i == currentIndex;
+            final bgColor = isAnswered ? _answered : _unanswered;
+
+            return GestureDetector(
+              onTap: () => onPageChanged(i),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: isCurrent ? bgColor : bgColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: bgColor,
+                    width: isCurrent ? 2.5 : 1.5,
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    '$questionNumber',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isCurrent ? Colors.white : bgColor,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+}
+
+class _LegendDot extends StatelessWidget {
+  final Color color;
+  final String label;
+  const _LegendDot({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const Gap(5),
+        Text(label, style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w500)),
+      ],
     );
   }
 }

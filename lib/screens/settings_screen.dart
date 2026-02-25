@@ -6,6 +6,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/Services/patient_service.dart';
 import 'package:ssapp/Services/survey_service.dart';
 import 'package:ssapp/utils/theme.dart';
+import 'package:ssapp/utils/toast_helper.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -35,19 +36,12 @@ class SettingsScreen extends StatelessWidget {
       if (context.mounted) {
         Navigator.of(context).pop(); // Cerrar loading
 
-        showToast(
-          context: context,
-          builder: (context, overlay) => SurfaceCard(
-            child: Basic(
-              title: const Text('Sincronización completada'),
-              subtitle: Text('$syncedPatients pacientes y $syncedSurveys encuestas sincronizadas'),
-              leading: Icon(
-                material.Icons.cloud_done,
-                color: LightModeColors.lightPrimary,
-              ),
-              trailingAlignment: Alignment.center,
-            ),
-          ),
+        showCenteredToast(
+          context,
+          title: 'Sincronización completada',
+          subtitle: '$syncedPatients pacientes y $syncedSurveys encuestas sincronizadas',
+          icon: material.Icons.cloud_done,
+          iconColor: LightModeColors.lightPrimary,
           location: ToastLocation.bottomCenter,
         );
       }
@@ -55,19 +49,12 @@ class SettingsScreen extends StatelessWidget {
       if (context.mounted) {
         Navigator.of(context).pop(); // Cerrar loading
 
-        showToast(
-          context: context,
-          builder: (context, overlay) => SurfaceCard(
-            child: Basic(
-              title: const Text('Error al sincronizar'),
-              subtitle: Text(e.toString()),
-              leading: Icon(
-                material.Icons.cloud_off,
-                color: LightModeColors.lightError,
-              ),
-              trailingAlignment: Alignment.center,
-            ),
-          ),
+        showCenteredToast(
+          context,
+          title: 'Error al sincronizar',
+          subtitle: e.toString(),
+          icon: material.Icons.cloud_off,
+          iconColor: LightModeColors.lightError,
           location: ToastLocation.bottomCenter,
         );
       }
@@ -106,19 +93,12 @@ class SettingsScreen extends StatelessWidget {
         await Hive.deleteBoxFromDisk('patients');
 
         if (context.mounted) {
-          showToast(
-            context: context,
-            builder: (context, overlay) => SurfaceCard(
-              child: Basic(
-                title: const Text('Datos eliminados'),
-                subtitle: const Text('Los datos locales han sido eliminados exitosamente'),
-                leading: Icon(
-                  material.Icons.check_circle,
-                  color: LightModeColors.lightPrimary,
-                ),
-                trailingAlignment: Alignment.center,
-              ),
-            ),
+          showCenteredToast(
+            context,
+            title: 'Datos eliminados',
+            subtitle: 'Los datos locales han sido eliminados exitosamente',
+            icon: material.Icons.check_circle,
+            iconColor: LightModeColors.lightPrimary,
             location: ToastLocation.bottomCenter,
           );
 
@@ -127,19 +107,12 @@ class SettingsScreen extends StatelessWidget {
         }
       } catch (e) {
         if (context.mounted) {
-          showToast(
-            context: context,
-            builder: (context, overlay) => SurfaceCard(
-              child: Basic(
-                title: const Text('Error'),
-                subtitle: Text(e.toString()),
-                leading: Icon(
-                  material.Icons.error_outline,
-                  color: LightModeColors.lightError,
-                ),
-                trailingAlignment: Alignment.center,
-              ),
-            ),
+          showCenteredToast(
+            context,
+            title: 'Error',
+            subtitle: e.toString(),
+            icon: material.Icons.error_outline,
+            iconColor: LightModeColors.lightError,
             location: ToastLocation.bottomCenter,
           );
         }

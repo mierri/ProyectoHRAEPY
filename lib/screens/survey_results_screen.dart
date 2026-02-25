@@ -6,6 +6,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/Services/patient_service.dart';
 import 'package:ssapp/Services/survey_service.dart';
 import 'package:ssapp/utils/theme.dart';
+import 'package:ssapp/utils/toast_helper.dart';
 
 class SurveyResultsScreen extends StatefulWidget {
   final int surveyId;
@@ -217,18 +218,12 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
             IconButton(
               icon: const Icon(material.Icons.share),
               onPressed: () {
-                showToast(
-                  context: context,
-                  builder: (context, overlay) => SurfaceCard(
-                    child: Basic(
-                      title: const Text('Compartir resultados'),
-                      subtitle: const Text('Función próximamente disponible'),
-                      leading: Icon(
-                        material.Icons.info,
-                        color: LightModeColors.lightPrimary,
-                      ),
-                    ),
-                  ),
+                showCenteredToast(
+                  context,
+                  title: 'Compartir resultados',
+                  subtitle: 'Función próximamente disponible',
+                  icon: material.Icons.info,
+                  iconColor: LightModeColors.lightPrimary,
                   location: ToastLocation.bottomCenter,
                 );
               },
