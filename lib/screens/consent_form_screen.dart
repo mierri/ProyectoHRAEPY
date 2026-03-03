@@ -55,6 +55,8 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
     switch (widget.surveyType) {
       case 'bai':
         return LightModeColors.lightTertiary;
+      case 'moca':
+        return LightModeColors.lightSecondary;
       case 'bdi':
       default:
         return LightModeColors.lightPrimary;
@@ -498,6 +500,8 @@ class ConsentInfoCard extends StatelessWidget {
     switch (surveyType) {
       case 'bai':
         return 'Este cuestionario evalúa síntomas de ansiedad mediante el Inventario de Ansiedad de Beck (BAI). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
+      case 'moca':
+        return 'Esta evaluación cognitiva evalúa diferentes dominios cognitivos mediante la Evaluación Cognitiva Montreal (MoCA). Evalúa atención, concentración, funciones ejecutivas, memoria, lenguaje, habilidades visuoconstructivas, pensamiento conceptual, cálculo y orientación. Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
       case 'bdi':
       default:
         return 'Este cuestionario evalúa síntomas de depresión mediante el Inventario de Depresión de Beck (BDI-II). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
@@ -508,6 +512,8 @@ class ConsentInfoCard extends StatelessWidget {
     switch (surveyType) {
       case 'bai':
         return LightModeColors.lightTertiary;
+      case 'moca':
+        return LightModeColors.lightSecondary;
       case 'bdi':
       default:
         return LightModeColors.lightPrimary;

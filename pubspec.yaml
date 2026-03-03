@@ -48,6 +48,7 @@ dependencies:
   shadcn_flutter: ^0.0.47
   fl_chart: ^1.1.1
   pdf: ^3.11.1
+  signature: ^5.5.0
   printing: ^5.13.4
   csv: ^7.1.0
   web: ^1.1.0

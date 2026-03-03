@@ -6,6 +6,7 @@ import 'package:ssapp/utils/theme.dart';
 enum SurveyType {
   bai,
   bdi,
+  moca,
 }
 
 extension SurveyTypeExtension on SurveyType {
@@ -15,6 +16,8 @@ extension SurveyTypeExtension on SurveyType {
         return 'BAI';
       case SurveyType.bdi:
         return 'BDI-II';
+      case SurveyType.moca:
+        return 'MoCA';
     }
   }
 
@@ -24,6 +27,8 @@ extension SurveyTypeExtension on SurveyType {
         return 'Beck Anxiety Inventory';
       case SurveyType.bdi:
         return 'Beck Depression Inventory — Segunda Edición';
+      case SurveyType.moca:
+        return 'Montreal Cognitive Assessment';
     }
   }
 
@@ -33,6 +38,8 @@ extension SurveyTypeExtension on SurveyType {
         return 'Inventario de Ansiedad de Beck';
       case SurveyType.bdi:
         return 'Inventario de Depresión de Beck';
+      case SurveyType.moca:
+        return 'Evaluación Cognitiva Montreal';
     }
   }
 
@@ -42,6 +49,8 @@ extension SurveyTypeExtension on SurveyType {
         return material.Icons.psychology_outlined;
       case SurveyType.bdi:
         return material.Icons.favorite_outline;
+      case SurveyType.moca:
+        return material.Icons.spa_outlined;
     }
   }
 
@@ -51,6 +60,8 @@ extension SurveyTypeExtension on SurveyType {
         return LightModeColors.lightTertiary;
       case SurveyType.bdi:
         return LightModeColors.lightPrimary;
+      case SurveyType.moca:
+        return LightModeColors.lightSecondary;
     }
   }
 }
@@ -230,4 +241,3 @@ class _SurveyTypeCardState extends State<SurveyTypeCard> with SingleTickerProvid
     );
   }
 }
-
