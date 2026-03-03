@@ -323,13 +323,18 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             ),
                           ),
                           const Gap(24),
-                          SizedBox(
-                            height: 320,
-                            child: _SeverityPieChart(
-                              surveys: surveys,
-                              surveyService: surveyService,
-                              surveyType: _selectedSurveyType == 0 ? 1 : _selectedSurveyType,
-                            ),
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              final isNarrow = constraints.maxWidth < 400;
+                              return SizedBox(
+                                height: isNarrow ? 480 : 320,
+                                child: _SeverityPieChart(
+                                  surveys: surveys,
+                                  surveyService: surveyService,
+                                  surveyType: _selectedSurveyType == 0 ? 1 : _selectedSurveyType,
+                                ),
+                              );
+                            },
                           ),
                         ],
                       ),
@@ -1842,116 +1847,127 @@ class _SeverityPieChart extends StatelessWidget {
           );
         }).toList();
 
-        return Column(
-          children: [
-            Expanded(
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: PieChart(
-                      PieChartData(
-                        sections: sections,
-                        centerSpaceRadius: 50,
-                        sectionsSpace: 3,
-                        pieTouchData: PieTouchData(
-                          touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                            setState(() {
-                              if (!event.isInterestedForInteractions ||
-                                  pieTouchResponse == null ||
-                                  pieTouchResponse.touchedSection == null) {
-                                touchedIndex = -1;
-                                return;
-                              }
-                              touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
-                            });
-                          },
-                        ),
-                      ),
-                    ),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final isNarrow = constraints.maxWidth < 400;
+
+            final legend = Column(
+              mainAxisAlignment: isNarrow ? MainAxisAlignment.start : MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Total: $total',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
                   ),
-                  const SizedBox(width: 12),
-                  // Panel lateral con detalles
-                  Expanded(
-                    flex: 2,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Total: $total',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
+                ),
+                const SizedBox(height: 12),
+                for (final entry in distribution.entries)
+                  Builder(builder: (context) {
+                    final pct = total == 0 ? 0.0 : entry.value / total * 100;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 12,
+                            height: 12,
+                            margin: const EdgeInsets.only(top: 2),
+                            decoration: BoxDecoration(
+                              color: colors[entry.key],
+                              shape: BoxShape.circle,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        for (final entry in distribution.entries)
-                          Builder(builder: (context) {
-                            final pct = total == 0 ? 0.0 : entry.value / total * 100;
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    width: 12,
-                                    height: 12,
-                                    margin: const EdgeInsets.only(top: 2),
-                                    decoration: BoxDecoration(
-                                      color: colors[entry.key],
-                                      shape: BoxShape.circle,
-                                    ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  entry.key,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
                                   ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          entry.key,
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                        Text(
-                                          '${entry.value} (${pct.toStringAsFixed(1)}%)',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: Theme.of(context).colorScheme.mutedForeground,
-                                          ),
-                                        ),
-                                        Text(
-                                          'Puntaje: ${scoreRanges[entry.key]}',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            color: Theme.of(context).colorScheme.mutedForeground,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                ),
+                                Text(
+                                  '${entry.value} (${pct.toStringAsFixed(1)}%)',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Theme.of(context).colorScheme.mutedForeground,
                                   ),
-                                ],
-                              ),
-                            );
-                          }),
+                                ),
+                                Text(
+                                  'Puntaje: ${scoreRanges[entry.key]}',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Theme.of(context).colorScheme.mutedForeground,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+              ],
+            );
+
+            final pieWidget = PieChart(
+              PieChartData(
+                sections: sections,
+                centerSpaceRadius: isNarrow ? 40 : 50,
+                sectionsSpace: 3,
+                pieTouchData: PieTouchData(
+                  touchCallback: (FlTouchEvent event, pieTouchResponse) {
+                    setState(() {
+                      if (!event.isInterestedForInteractions ||
+                          pieTouchResponse == null ||
+                          pieTouchResponse.touchedSection == null) {
+                        touchedIndex = -1;
+                        return;
+                      }
+                      touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
+                    });
+                  },
+                ),
+              ),
+            );
+
+            return Column(
+              children: [
+                if (isNarrow) ...[
+                  // Narrow: pie on top, legend below
+                  SizedBox(height: 200, child: pieWidget),
+                  const SizedBox(height: 16),
+                  legend,
+                ] else ...[
+                  // Wide: pie + legend side by side
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Expanded(flex: 3, child: pieWidget),
+                        const SizedBox(width: 12),
+                        Expanded(flex: 2, child: legend),
                       ],
                     ),
                   ),
                 ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Toca un segmento para resaltarlo',
-              style: TextStyle(
-                fontSize: 11,
-                color: Theme.of(context).colorScheme.mutedForeground,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
+                const SizedBox(height: 8),
+                Text(
+                  'Toca un segmento para resaltarlo',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Theme.of(context).colorScheme.mutedForeground,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            );
+          },
         );
       },
     );

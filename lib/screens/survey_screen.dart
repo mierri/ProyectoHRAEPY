@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' as material show Icons, Material;
 import 'package:go_router/go_router.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
@@ -736,14 +737,29 @@ class _SurveyScreenState extends State<SurveyScreen> {
                     final index = entry.key;
                     final option = entry.value;
                     final isSelected = _selectedOptionIndex == index;
-                    final optionLabel = String.fromCharCode(65 + index); // A, B, C, D
+                    // Sentiment icons from Material Symbols (0=best → 3=worst)
+                    const faceIcons = [
+                      Symbols.sentiment_very_satisfied,
+                      Symbols.sentiment_satisfied,
+                      Symbols.sentiment_dissatisfied,
+                      Symbols.sentiment_very_dissatisfied,
+                    ];
+                    const faceColors = [
+                      Color(0xFF16A34A), // green
+                      Color(0xFF65A30D), // lime
+                      Color(0xFFF59E0B), // amber
+                      Color(0xFFDC2626), // red
+                    ];
+                    final faceIcon = index < faceIcons.length ? faceIcons[index] : Symbols.sentiment_neutral;
+                    final faceColor = index < faceColors.length ? faceColors[index] : const Color(0xFF6B7280);
 
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: _OptionCard(
                         option: option,
                         isSelected: isSelected,
-                        optionLabel: optionLabel,
+                        faceIcon: faceIcon,
+                        faceColor: faceColor,
                         surveyColor: _surveyColor,
                         onTap: () => _selectOption(
                           question.number,
@@ -754,7 +770,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
                     );
                   }),
                   const Gap(24),
-                  // Pagination
+                  // rom a ation
                   _SurveyPagination(
                     currentIndex: _currentQuestionIndex,
                     totalQuestions: _questions.length,
@@ -976,14 +992,16 @@ class _LegendDot extends StatelessWidget {
 class _OptionCard extends StatefulWidget {
   final SurveyOption option;
   final bool isSelected;
-  final String optionLabel;
+  final IconData faceIcon;
+  final Color faceColor;
   final Color surveyColor;
   final VoidCallback onTap;
 
   const _OptionCard({
     required this.option,
     required this.isSelected,
-    required this.optionLabel,
+    required this.faceIcon,
+    required this.faceColor,
     required this.surveyColor,
     required this.onTap,
   });
@@ -1046,28 +1064,31 @@ class _OptionCardState extends State<_OptionCard> with SingleTickerProviderState
               ? widget.surveyColor
               : LightModeColors.lightOutline.withValues(alpha: 0.5),
           borderWidth: widget.isSelected ? 2.5 : 1.5,
-          child: Row(
+              child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Sentiment face icon
               Container(
-                width: 36,
-                height: 36,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   color: widget.isSelected
-                      ? widget.surveyColor
-                      : LightModeColors.lightSurfaceVariant,
+                      ? widget.faceColor.withValues(alpha: 0.15)
+                      : widget.faceColor.withValues(alpha: 0.08),
                   shape: BoxShape.circle,
+                  border: Border.all(
+                    color: widget.isSelected
+                        ? widget.faceColor
+                        : widget.faceColor.withValues(alpha: 0.4),
+                    width: widget.isSelected ? 2 : 1.5,
+                  ),
                 ),
                 child: Center(
-                  child: Text(
-                    widget.optionLabel,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: widget.isSelected
-                          ? Colors.white
-                          : LightModeColors.lightOnSurfaceVariant,
-                    ),
+                  child: Icon(
+                    widget.faceIcon,
+                    color: widget.faceColor,
+                    size: 26,
+                    fill: widget.isSelected ? 1 : 0,
                   ),
                 ),
               ),

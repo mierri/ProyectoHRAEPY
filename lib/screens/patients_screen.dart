@@ -508,12 +508,14 @@ class _PatientCard extends StatelessWidget {
                         ],
                       ),
                       const Gap(6),
-                      Row(
+                      Wrap(
+                        spacing: 0,
+                        runSpacing: 2,
                         children: [
                           Text('${patient.age} años').muted().small(),
-                          const Text(' • ').muted().small(),
+                          Text(' • ').muted().small(),
                           Text(_getGenderLabel(patient.gender)).muted().small(),
-                          const Text(' • ').muted().small(),
+                          Text(' • ').muted().small(),
                           Text(DateFormat('dd/MM/yyyy').format(patient.birthDate)).muted().small(),
                         ],
                       ),
@@ -905,25 +907,6 @@ class _PatientDetailsDialog extends StatelessWidget {
                       onPressed: () => Navigator.of(context).pop(),
                       child: const Text('Cerrar'),
                     ),
-                    const Gap(8),
-                    OutlineButton(
-                      onPressed: () => _showDeleteConfirmation(context),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            material.Icons.delete_outline,
-                            size: 18,
-                            color: LightModeColors.lightError,
-                          ),
-                          const Gap(8),
-                          Text(
-                            'Eliminar',
-                            style: TextStyle(color: LightModeColors.lightError),
-                          ),
-                        ],
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -1003,140 +986,5 @@ class _PatientDetailsDialog extends StatelessWidget {
     }
   }
 
-  void _showDeleteConfirmation(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (deleteDialogContext) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(
-              material.Icons.warning,
-              color: LightModeColors.lightError,
-            ),
-            const Gap(12),
-            const Text('Confirmar eliminación'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '¿Estás seguro de que deseas eliminar a este paciente?',
-              style: const TextStyle(fontSize: 14),
-            ),
-            const Gap(12),
-            SurfaceCard(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      patient.name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const Gap(4),
-                    Text('ID: ${patient.patientId}').muted().small(),
-                  ],
-                ),
-              ),
-            ),
-            const Gap(12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: LightModeColors.lightError.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: LightModeColors.lightError.withValues(alpha: 0.2),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    material.Icons.info_outline,
-                    size: 16,
-                    color: LightModeColors.lightError,
-                  ),
-                  const Gap(8),
-                  Expanded(
-                    child: Text(
-                      'Esta acción no se puede deshacer. También se eliminarán todas las encuestas asociadas.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: LightModeColors.lightError,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          OutlineButton(
-            onPressed: () => Navigator.of(deleteDialogContext).pop(),
-            child: const Text('Cancelar'),
-          ),
-          DestructiveButton(
-            onPressed: () async {
-              await _deletePatient(context, deleteDialogContext);
-            },
-            child: const Text('Eliminar Paciente'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _deletePatient(BuildContext parentContext, BuildContext dialogContext) async {
-    try {
-      final patientService = parentContext.read<PatientService>();
-      final success = await patientService.deletePatient(patient.patientId);
-
-      if (dialogContext.mounted) {
-        Navigator.of(dialogContext).pop(); // Cerrar diálogo de confirmación
-      }
-
-      if (parentContext.mounted) {
-        Navigator.of(parentContext).pop(); // Cerrar diálogo de detalles
-
-        if (success) {
-          showCenteredToast(
-            parentContext,
-            title: 'Paciente eliminado',
-            subtitle: '${patient.name} ha sido eliminado exitosamente',
-            icon: material.Icons.check_circle,
-            iconColor: LightModeColors.lightTertiary,
-            location: ToastLocation.bottomCenter,
-          );
-        } else {
-          showCenteredToast(
-            parentContext,
-            title: 'Error',
-            subtitle: 'No se pudo eliminar el paciente',
-            icon: material.Icons.error,
-            iconColor: LightModeColors.lightError,
-            location: ToastLocation.bottomCenter,
-          );
-        }
-      }
-    } catch (e) {
-      if (parentContext.mounted) {
-        showCenteredToast(
-          parentContext,
-          title: 'Error',
-          subtitle: 'Ocurrió un error: $e',
-          icon: material.Icons.error,
-          iconColor: LightModeColors.lightError,
-          location: ToastLocation.bottomCenter,
-        );
-      }
-    }
-  }
 }
 

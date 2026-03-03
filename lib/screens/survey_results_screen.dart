@@ -467,27 +467,31 @@ class _ScoreInterpretationCard extends StatelessWidget {
                   color: LightModeColors.lightPrimary,
                 ),
                 const Gap(12),
-                const Text('Interpretación de Puntajes').semiBold().large(),
+                Expanded(
+                  child: const Text('Interpretación de Puntajes').semiBold().large(),
+                ),
               ],
             ),
             const Gap(20),
             ...ranges.map((range) => Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Container(
-                        width: 16,
-                        height: 16,
+                        width: 14,
+                        height: 14,
                         decoration: BoxDecoration(
                           color: range['color'] as Color,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
-                      const Gap(12),
+                      const Gap(10),
                       Expanded(
                         child: Text(
                           '${range['range']}: ${range['label']}',
-                          style: const TextStyle(fontSize: 15),
+                          style: const TextStyle(fontSize: 14),
+                          softWrap: true,
                         ),
                       ),
                     ],
@@ -605,16 +609,18 @@ class _ResponseDetailsCard extends StatelessWidget {
                   color: LightModeColors.lightPrimary,
                 ),
                 const Gap(12),
-                const Text('Detalle de Respuestas').semiBold().large(),
-                const Spacer(),
+                Expanded(
+                  child: Text('Detalle de Respuestas').semiBold().large(),
+                ),
+                const Gap(8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: LightModeColors.lightPrimary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '${responses.length} preguntas',
+                    '${responses.length} preg.',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
