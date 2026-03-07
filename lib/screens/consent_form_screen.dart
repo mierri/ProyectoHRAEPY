@@ -57,6 +57,8 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
         return LightModeColors.lightTertiary;
       case 'moca':
         return LightModeColors.lightSecondary;
+      case 'whoqol':
+        return const Color(0xFF7C3AED);
       case 'bdi':
       default:
         return LightModeColors.lightPrimary;
@@ -90,16 +92,19 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
       if (!mounted) return;
 
       if (patient != null) {
-        // Show instructions dialog before starting the survey
+
+        final resolvedSurveyType = widget.surveyType ?? 'bdi';
+        final patientId = patient.patientId;
+
         if (mounted) {
-          await _showInstructionsDialog(
+          final shouldContinue = await _showInstructionsDialog(
             context,
-            surveyType: widget.surveyType ?? 'bdi',
+            surveyType: resolvedSurveyType,
             surveyColor: _getSurveyColor(),
-            onContinue: () {
-              context.push('/survey/${patient.patientId}?surveyType=${widget.surveyType ?? "bdi"}');
-            },
           );
+          if (shouldContinue && mounted) {
+            context.push('/survey/$patientId?surveyType=$resolvedSurveyType');
+          }
         }
       } else {
         _showError('No se pudo crear el registro del paciente. Por favor intente nuevamente.');
@@ -115,15 +120,32 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
     }
   }
 
-  static Future<void> _showInstructionsDialog(
+  static Future<bool> _showInstructionsDialog(
     BuildContext context, {
     required String surveyType,
     required Color surveyColor,
-    required VoidCallback onContinue,
   }) async {
     final isBai = surveyType == 'bai';
+    final isMoca = surveyType == 'moca';
+    final isWhoqol = surveyType == 'whoqol';
 
-    await showDialog(
+    String surveyTitle;
+    String surveyInstructions;
+    if (isBai) {
+      surveyTitle = 'Inventario de Ansiedad de Beck (BAI)';
+      surveyInstructions = 'A continuación encontrará una lista de síntomas. Por favor, indique cuánto le ha molestado cada síntoma durante la última semana, incluyendo hoy.';
+    } else if (isMoca) {
+      surveyTitle = 'Evaluación Cognitiva Montreal (MoCA)';
+      surveyInstructions = 'A continuación se le presentarán una serie de tareas y preguntas que evalúan diferentes áreas de su funcionamiento cognitivo. Siga las instrucciones de cada actividad con atención. No hay respuestas buenas o malas, simplemente haga su mejor esfuerzo.';
+    } else if (isWhoqol) {
+      surveyTitle = 'Cuestionario de Calidad de Vida (WHOQOL-BREF)';
+      surveyInstructions = 'Este cuestionario le pregunta cómo se ha sentido acerca de su calidad de vida, su salud y otros aspectos de su vida durante las dos últimas semanas. Por favor, responda todas las preguntas. Si no está seguro/a de qué respuesta dar a una pregunta, escoja la que le parezca más apropiada.';
+    } else {
+      surveyTitle = 'Inventario de Depresión de Beck (BDI-II)';
+      surveyInstructions = 'Este cuestionario consta de 21 grupos de afirmaciones. Por favor, lea con cuidado cada grupo y elija la que mejor describe cómo se ha sentido durante las últimas dos semanas, incluyendo hoy.';
+    }
+
+    final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => Center(
@@ -169,17 +191,10 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Instrucciones',
-                            ).textLarge().bold(),
+                            const Text('Instrucciones').textLarge().bold(),
                             Text(
-                              isBai
-                                  ? 'Inventario de Ansiedad de Beck (BAI)'
-                                  : 'Inventario de Depresión de Beck (BDI-II)',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: surveyColor,
-                              ),
+                              surveyTitle,
+                              style: TextStyle(fontSize: 13, color: surveyColor),
                             ),
                           ],
                         ),
@@ -187,7 +202,6 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                     ],
                   ),
                   const Gap(20),
-                  // Explanation text
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
@@ -196,76 +210,108 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                       border: Border.all(color: surveyColor.withValues(alpha: 0.3)),
                     ),
                     child: Text(
-                      isBai
-                          ? 'A continuación encontrará una lista de síntomas. Por favor, indique cuánto le ha molestado cada síntoma durante la última semana, incluyendo hoy.'
-                          : 'Este cuestionario consta de 21 grupos de afirmaciones. Por favor, lea con cuidado cada grupo y elija la que mejor describe cómo se ha sentido durante las últimas dos semanas, incluyendo hoy.',
+                      surveyInstructions,
                       style: const TextStyle(fontSize: 14, height: 1.5),
                     ),
                   ),
-                  const Gap(20),
-                  // Scale explanation title
-                  const Text('¿Qué significa cada opción?').medium().semiBold(),
-                  const Gap(12),
-                  // Scale items
-                  if (isBai) ...[
-                    _ScaleItem(
-                      icon: Symbols.sentiment_very_satisfied,
-                      label: 'En absoluto',
-                      description: 'No me ha afectado nada o casi nada.',
-                      color: const Color(0xFF16A34A),
-                    ),
-                    const Gap(8),
-                    _ScaleItem(
-                      icon: Symbols.sentiment_satisfied,
-                      label: 'Levemente',
-                      description: 'Me ha afectado un poco, pero no me ha perturbado mucho.',
-                      color: const Color(0xFF65A30D),
-                    ),
-                    const Gap(8),
-                    _ScaleItem(
-                      icon: Symbols.sentiment_dissatisfied,
-                      label: 'Moderadamente',
-                      description: 'Me ha afectado bastante y fue muy desagradable.',
-                      color: const Color(0xFFF59E0B),
-                    ),
-                    const Gap(8),
-                    _ScaleItem(
-                      icon: Symbols.sentiment_very_dissatisfied,
-                      label: 'Severamente',
-                      description: 'Apenas podía soportarlo.',
-                      color: const Color(0xFFDC2626),
-                    ),
-                  ] else ...[
-                    _ScaleItem(
-                      icon: Symbols.sentiment_very_satisfied,
-                      label: 'Opción 0',
-                      description: 'No lo experimento o no me aplica en este momento.',
-                      color: const Color(0xFF16A34A),
-                    ),
-                    const Gap(8),
-                    _ScaleItem(
-                      icon: Symbols.sentiment_satisfied,
-                      label: 'Opción 1',
-                      description: 'Lo experimento algunas veces o de manera leve.',
-                      color: const Color(0xFF65A30D),
-                    ),
-                    const Gap(8),
-                    _ScaleItem(
-                      icon: Symbols.sentiment_dissatisfied,
-                      label: 'Opción 2',
-                      description: 'Lo experimento con más frecuencia o de forma notable.',
-                      color: const Color(0xFFF59E0B),
-                    ),
-                    const Gap(8),
-                    _ScaleItem(
-                      icon: Symbols.sentiment_very_dissatisfied,
-                      label: 'Opción 3',
-                      description: 'Lo experimento casi siempre o de manera muy intensa.',
-                      color: const Color(0xFFDC2626),
-                    ),
+                  if (!isMoca) ...[
+                    const Gap(20),
+                    const Text('¿Qué significa cada opción?').medium().semiBold(),
+                    const Gap(12),
+                    if (isBai) ...[
+                      _ScaleItem(
+                        icon: Symbols.sentiment_very_satisfied,
+                        label: 'En absoluto',
+                        description: 'No me ha afectado nada o casi nada.',
+                        color: const Color(0xFF16A34A),
+                      ),
+                      const Gap(8),
+                      _ScaleItem(
+                        icon: Symbols.sentiment_satisfied,
+                        label: 'Levemente',
+                        description: 'Me ha afectado un poco, pero no me ha perturbado mucho.',
+                        color: const Color(0xFF65A30D),
+                      ),
+                      const Gap(8),
+                      _ScaleItem(
+                        icon: Symbols.sentiment_dissatisfied,
+                        label: 'Moderadamente',
+                        description: 'Me ha afectado bastante y fue muy desagradable.',
+                        color: const Color(0xFFF59E0B),
+                      ),
+                      const Gap(8),
+                      _ScaleItem(
+                        icon: Symbols.sentiment_very_dissatisfied,
+                        label: 'Severamente',
+                        description: 'Apenas podía soportarlo.',
+                        color: const Color(0xFFDC2626),
+                      ),
+                    ] else if (isWhoqol) ...[
+                      _ScaleItem(
+                        icon: Symbols.sentiment_very_satisfied,
+                        label: '1 — Nada / Muy insatisfecho/a / Nunca',
+                        description: 'La situación descrita no aplica o está completamente ausente.',
+                        color: const Color(0xFF16A34A),
+                      ),
+                      const Gap(8),
+                      _ScaleItem(
+                        icon: Symbols.sentiment_satisfied,
+                        label: '2 — Un poco / Insatisfecho/a / Raramente',
+                        description: 'La situación aplica de manera mínima o poco frecuente.',
+                        color: const Color(0xFF65A30D),
+                      ),
+                      const Gap(8),
+                      _ScaleItem(
+                        icon: Symbols.sentiment_neutral,
+                        label: '3 — Lo normal / Moderado / Medianamente',
+                        description: 'La situación aplica de forma moderada o es más o menos frecuente.',
+                        color: const Color(0xFFF59E0B),
+                      ),
+                      const Gap(8),
+                      _ScaleItem(
+                        icon: Symbols.sentiment_dissatisfied,
+                        label: '4 — Bastante / Satisfecho/a / Frecuentemente',
+                        description: 'La situación aplica bastante o con frecuencia.',
+                        color: const Color(0xFFEA580C),
+                      ),
+                      const Gap(8),
+                      _ScaleItem(
+                        icon: Symbols.sentiment_very_dissatisfied,
+                        label: '5 — Extremadamente / Muy satisfecho/a / Siempre',
+                        description: 'La situación aplica en el máximo grado posible.',
+                        color: const Color(0xFFDC2626),
+                      ),
+                    ] else ...[
+                      _ScaleItem(
+                        icon: Symbols.sentiment_very_satisfied,
+                        label: 'Opción 0',
+                        description: 'No lo experimento o no me aplica en este momento.',
+                        color: const Color(0xFF16A34A),
+                      ),
+                      const Gap(8),
+                      _ScaleItem(
+                        icon: Symbols.sentiment_satisfied,
+                        label: 'Opción 1',
+                        description: 'Lo experimento algunas veces o de manera leve.',
+                        color: const Color(0xFF65A30D),
+                      ),
+                      const Gap(8),
+                      _ScaleItem(
+                        icon: Symbols.sentiment_dissatisfied,
+                        label: 'Opción 2',
+                        description: 'Lo experimento con más frecuencia o de forma notable.',
+                        color: const Color(0xFFF59E0B),
+                      ),
+                      const Gap(8),
+                      _ScaleItem(
+                        icon: Symbols.sentiment_very_dissatisfied,
+                        label: 'Opción 3',
+                        description: 'Lo experimento casi siempre o de manera muy intensa.',
+                        color: const Color(0xFFDC2626),
+                      ),
+                    ],
                   ],
                   const Gap(20),
-                  // Tip
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -288,18 +334,16 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                     ],
                   ),
                   const Gap(24),
-                  // Continue button
                   SizedBox(
                     width: double.infinity,
                     child: PrimaryButton(
                       onPressed: () {
-                        material.Navigator.of(ctx).pop();
-                        onContinue();
+                        material.Navigator.of(ctx).pop(true);
                       },
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text('Comenzar encuesta'),
+                          Text('Comenzar'),
                           Gap(8),
                           Icon(material.Icons.arrow_forward, size: 18),
                         ],
@@ -313,6 +357,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
         ),
       ),
     );
+    return result ?? false;
   }
 
   @override
@@ -342,7 +387,6 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
             const Text('Datos del Paciente').textLarge().bold(),
             const Gap(16),
 
-            // Nombre completo
             const Text('Nombre completo').medium(),
             const Gap(5),
             TextField(
@@ -351,7 +395,6 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
             ),
             const Gap(16),
 
-            // Fecha de nacimiento
             const Text('Fecha de Nacimiento').medium(),
             const Gap(5),
             DatePicker(
@@ -372,7 +415,6 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
             ),
             const Gap(16),
 
-            // Sexo - usando Radio buttons simples
             const Text('Sexo').medium(),
             const Gap(5),
             Column(
@@ -416,7 +458,6 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
             ),
             const Gap(16),
 
-            // Checkbox de consentimiento
             GestureDetector(
               onTap: () => setState(() => _consentGiven = !_consentGiven),
               child: Row(
@@ -437,7 +478,6 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
             ),
             const Gap(32),
 
-            // Botón de submit
             SizedBox(
               width: double.infinity,
               child: GestureDetector(
@@ -502,6 +542,8 @@ class ConsentInfoCard extends StatelessWidget {
         return 'Este cuestionario evalúa síntomas de ansiedad mediante el Inventario de Ansiedad de Beck (BAI). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
       case 'moca':
         return 'Esta evaluación cognitiva evalúa diferentes dominios cognitivos mediante la Evaluación Cognitiva Montreal (MoCA). Evalúa atención, concentración, funciones ejecutivas, memoria, lenguaje, habilidades visuoconstructivas, pensamiento conceptual, cálculo y orientación. Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
+      case 'whoqol':
+        return 'Este cuestionario evalúa la calidad de vida en cuatro dominios: salud física, salud psicológica, relaciones sociales y ambiente, mediante el instrumento WHOQOL-BREF de la Organización Mundial de la Salud. Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
       case 'bdi':
       default:
         return 'Este cuestionario evalúa síntomas de depresión mediante el Inventario de Depresión de Beck (BDI-II). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
@@ -514,6 +556,8 @@ class ConsentInfoCard extends StatelessWidget {
         return LightModeColors.lightTertiary;
       case 'moca':
         return LightModeColors.lightSecondary;
+      case 'whoqol':
+        return const Color(0xFF7C3AED);
       case 'bdi':
       default:
         return LightModeColors.lightPrimary;
@@ -555,7 +599,6 @@ class ConsentInfoCard extends StatelessWidget {
   }
 }
 
-/// A single scale row used in the instructions dialog
 class _ScaleItem extends StatelessWidget {
   final IconData icon;
   final String label;

@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide AlertDialog, showDialog, Colors, Column, Row, Expanded, Stack, Positioned, Card;
 import 'package:signature/signature.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' hide Colors, Column, Row, Expanded, Stack, Positioned, Card, AlertDialog, showDialog;
+import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/utils/theme.dart';
 
 class DrawingCanvas extends StatefulWidget {
@@ -93,31 +93,86 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
                 onPressed: () {
                   showDialog(
                     context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Borrar dibujo'),
-                      content: const Text('¿Está seguro que desea borrar todo el dibujo?'),
-                      actions: [
-                        OutlineButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: const Text('Cancelar'),
+                    builder: (ctx) => Center(
+                      child: Container(
+                        constraints: const BoxConstraints(maxWidth: 380),
+                        margin: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.12),
+                              blurRadius: 20,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
                         ),
-                        PrimaryButton(
-                          onPressed: () {
-                            widget.controller.clear();
-                            Navigator.of(context).pop();
-                          },
-                          child: const Text('Borrar'),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.delete_outline,
+                                      color: LightModeColors.lightError,
+                                      size: 24,
+                                    ),
+                                    const Gap(12),
+                                    const Text(
+                                      'Borrar dibujo',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const Gap(16),
+                                const Text(
+                                  '¿Está seguro que desea borrar todo el dibujo?',
+                                  style: TextStyle(fontSize: 14, height: 1.4),
+                                ),
+                                const Gap(24),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlineButton(
+                                        onPressed: () => Navigator.of(ctx).pop(),
+                                        child: const Text('Cancelar'),
+                                      ),
+                                    ),
+                                    const Gap(12),
+                                    Expanded(
+                                      child: DestructiveButton(
+                                        onPressed: () {
+                                          widget.controller.clear();
+                                          Navigator.of(ctx).pop();
+                                        },
+                                        child: const Text('Borrar'),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                      ],
+                      ),
                     ),
                   );
                 },
-                child: Row(
+                child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.delete_outline, size: 18),
-                    const Gap(8),
-                    const Text('Borrar'),
+                    Icon(Icons.delete_outline, size: 18),
+                    Gap(8),
+                    Text('Borrar'),
                   ],
                 ),
               ),
@@ -359,7 +414,7 @@ class ClockGuidePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.grey.withValues(alpha: 0.2)
+      ..color = Colors.gray.withValues(alpha: 0.2)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
 

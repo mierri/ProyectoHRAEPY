@@ -8,12 +8,10 @@ import 'package:ssapp/Services/survey_service.dart';
 import 'package:ssapp/utils/theme.dart';
 import 'package:ssapp/utils/toast_helper.dart';
 
-// ─── Breakpoints ────────────────────────────────────────────────────────────
 class _Breakpoints {
   static const double tablet = 600;
 }
 
-// ─── Screen ─────────────────────────────────────────────────────────────────
 class SurveysListScreen extends StatefulWidget {
   const SurveysListScreen({super.key});
 
@@ -23,7 +21,7 @@ class SurveysListScreen extends StatefulWidget {
 
 class _SurveysListScreenState extends State<SurveysListScreen> {
   bool _isLoading = true;
-  String _filterType = 'all';   // 'all' | 'bdi' | 'bai'
+  String _filterType = 'all';   // 'all' | 'bdi' | 'bai' | 'moca' | 'whoqol'
   String _filterStatus = 'all'; // 'all' | 'synced' | 'pending'
 
   @override
@@ -45,8 +43,11 @@ class _SurveysListScreenState extends State<SurveysListScreen> {
 
   List<Map<String, dynamic>> _filteredSurveys(List<Map<String, dynamic>> all) {
     var result = all;
-    if (_filterType == 'bdi') result = result.where((s) => (s['survey_type'] ?? 1) == 1).toList();
-    if (_filterType == 'bai') result = result.where((s) => (s['survey_type'] ?? 1) == 2).toList();
+    const _typeIdMap = {'bdi': 1, 'bai': 2, 'moca': 3, 'whoqol': 4};
+    if (_typeIdMap.containsKey(_filterType)) {
+      final typeId = _typeIdMap[_filterType]!;
+      result = result.where((s) => (s['survey_type'] ?? 1) == typeId).toList();
+    }
     if (_filterStatus == 'synced')  result = result.where((s) => s['synced'] == true).toList();
     if (_filterStatus == 'pending') result = result.where((s) => s['synced'] != true).toList();
     return result;
@@ -109,7 +110,6 @@ class _SurveysListScreenState extends State<SurveysListScreen> {
   }
 }
 
-// ─── Narrow layout (mobile) ─────────────────────────────────────────────────
 class _NarrowLayout extends StatelessWidget {
   final Map<String, dynamic> stats;
   final List<Map<String, dynamic>> surveys;
@@ -150,7 +150,6 @@ class _NarrowLayout extends StatelessWidget {
   }
 }
 
-// ─── Wide layout (tablet / desktop) ─────────────────────────────────────────
 class _WideLayout extends StatelessWidget {
   final Map<String, dynamic> stats;
   final List<Map<String, dynamic>> surveys;
@@ -170,57 +169,58 @@ class _WideLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // ── Sidebar ──────────────────────────────
-        SizedBox(
-          width: 260,
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border(
-                right: BorderSide(
-                  color: LightModeColors.lightOutline.withValues(alpha: 0.2),
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1200),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 280,
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border(
+                    right: BorderSide(
+                      color: LightModeColors.lightOutline.withValues(alpha: 0.2),
+                    ),
+                  ),
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _StatsSection(stats: stats, compact: true),
+                      const Gap(24),
+                      const Divider(),
+                      const Gap(16),
+                      _FiltersSection(
+                        filterType: filterType,
+                        filterStatus: filterStatus,
+                        onFilterTypeChanged: onFilterTypeChanged,
+                        onFilterStatusChanged: onFilterStatusChanged,
+                        vertical: true,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _StatsSection(stats: stats, compact: true),
-                  const Gap(24),
-                  const Divider(),
-                  const Gap(16),
-                  _FiltersSection(
-                    filterType: filterType,
-                    filterStatus: filterStatus,
-                    onFilterTypeChanged: onFilterTypeChanged,
-                    onFilterStatusChanged: onFilterStatusChanged,
-                    vertical: true,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
 
-        // ── Content ──────────────────────────────
-        Expanded(
-          child: surveys.isEmpty
-              ? const _EmptyState()
-              : _SurveyList(surveys: surveys, wideMode: true),
+            Expanded(
+              child: surveys.isEmpty
+                  ? const _EmptyState()
+                  : _SurveyList(surveys: surveys, wideMode: true),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
 
-// ─── Stats section ───────────────────────────────────────────────────────────
 class _StatsSection extends StatelessWidget {
   final Map<String, dynamic> stats;
-  /// When true, stacks the stat cards vertically (sidebar usage).
   final bool compact;
 
   const _StatsSection({required this.stats, this.compact = false});
@@ -244,7 +244,6 @@ class _StatsSection extends StatelessWidget {
           const Text('Estadísticas').medium(),
           const Gap(12),
           if (compact)
-            // Sidebar: apiladas verticalmente, sin riesgo de apachurramiento
             Column(
               children: items
                   .map((item) => Padding(
@@ -254,9 +253,7 @@ class _StatsSection extends StatelessWidget {
                   .toList(),
             )
           else
-            // Mobile / inline: usa LayoutBuilder para decidir cuántas columnas
             LayoutBuilder(builder: (context, constraints) {
-              // Ancho mínimo cómodo por tarjeta (ícono + número + etiqueta)
               const minCardWidth = 90.0;
               final fits3 = constraints.maxWidth >= minCardWidth * 3 + 20;
 
@@ -275,7 +272,6 @@ class _StatsSection extends StatelessWidget {
                 );
               }
 
-              // Pantallas muy estrechas: 2 + 1
               return Column(
                 children: [
                   Row(children: [
@@ -294,13 +290,11 @@ class _StatsSection extends StatelessWidget {
   }
 }
 
-// ─── Filters section ─────────────────────────────────────────────────────────
 class _FiltersSection extends StatelessWidget {
   final String filterType;
   final String filterStatus;
   final ValueChanged<String> onFilterTypeChanged;
   final ValueChanged<String> onFilterStatusChanged;
-  /// When true renders filters stacked (sidebar). When false renders inline (top bar).
   final bool vertical;
 
   const _FiltersSection({
@@ -313,28 +307,28 @@ class _FiltersSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final typeGroup = _FilterGroup(
-      label: 'Tipo',
+    final typeDropdown = _FilterDropdown(
+      label: 'Tipo de encuesta',
       options: const [
-        _FilterOption(value: 'all', label: 'Todas'),
-        _FilterOption(value: 'bdi', label: 'BDI'),
+        _FilterOption(value: 'bdi', label: 'BDI-II'),
         _FilterOption(value: 'bai', label: 'BAI'),
+        _FilterOption(value: 'moca', label: 'MoCA'),
+        _FilterOption(value: 'whoqol', label: 'WHOQOL-BREF'),
       ],
-      selected: filterType,
-      color: LightModeColors.lightPrimary,
-      onChanged: onFilterTypeChanged,
+      selected: filterType == 'all' ? null : filterType,
+      hint: 'Todas',
+      onChanged: (v) => onFilterTypeChanged(v ?? 'all'),
     );
 
-    final statusGroup = _FilterGroup(
+    final statusDropdown = _FilterDropdown(
       label: 'Estado',
       options: const [
-        _FilterOption(value: 'all', label: 'Todas'),
         _FilterOption(value: 'synced', label: 'Sincronizadas'),
         _FilterOption(value: 'pending', label: 'Pendientes'),
       ],
-      selected: filterStatus,
-      color: LightModeColors.lightTertiary,
-      onChanged: onFilterStatusChanged,
+      selected: filterStatus == 'all' ? null : filterStatus,
+      hint: 'Todas',
+      onChanged: (v) => onFilterStatusChanged(v ?? 'all'),
     );
 
     if (vertical) {
@@ -343,48 +337,45 @@ class _FiltersSection extends StatelessWidget {
         children: [
           const Text('Filtros').small().muted(),
           const Gap(12),
-          typeGroup,
+          typeDropdown,
           const Gap(12),
-          statusGroup,
+          statusDropdown,
         ],
       );
     }
 
     return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          const Text('Filtros').small().muted(),
-          const Gap(12),
-          typeGroup,
-          const Gap(12),
-          statusGroup,
+          Expanded(child: typeDropdown),
+          const Gap(10),
+          Expanded(child: statusDropdown),
         ],
       ),
     );
   }
 }
 
-// ─── Filter group (label + row of buttons) ───────────────────────────────────
 class _FilterOption {
   final String value;
   final String label;
   const _FilterOption({required this.value, required this.label});
 }
 
-class _FilterGroup extends StatelessWidget {
+class _FilterDropdown extends StatelessWidget {
   final String label;
   final List<_FilterOption> options;
-  final String selected;
-  final Color color;
-  final ValueChanged<String> onChanged;
+  final String? selected;
+  final String hint;
+  final ValueChanged<String?> onChanged;
 
-  const _FilterGroup({
+  const _FilterDropdown({
     required this.label,
     required this.options,
     required this.selected,
-    required this.color,
+    required this.hint,
     required this.onChanged,
   });
 
@@ -395,27 +386,31 @@ class _FilterGroup extends StatelessWidget {
       children: [
         Text(label).small(),
         const Gap(6),
-        Row(
-          children: [
-            for (int i = 0; i < options.length; i++) ...[
-              if (i > 0) const Gap(4),
-              Expanded(
-                child: _FilterButton(
-                  label: options[i].label,
-                  isSelected: selected == options[i].value,
-                  onPressed: () => onChanged(options[i].value),
-                  color: color,
-                ),
-              ),
-            ],
-          ],
+        Select<String>(
+          value: selected,
+          onChanged: onChanged,
+          itemBuilder: (context, item) {
+            final match = options.where((o) => o.value == item).toList();
+            return Text(match.isNotEmpty ? match.first.label : item);
+          },
+          popup: SelectPopup(
+            items: SelectItemList(
+              children: [
+                for (final opt in options)
+                  SelectItemButton(
+                    value: opt.value,
+                    child: Text(opt.label),
+                  ),
+              ],
+            ),
+          ).call,
+          placeholder: Text(hint, style: const TextStyle(fontSize: 13)),
         ),
       ],
     );
   }
 }
 
-// ─── Survey list ─────────────────────────────────────────────────────────────
 class _SurveyList extends StatelessWidget {
   final List<Map<String, dynamic>> surveys;
   final bool wideMode;
@@ -425,7 +420,6 @@ class _SurveyList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (wideMode) {
-      // Grid of 2 columns on wide screens
       return GridView.builder(
         padding: const EdgeInsets.all(20),
         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -450,7 +444,6 @@ class _SurveyList extends StatelessWidget {
   }
 }
 
-// ─── Empty state ─────────────────────────────────────────────────────────────
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
 
@@ -471,50 +464,6 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-// ─── Filter button ────────────────────────────────────────────────────────────
-class _FilterButton extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onPressed;
-  final Color color;
-
-  const _FilterButton({
-    required this.label,
-    required this.isSelected,
-    required this.onPressed,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onPressed,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? color.withValues(alpha: 0.1) : Colors.transparent,
-          border: Border.all(
-            color: isSelected ? color : LightModeColors.lightOutline.withValues(alpha: 0.3),
-            width: isSelected ? 2 : 1,
-          ),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-            color: isSelected ? color : LightModeColors.lightOnSurface,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Stat card ───────────────────────────────────────────────────────────────
 class _StatCard extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -565,13 +514,11 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-// ─── Survey card ─────────────────────────────────────────────────────────────
 class _SurveyCard extends StatelessWidget {
   final Map<String, dynamic> survey;
 
   const _SurveyCard({required this.survey});
 
-  // ── Helpers ──
   Color get _surveyColor {
     return (survey['survey_type'] as int? ?? 1) == 1
         ? LightModeColors.lightPrimary
@@ -660,7 +607,6 @@ class _SurveyCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Header row ──────────────────
             Row(
               children: [
                 Container(
@@ -695,7 +641,6 @@ class _SurveyCard extends StatelessWidget {
             const Divider(height: 1),
             const Gap(10),
 
-            // ── Footer row ──────────────────
             Row(
               children: [
                 Icon(material.Icons.calendar_today, size: 13, color: LightModeColors.lightOnSurfaceVariant),
@@ -718,7 +663,6 @@ class _SurveyCard extends StatelessWidget {
   }
 }
 
-// ─── Small reusable badge widgets ────────────────────────────────────────────
 class _SyncBadge extends StatelessWidget {
   final bool isSynced;
   const _SyncBadge({required this.isSynced});

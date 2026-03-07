@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ssapp/utils/theme.dart';
 
-/// A placeholder screen for routes that are not yet implemented
+// page de marcador de posición para funcionalidades no implementadas
 class PlaceholderScreen extends StatelessWidget {
   final String title;
   final String message;

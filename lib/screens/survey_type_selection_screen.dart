@@ -6,6 +6,7 @@ import 'package:ssapp/utils/theme.dart';
 enum SurveyType {
   bai,
   bdi,
+  whoqol,
   moca,
 }
 
@@ -18,6 +19,8 @@ extension SurveyTypeExtension on SurveyType {
         return 'BDI-II';
       case SurveyType.moca:
         return 'MoCA';
+      case SurveyType.whoqol:
+        return 'WHOQOL-BREF';
     }
   }
 
@@ -29,6 +32,8 @@ extension SurveyTypeExtension on SurveyType {
         return 'Beck Depression Inventory — Segunda Edición';
       case SurveyType.moca:
         return 'Montreal Cognitive Assessment';
+      case SurveyType.whoqol:
+        return 'World Health Organization Quality of Life';
     }
   }
 
@@ -40,6 +45,8 @@ extension SurveyTypeExtension on SurveyType {
         return 'Inventario de Depresión de Beck';
       case SurveyType.moca:
         return 'Evaluación Cognitiva Montreal';
+      case SurveyType.whoqol:
+        return 'Cuestionario de Calidad de Vida';
     }
   }
 
@@ -51,6 +58,8 @@ extension SurveyTypeExtension on SurveyType {
         return material.Icons.favorite_outline;
       case SurveyType.moca:
         return material.Icons.spa_outlined;
+      case SurveyType.whoqol:
+        return material.Icons.self_improvement_outlined;
     }
   }
 
@@ -62,6 +71,8 @@ extension SurveyTypeExtension on SurveyType {
         return LightModeColors.lightPrimary;
       case SurveyType.moca:
         return LightModeColors.lightSecondary;
+      case SurveyType.whoqol:
+        return const Color(0xFF7C3AED);
     }
   }
 }

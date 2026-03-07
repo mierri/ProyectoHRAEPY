@@ -29,21 +29,18 @@ class _SurveyScreenState extends State<SurveyScreen> {
   int _currentQuestionIndex = 0;
   final Map<int, int> _responses = {};
   int? _selectedOptionIndex;
-  bool _isSaving = false; // Track saving state
+  bool _isSaving = false;
 
-  // Get survey type ID based on type string
   int get _surveyTypeId {
     return widget.surveyType == 'bai' ? 2 : 1; // 1=BDI, 2=BAI
   }
 
-  // Get questions based on survey type
   List<SurveyQuestion> get _questions {
     return widget.surveyType == 'bai'
         ? BAIQuestions.questions
         : BDIQuestions.questions;
   }
 
-  // Get survey color based on type
   Color get _surveyColor {
     return widget.surveyType == 'bai'
         ? LightModeColors.lightTertiary
@@ -56,12 +53,10 @@ class _SurveyScreenState extends State<SurveyScreen> {
   }
 
   Future<void> _saveSurvey() async {
-    // Prevent multiple saves
     if (_isSaving) return;
 
     setState(() => _isSaving = true);
 
-    // Show loading dialog
     if (mounted) {
       showDialog(
         context: context,
@@ -95,12 +90,10 @@ class _SurveyScreenState extends State<SurveyScreen> {
     bool wasSynced = false;
 
     try {
-      // Validate patientId
       if (widget.patientId == 0) {
         throw Exception('ID de paciente inválido. Por favor, reinicie el proceso.');
       }
 
-      // Create response models from the responses map
       final List<ResponseModel> responses = _responses.entries.map((entry) {
         return ResponseModel(
           questionId: entry.key,
@@ -130,12 +123,10 @@ class _SurveyScreenState extends State<SurveyScreen> {
 
       await box.add(survey);
 
-      // Try to sync with Supabase (with timeout to prevent freezing)
       if (mounted) {
         try {
           final surveyService = context.read<SurveyService>();
 
-          // Add timeout to prevent hanging
           wasSynced = await surveyService.syncSurveyToSupabase(survey)
               .timeout(
                 const Duration(seconds: 10),
@@ -159,7 +150,6 @@ class _SurveyScreenState extends State<SurveyScreen> {
         Navigator.of(context).pop();
       }
 
-      // Small delay to ensure dialog is closed
       await Future.delayed(const Duration(milliseconds: 100));
 
       if (mounted) {
@@ -647,7 +637,6 @@ class _SurveyScreenState extends State<SurveyScreen> {
       ],
       child: Column(
         children: [
-          // Progress bar
           Container(
             height: 6,
             decoration: BoxDecoration(
@@ -732,12 +721,10 @@ class _SurveyScreenState extends State<SurveyScreen> {
                     ),
                   ),
                   const Gap(24),
-                  // Options
                   ...question.options.asMap().entries.map((entry) {
                     final index = entry.key;
                     final option = entry.value;
                     final isSelected = _selectedOptionIndex == index;
-                    // Sentiment icons from Material Symbols (0=best → 3=worst)
                     const faceIcons = [
                       Symbols.sentiment_very_satisfied,
                       Symbols.sentiment_satisfied,
@@ -1067,7 +1054,6 @@ class _OptionCardState extends State<_OptionCard> with SingleTickerProviderState
               child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Sentiment face icon
               Container(
                 width: 44,
                 height: 44,

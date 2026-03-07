@@ -17,6 +17,7 @@ import 'package:ssapp/screens/survey_results_screen.dart';
 import 'package:ssapp/screens/survey_screen.dart';
 import 'package:ssapp/screens/surveys_list_screen.dart';
 import 'package:ssapp/screens/survey_type_selection_screen.dart';
+import 'package:ssapp/screens/whoqol_screen.dart';
 import 'package:ssapp/Services/patient_service.dart';
 import 'package:ssapp/Services/survey_service.dart';
 
@@ -97,6 +98,11 @@ final GoRouter _router = GoRouter(
         // Route to MoCA test screen if survey type is moca
         if (surveyType == 'moca') {
           return MocaTestScreen(patientId: patientId);
+        }
+
+        // Route to WHOQOL screen
+        if (surveyType == 'whoqol') {
+          return WhoqolScreen(patientId: patientId);
         }
 
         // Otherwise, use the standard survey screen for BDI/BAI

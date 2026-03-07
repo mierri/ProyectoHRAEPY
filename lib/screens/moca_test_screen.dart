@@ -21,20 +21,17 @@ class _MocaTestScreenState extends State<MocaTestScreen> {
   final Map<String, dynamic> _results = {};
   bool _isLoading = false;
 
-  // Memory-specific state
   List<String> _memoryTrial1 = [];
   List<String> _memoryTrial2 = [];
   Set<String> _delayedRecallWords = {};
   Set<String> _categoryRecallWords = {};
   Set<String> _multipleChoiceRecallWords = {};
 
-  // Fluency test state
   int _fluencyTimer = 60;
   Timer? _fluencyTimerInstance;
   bool _fluencyStarted = false;
   List<String> _fluencyWords = [];
 
-  // Drawing controllers
   late SignatureController _trailMakingController;
   late SignatureController _cubeController;
   late SignatureController _clockController;
@@ -114,11 +111,9 @@ class _MocaTestScreenState extends State<MocaTestScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Calculate total score
       int totalScore = _calculateTotalScore();
 
-      // TODO: Save to database when backend is ready
-      // For now, just show results
+      // TODO: implementar back
 
       if (!mounted) return;
 
@@ -226,7 +221,6 @@ class _MocaTestScreenState extends State<MocaTestScreen> {
       ],
       child: Column(
         children: [
-          // Progress bar
           Container(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -258,7 +252,6 @@ class _MocaTestScreenState extends State<MocaTestScreen> {
             ),
           ),
 
-          // Navigation buttons
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -494,9 +487,21 @@ class _MocaTestScreenState extends State<MocaTestScreen> {
 
   Widget _buildNamingWidget() {
     final animalImages = [
-      {'name': 'Caballo', 'emoji': '🐴', 'alternates': 'poni, yegua, potro'},
-      {'name': 'Tigre', 'emoji': '🐯', 'alternates': 'Solo tigre'},
-      {'name': 'Pato', 'emoji': '🦆', 'alternates': 'Solo pato'},
+      {
+        'name': 'León',
+        'asset': 'assets/images/moca/leon.jpg',
+        'alternates': 'Solo león',
+      },
+      {
+        'name': 'Caballo',
+        'asset': 'assets/images/moca/caballo.jpg',
+        'alternates': 'Yegua, potro, poni',
+      },
+      {
+        'name': 'Pato',
+        'asset': 'assets/images/moca/pato.jpg',
+        'alternates': 'Pato macho, ánade',
+      },
     ];
 
     return Column(
@@ -521,23 +526,46 @@ class _MocaTestScreenState extends State<MocaTestScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Animal image (emoji placeholder)
+                    // Animal image
                     Center(
-                      child: Container(
-                        width: 150,
-                        height: 150,
-                        decoration: BoxDecoration(
-                          color: LightModeColors.lightSecondary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: LightModeColors.lightSecondary.withValues(alpha: 0.3),
-                            width: 2,
+                      child: AspectRatio(
+                        aspectRatio: 1,
+                        child: Container(
+                          constraints: const BoxConstraints(maxWidth: 260),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF5F5F5),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: LightModeColors.lightSecondary.withValues(alpha: 0.3),
+                              width: 2,
+                            ),
                           ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            animal['emoji'] as String,
-                            style: const TextStyle(fontSize: 80),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.asset(
+                              animal['asset'] as String,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) => Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      material.Icons.image_not_supported_outlined,
+                                      size: 40,
+                                      color: LightModeColors.lightSecondary.withValues(alpha: 0.5),
+                                    ),
+                                    const Gap(8),
+                                    Text(
+                                      animal['name'] as String,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: LightModeColors.lightSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),

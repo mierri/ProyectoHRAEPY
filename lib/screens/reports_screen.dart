@@ -23,20 +23,18 @@ class ReportsScreen extends StatefulWidget {
 }
 
 class _ReportsScreenState extends State<ReportsScreen> {
-  int _selectedSurveyType = 0; // 0 = Todas, 1 = BDI-II, 2 = BAI
+  int _selectedSurveyType = 1;
 
   @override
   Widget build(BuildContext context) {
     final surveyService = context.watch<SurveyService>();
     final allSurveys = surveyService.getCompletedSurveys();
 
-    // Filtrar por tipo de encuesta (0 = Todas)
-    final surveys = _selectedSurveyType == 0
-        ? allSurveys
-        : allSurveys.where((s) {
-            final surveyType = s['survey_type'] as int? ?? 1;
-            return surveyType == _selectedSurveyType;
-          }).toList();
+    // filtrar por tipo de encuesta (siempre filtra, sin opción "Todas")
+    final surveys = allSurveys.where((s) {
+      final surveyType = s['survey_type'] as int? ?? 1;
+      return surveyType == _selectedSurveyType;
+    }).toList();
 
     final stats = _calculateStatistics(surveys, surveyService);
 
@@ -64,14 +62,21 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     color: Theme.of(context).colorScheme.mutedForeground,
                   ),
                   const Gap(16),
-                  Text('No hay encuestas completadas',
+                  Text(
+                    allSurveys.isEmpty
+                        ? 'No hay encuestas completadas'
+                        : 'No hay encuestas de este tipo',
                     style: TextStyle(
                       fontSize: 20,
                       color: Theme.of(context).colorScheme.mutedForeground,
                     ),
                   ),
                   const Gap(8),
-                  const Text('Completa algunas encuestas para ver estadísticas').muted().small(),
+                  Text(
+                    allSurveys.isEmpty
+                        ? 'Completa algunas encuestas para ver estadísticas'
+                        : 'Selecciona otro tipo de encuesta en el selector',
+                  ).muted().small(),
                 ],
               ),
             )
@@ -80,7 +85,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Selector de tipo de encuesta
+                  // selector de tipo de encuesta
                   SurfaceCard(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -88,37 +93,23 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         children: [
                           const Text('Tipo:').semiBold(),
                           const Gap(10),
-                          Wrap(
-                            spacing: 6,
-                            children: [
-                              _selectedSurveyType == 0
-                                  ? PrimaryButton(
-                                      onPressed: () => setState(() => _selectedSurveyType = 0),
-                                      child: const Text('Todas'),
-                                    )
-                                  : OutlineButton(
-                                      onPressed: () => setState(() => _selectedSurveyType = 0),
-                                      child: const Text('Todas'),
-                                    ),
-                              _selectedSurveyType == 1
-                                  ? PrimaryButton(
-                                        onPressed: () => setState(() => _selectedSurveyType = 1),
-                                      child: const Text('BDI-II'),
-                                    )
-                                  : OutlineButton(
-                                      onPressed: () => setState(() => _selectedSurveyType = 1),
-                                      child: const Text('BDI-II'),
-                                    ),
-                              _selectedSurveyType == 2
-                                  ? PrimaryButton(
-                                      onPressed: () => setState(() => _selectedSurveyType = 2),
-                                      child: const Text('BAI'),
-                                    )
-                                  : OutlineButton(
-                                      onPressed: () => setState(() => _selectedSurveyType = 2),
-                                      child: const Text('BAI'),
-                                    ),
-                            ],
+                          Expanded(
+                            child: Select<int>(
+                              value: _selectedSurveyType,
+                              onChanged: (v) {
+                                if (v != null) setState(() => _selectedSurveyType = v);
+                              },
+                              itemBuilder: (context, item) {
+                                const names = {1: 'BDI-II', 2: 'BAI'};
+                                return Text(names[item] ?? '$item');
+                              },
+                              popup: SelectPopup(
+                                items: SelectItemList(children: [
+                                  SelectItemButton(value: 1, child: const Text('BDI-II — Inventario de Depresión de Beck')),
+                                  SelectItemButton(value: 2, child: const Text('BAI — Inventario de Ansiedad de Beck')),
+                                ]),
+                              ).call,
+                            ),
                           ),
                         ],
                       ),
@@ -126,18 +117,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
                   const Gap(24),
 
-                  // Botones de exportación
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: [
                       OutlineButton(
                         onPressed: surveys.isEmpty ? null : () {
-                          if (_selectedSurveyType == 0) {
-                            _exportAllToCSV(context, allSurveys, surveyService);
-                          } else {
-                            _exportToSPSS(context, surveys, surveyService);
-                          }
+                          _exportToSPSS(context, surveys, surveyService);
                         },
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -150,11 +136,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       ),
                       PrimaryButton(
                         onPressed: surveys.isEmpty ? null : () {
-                          if (_selectedSurveyType == 0) {
-                            _generateFullPDFReport(context, allSurveys, surveyService);
-                          } else {
-                            _generatePDFReport(context, surveys, surveyService, stats);
-                          }
+                          _generatePDFReport(context, surveys, surveyService, stats);
                         },
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -169,7 +151,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
                   const Gap(24),
 
-                  // Medidas de tendencia central
                   Text('Medidas de Tendencia Central',
                     style: TextStyle(
                       fontSize: 20,
@@ -179,7 +160,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   const Gap(12),
                   LayoutBuilder(
                     builder: (context, constraints) {
-                      // En tablet 8" (800px aprox), las tarjetas necesitan más altura
                       final cardW = (constraints.maxWidth - 12) / 2;
                       final statH = (cardW * 0.48).clamp(72.0, 110.0);
                       final infoH = (cardW * 0.32).clamp(56.0, 80.0);
@@ -252,7 +232,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
                   const Gap(24),
 
-                  // Gráficas
                   Text('Distribución de Resultados',
                     style: TextStyle(
                       fontSize: 20,
@@ -261,7 +240,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
                   const Gap(16),
 
-                  // Gráfica de barras por nivel
                   SurfaceCard(
                     child: Padding(
                       padding: const EdgeInsets.all(24),
@@ -275,7 +253,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             child: _LevelDistributionChart(
                               surveys: surveys,
                               surveyService: surveyService,
-                              surveyType: _selectedSurveyType == 0 ? 1 : _selectedSurveyType,
+                              surveyType: _selectedSurveyType,
                             ),
                           ),
                         ],
@@ -284,7 +262,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
                   const Gap(24),
 
-                  // Gráfica de línea temporal
                   SurfaceCard(
                     child: Padding(
                       padding: const EdgeInsets.all(24),
@@ -306,7 +283,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
                   const Gap(24),
 
-                  // Gráfica de pastel
                   SurfaceCard(
                     child: Padding(
                       padding: const EdgeInsets.all(24),
@@ -331,7 +307,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                 child: _SeverityPieChart(
                                   surveys: surveys,
                                   surveyService: surveyService,
-                                  surveyType: _selectedSurveyType == 0 ? 1 : _selectedSurveyType,
+                                  surveyType: _selectedSurveyType,
                                 ),
                               );
                             },
@@ -395,17 +371,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
     };
   }
 
-  // Exportar datos a CSV (compatible con SPSS)
   Future<void> _exportToSPSS(BuildContext context, List<Map<String, dynamic>> surveys, SurveyService surveyService) async {
     try {
       final surveyTypeName = _selectedSurveyType == 1 ? 'BDI-II' : 'BAI';
 
-      // Crear encabezados
       List<List<dynamic>> rows = [
         ['ID_Encuesta', 'ID_Paciente', 'Fecha', 'Tipo_Encuesta', 'Puntaje_Total', 'Nivel_Severidad']
       ];
 
-      // Agregar datos
       for (var survey in surveys) {
         final surveyId = survey['survey_id'];
         final patientId = survey['patient_id'] ?? 'N/A';
@@ -423,12 +396,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
         ]);
       }
 
-      // Convert to CSV format manually with proper escaping
       String csvString = '';
       for (var row in rows) {
         csvString += '${row.map((cell) {
           final cellStr = cell.toString();
-          // Escape quotes and wrap in quotes if contains comma, quote, or newline
           if (cellStr.contains(',') || cellStr.contains('"') || cellStr.contains('\n')) {
             return '"${cellStr.replaceAll('"', '""')}"';
           }
@@ -443,10 +414,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
       final fileName = 'datos_${surveyTypeName}_${DateTime.now().millisecondsSinceEpoch}.csv';
 
       if (kIsWeb) {
-        // Descarga en web usando printing (universally available)
         await Printing.sharePdf(bytes: bytes, filename: fileName);
       } else {
-        // En móvil/desktop: guardar en temp y compartir
         final dir = await getTemporaryDirectory();
         final file = File('${dir.path}/$fileName');
         await file.writeAsBytes(bytes);
@@ -455,7 +424,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
         );
       }
 
-      // Mostrar confirmación
       showCenteredToast(
         context,
         title: 'Datos exportados',
@@ -493,7 +461,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
 
-  // Exportar TODOS los datos a CSV (BDI-II + BAI juntos)
+  // Exportar TODOS los datos a CSV — aún no implementado medamiedo
+  // ignore: unused_element
   Future<void> _exportAllToCSV(BuildContext context, List<Map<String, dynamic>> allSurveys, SurveyService surveyService) async {
     try {
       List<List<dynamic>> rows = [
@@ -562,7 +531,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
     }
   }
 
-  // Generar PDF completo con BDI-II + BAI
+  // Generar PDF completo con BDI-II + BAI — aún no implementado medamiedo
+  // ignore: unused_element
   Future<void> _generateFullPDFReport(
     BuildContext context,
     List<Map<String, dynamic>> allSurveys,
@@ -578,7 +548,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
       final fontRegular = await PdfGoogleFonts.notoSansRegular();
       final fontBold = await PdfGoogleFonts.notoSansBold();
 
-      // ── Función local para construir cada sección ──────────────────────
       pw.Widget buildSection(
         String title,
         String fullName,
@@ -714,7 +683,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                           _drawPdfSector(canvas, cx, cy, r, startAng, sweepAng);
                           startAng += sweepAng;
                         }
-                        // Agujero central (donut)
+                        // donita
                         canvas.setFillColor(PdfColors.white);
                         _drawPdfCircle(canvas, cx, cy, r * 0.38);
                       },
@@ -878,7 +847,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
     }
   }
 
-  // Generar reporte PDF
   Future<void> _generatePDFReport(
     BuildContext context,
     List<Map<String, dynamic>> surveys,
@@ -892,14 +860,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
           ? 'Inventario de Depresión de Beck II'
           : 'Inventario de Ansiedad de Beck';
 
-      // Fuente Unicode
       final fontRegular = await PdfGoogleFonts.notoSansRegular();
       final fontBold = await PdfGoogleFonts.notoSansBold();
 
       pw.TextStyle pdfStyle({double fontSize = 10, bool bold = false, PdfColor? color}) =>
           pw.TextStyle(font: bold ? fontBold : fontRegular, fontSize: fontSize, color: color);
 
-      // Calcular distribución por niveles
       final distribution = <String, int>{
         'Mínima': 0,
         'Leve': 0,
@@ -915,7 +881,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
         }
       }
 
-      // Rangos ASCII (sin guiones especiales)
       final scoreRanges = _selectedSurveyType == 1
           ? {'Mínima': '0-13', 'Leve': '14-19', 'Moderada': '20-28', 'Severa': '29-63'}
           : {'Mínima': '0-7', 'Leve': '8-15', 'Moderada': '16-25', 'Severa': '26-63'};
@@ -927,7 +892,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
           ? 1
           : distribution.values.reduce((a, b) => a > b ? a : b);
 
-      // Tendencia temporal
       final sortedSurveys = List<Map<String, dynamic>>.from(surveys)
         ..sort((a, b) => DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
       final timelineScores = sortedSurveys
@@ -937,7 +901,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
           ? 5.0
           : timelineScores.reduce((a, b) => a > b ? a : b).toDouble();
 
-      // Acceso seguro a stats
       final statMin = (stats['min'] ?? 0).toInt();
       final statMax = (stats['max'] ?? 0).toInt();
       final statMean = stats['mean'] ?? 0.0;
@@ -1204,8 +1167,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
     }
   }
 
-  /// Dibuja un sector circular (rebanada de pastel) usando curvas de Bézier cúbicas.
-  /// [startAngle] y [sweepAngle] en radianes.
   static void _drawPdfSector(
     PdfGraphics canvas,
     double cx,
@@ -1214,7 +1175,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
     double startAngle,
     double sweepAngle,
   ) {
-    // Dividimos el arco en segmentos de máx. 90° para buena aproximación
     const maxStep = math.pi / 2;
     canvas.moveTo(cx, cy);
     double a = startAngle;
@@ -1229,7 +1189,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
     canvas.fillPath();
   }
 
-  /// Agrega un segmento de arco (≤90°) al path actual usando Bézier cúbica.
   static void _addArcSegment(
     PdfGraphics canvas,
     double cx,
@@ -1239,7 +1198,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
     double sweepAngle,
   ) {
     final endAngle = startAngle + sweepAngle;
-    // Factor de control Bézier para aproximar arco circular
     final k = (4.0 / 3.0) * math.tan(sweepAngle / 4);
     final x0 = cx + r * math.cos(startAngle);
     final y0 = cy + r * math.sin(startAngle);
@@ -1253,7 +1211,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
     canvas.curveTo(x1, y1, x2, y2, x3, y3);
   }
 
-  /// Dibuja un círculo completo relleno (para el agujero central del donut).
   static void _drawPdfCircle(PdfGraphics canvas, double cx, double cy, double r) {
     _drawPdfSector(canvas, cx, cy, r, 0, 2 * math.pi);
   }
@@ -1449,13 +1406,11 @@ class _LevelDistributionChart extends StatelessWidget {
 
   String _getLevel(int score, int surveyType) {
     if (surveyType == 1) {
-      // BDI-II
       if (score <= 13) return 'minimal';
       if (score <= 19) return 'mild';
       if (score <= 28) return 'moderate';
       return 'severe';
     } else {
-      // BAI
       if (score <= 7) return 'minimal';
       if (score <= 15) return 'mild';
       if (score <= 25) return 'moderate';
@@ -1780,7 +1735,6 @@ class _SeverityPieChart extends StatelessWidget {
       return const Center(child: Text('No hay datos para mostrar'));
     }
 
-    // Calcular distribución por nivel de severidad
     final distribution = <String, int>{
       'Mínima': 0,
       'Leve': 0,
@@ -1802,7 +1756,6 @@ class _SeverityPieChart extends StatelessWidget {
       distribution[label] = distribution[label]! + 1;
     }
 
-    // Rangos de puntaje según tipo de encuesta
     if (surveyType == 1) {
       scoreRanges['Mínima'] = '0–13';
       scoreRanges['Leve'] = '14–19';
@@ -1940,12 +1893,10 @@ class _SeverityPieChart extends StatelessWidget {
             return Column(
               children: [
                 if (isNarrow) ...[
-                  // Narrow: pie on top, legend below
                   SizedBox(height: 200, child: pieWidget),
                   const SizedBox(height: 16),
                   legend,
                 ] else ...[
-                  // Wide: pie + legend side by side
                   Expanded(
                     child: Row(
                       children: [
