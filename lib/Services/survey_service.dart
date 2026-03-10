@@ -191,7 +191,7 @@ class SurveyService extends ChangeNotifier {
       final surveyData = {
         'survey_id': survey.surveyId,
         'patient_id': survey.patientId,
-        'survey_type': survey.surveyType, // ¡IMPORTANTE! Guardar el tipo de encuesta
+        'survey_type': survey.surveyType,
         'synced': true,
       };
 
@@ -200,7 +200,6 @@ class SurveyService extends ChangeNotifier {
           .insert(surveyData);
 
       // Insertar respuestas en la tabla 'responses'
-      // Según fix_responses_table.sql: id (BIGSERIAL PRIMARY KEY), survey_id, question_id, answer_value
       final responsesData = survey.responses.map((r) => {
         'survey_id': survey.surveyId,
         'question_id': r.questionId,
@@ -213,7 +212,7 @@ class SurveyService extends ChangeNotifier {
             .insert(responsesData);
       }
 
-      print('✅ Encuesta sincronizada exitosamente: ${survey.surveyId}');
+      print('Encuesta sincronizada exitosamente: ${survey.surveyId}');
       return true;
     } catch (e, stackTrace) {
       print('Error al sincronizar con Supabase: $e');
@@ -244,14 +243,9 @@ class SurveyService extends ChangeNotifier {
     }
   }
 
-  /// Sincroniza una encuesta con el backend de Render (alternativo)
+  /// Sincroniza una encuesta con el backend de Render
   Future<bool> syncSurveyToRender(SurveyModel survey) async {
     try {
-      // Puedes usar este método si también quieres un backend en Render
-      // que haga procesamiento adicional o actúe como intermediario
-      
-      // El código HTTP ya existente funcionaría aquí
-      // por ahora retornamos true
       return true;
     } catch (e) {
       print('Error al sincronizar con Render: $e');
@@ -269,7 +263,7 @@ class SurveyService extends ChangeNotifier {
       final pendingSurveys = box.values.where((s) => !s.synced).toList();
 
       if (pendingSurveys.isEmpty) {
-        print('✅ No hay encuestas pendientes de sincronización');
+        print('No hay encuestas pendientes de sincronización');
         return 0;
       }
 
@@ -281,19 +275,19 @@ class SurveyService extends ChangeNotifier {
           survey.synced = true;
           await survey.save();
           syncedCount++;
-          print('✅ Encuesta ${survey.surveyId} sincronizada');
+          print('Encuesta ${survey.surveyId} sincronizada');
         } else {
-          print('⚠️ No se pudo sincronizar encuesta ${survey.surveyId}');
+          print('No se pudo sincronizar encuesta ${survey.surveyId}');
         }
       }
 
       // Recargar lista después de sincronizar
       await loadSurveys();
 
-      print('✅ Sincronización completada: $syncedCount/${pendingSurveys.length} encuestas');
+      print('Sincronización completada: $syncedCount/${pendingSurveys.length} encuestas');
 
     } catch (e) {
-      print('❌ Error al sincronizar encuestas pendientes: $e');
+      print('Error al sincronizar encuestas pendientes: $e');
     }
 
     return syncedCount;
