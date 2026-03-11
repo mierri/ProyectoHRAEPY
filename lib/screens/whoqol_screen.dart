@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart' as material
     show Icons, Material, Colors, Navigator, BoxDecoration, BoxShadow, BorderRadius, Offset;
 import 'package:go_router/go_router.dart';
+import 'package:hive/hive.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
+import 'package:ssapp/models/response_model.dart';
+import 'package:ssapp/models/survey_model.dart';
 import 'package:ssapp/models/whoqol_questions.dart';
+import 'package:ssapp/Services/survey_service.dart';
 import 'package:ssapp/utils/theme.dart';
 import 'package:ssapp/utils/toast_helper.dart';
 
@@ -21,6 +26,7 @@ class _WhoqolScreenState extends State<WhoqolScreen> {
   int _currentIndex = 0;
   final Map<int, int> _responses = {};
   int? _selectedOptionIndex;
+  bool _isSaving = false;
 
   List<WhoqolQuestion> get _questions => WhoqolQuestions.questions;
   WhoqolQuestion get _current => _questions[_currentIndex];
@@ -53,7 +59,7 @@ class _WhoqolScreenState extends State<WhoqolScreen> {
         if (_responses.containsKey(qNum)) _selectedOptionIndex = _responses[qNum]! - 1;
       });
     } else {
-      _showResultDialog();
+      _saveSurvey();
     }
   }
 
@@ -77,7 +83,145 @@ class _WhoqolScreenState extends State<WhoqolScreen> {
     });
   }
 
-  void _showResultDialog() {
+  Future<void> _saveSurvey() async {
+    if (_isSaving) return;
+
+    setState(() => _isSaving = true);
+
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: material.Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const Gap(16),
+                const Text(
+                  'Guardando encuesta WHOQOL...',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    bool wasSynced = false;
+
+    try {
+      if (widget.patientId == 0) {
+        throw Exception('ID de paciente inválido. Por favor, reinicie el proceso.');
+      }
+
+      // Convertir respuestas al formato ResponseModel
+      final List<ResponseModel> responses = _responses.entries.map((entry) {
+        return ResponseModel(
+          questionId: entry.key,
+          answerValue: entry.value,
+        );
+      }).toList();
+
+      if (responses.length != 26) {
+        throw Exception('Faltan respuestas. Por favor, responda todas las preguntas.');
+      }
+
+      // Crear survey con surveyType = 3 para WHOQOL
+      final survey = SurveyModel(
+        surveyId: DateTime.now().millisecondsSinceEpoch,
+        surveyType: 3, // 3 = WHOQOL-BREF
+        patientId: widget.patientId,
+        responses: responses,
+        synced: false,
+      );
+
+      // Guardar localmente en Hive
+      Box<SurveyModel> box;
+      try {
+        box = await Hive.openBox<SurveyModel>('surveys');
+      } catch (e) {
+        await Hive.deleteBoxFromDisk('surveys');
+        box = await Hive.openBox<SurveyModel>('surveys');
+      }
+
+      await box.add(survey);
+
+      // Intentar sincronizar con Supabase
+      if (mounted) {
+        try {
+          final surveyService = context.read<SurveyService>();
+
+          wasSynced = await surveyService.syncSurveyToSupabase(survey)
+              .timeout(
+                const Duration(seconds: 10),
+                onTimeout: () {
+                  return false;
+                },
+              );
+
+          if (wasSynced) {
+            survey.synced = true;
+            await survey.save();
+          } else {
+            print('No se pudo sincronizar con Supabase');
+          }
+        } catch (e) {
+          print('Error al sincronizar: $e');
+          wasSynced = false;
+        }
+      }
+
+      if (mounted) {
+        material.Navigator.of(context).pop(); // Cerrar diálogo de carga
+      }
+
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      if (mounted) {
+        _showResultDialog(wasSynced);
+      }
+    } catch (e, stackTrace) {
+      print('Error al guardar encuesta WHOQOL: $e');
+      print('Stack trace: $stackTrace');
+
+      if (mounted) {
+        material.Navigator.of(context).pop();
+      }
+
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Error'),
+            content: Text('No se pudo guardar la encuesta: $e'),
+            actions: [
+              PrimaryButton(
+                onPressed: () => material.Navigator.of(context).pop(),
+                child: const Text('Aceptar'),
+              ),
+            ],
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
+  }
+
+  void _showResultDialog(bool wasSynced) {
     final q1 = _responses[1];
     final q2 = _responses[2];
     final dom1 = WhoqolQuestions.domainScore(domainQuestions: WhoqolQuestions.domain1Questions, responses: _responses);
@@ -135,8 +279,35 @@ class _WhoqolScreenState extends State<WhoqolScreen> {
                   const Gap(16),
                   Container(
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: _kWhoqolColor.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10), border: Border.all(color: _kWhoqolColor.withValues(alpha: 0.25))),
-                    child: const Text('Nota: Los resultados se guardarán en la base de datos cuando se habilite el soporte correspondiente.', style: TextStyle(fontSize: 12, height: 1.4)),
+                    decoration: BoxDecoration(
+                      color: wasSynced 
+                          ? const Color(0xFF10B981).withValues(alpha: 0.06) 
+                          : const Color(0xFFF59E0B).withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: wasSynced 
+                            ? const Color(0xFF10B981).withValues(alpha: 0.25) 
+                            : const Color(0xFFF59E0B).withValues(alpha: 0.25)
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          wasSynced ? material.Icons.check_circle : material.Icons.cloud_off,
+                          color: wasSynced ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                          size: 20,
+                        ),
+                        const Gap(8),
+                        Expanded(
+                          child: Text(
+                            wasSynced
+                                ? 'Datos sincronizados.'
+                                : 'Sincronización pendiente.',
+                            style: const TextStyle(fontSize: 12, height: 1.4),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const Gap(20),
                   SizedBox(
