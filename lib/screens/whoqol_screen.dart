@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart' as material
     show Icons, Material, Colors, Navigator, BoxDecoration, BoxShadow, BorderRadius, Offset;
 import 'package:go_router/go_router.dart';
-import 'package:hive/hive.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
-import 'package:ssapp/models/response_model.dart';
-import 'package:ssapp/models/survey_model.dart';
+import 'package:ssapp/controllers/whoqol_controller.dart';
 import 'package:ssapp/models/whoqol_questions.dart';
 import 'package:ssapp/Services/survey_service.dart';
 import 'package:ssapp/utils/theme.dart';
@@ -23,19 +21,35 @@ class WhoqolScreen extends StatefulWidget {
 }
 
 class _WhoqolScreenState extends State<WhoqolScreen> {
-  int _currentIndex = 0;
-  final Map<int, int> _responses = {};
-  int? _selectedOptionIndex;
-  bool _isSaving = false;
+  late WhoqolController _controller;
 
-  List<WhoqolQuestion> get _questions => WhoqolQuestions.questions;
-  WhoqolQuestion get _current => _questions[_currentIndex];
+  @override
+  void initState() {
+    super.initState();
+    final surveyService = context.read<SurveyService>();
+    _controller = WhoqolController(
+      patientId: widget.patientId,
+      surveyService: surveyService,
+    );
+    _controller.addListener(_onControllerUpdate);
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_onControllerUpdate);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onControllerUpdate() {
+    if (mounted) setState(() {});
+  }
+
+  WhoqolQuestion get _current => _controller.currentQuestion;
 
   void _selectOption(int questionNumber, int rawScore, int optionIndex) {
-    setState(() {
-      _responses[questionNumber] = rawScore;
-      _selectedOptionIndex = optionIndex;
-    });
+    _controller.selectOption(questionNumber, rawScore, optionIndex);
+    
     showCenteredToast(
       context,
       title: 'Respuesta guardada',
@@ -43,50 +57,34 @@ class _WhoqolScreenState extends State<WhoqolScreen> {
       iconColor: _kWhoqolColor,
       location: ToastLocation.topCenter,
     );
-    if (_currentIndex < _questions.length - 1) {
+    
+    if (!_controller.isLastQuestion) {
       Future.delayed(const Duration(milliseconds: 600), () {
-        if (mounted) _nextQuestion();
+        if (mounted && _controller.canGoNext) {
+          _controller.nextQuestion();
+        }
       });
     }
   }
 
   void _nextQuestion() {
-    if (_currentIndex < _questions.length - 1) {
-      setState(() {
-        _currentIndex++;
-        _selectedOptionIndex = null;
-        final qNum = _currentIndex + 1;
-        if (_responses.containsKey(qNum)) _selectedOptionIndex = _responses[qNum]! - 1;
-      });
+    if (!_controller.isLastQuestion) {
+      _controller.nextQuestion();
     } else {
       _saveSurvey();
     }
   }
 
   void _previousQuestion() {
-    if (_currentIndex > 0) {
-      setState(() {
-        _currentIndex--;
-        _selectedOptionIndex = null;
-        final qNum = _currentIndex + 1;
-        if (_responses.containsKey(qNum)) _selectedOptionIndex = _responses[qNum]! - 1;
-      });
-    }
+    _controller.previousQuestion();
   }
 
   void _goToQuestion(int index) {
-    setState(() {
-      _currentIndex = index;
-      _selectedOptionIndex = null;
-      final qNum = index + 1;
-      if (_responses.containsKey(qNum)) _selectedOptionIndex = _responses[qNum]! - 1;
-    });
+    _controller.goToQuestion(index);
   }
 
   Future<void> _saveSurvey() async {
-    if (_isSaving) return;
-
-    setState(() => _isSaving = true);
+    if (_controller.isSaving) return;
 
     if (mounted) {
       showDialog(
@@ -118,93 +116,21 @@ class _WhoqolScreenState extends State<WhoqolScreen> {
       );
     }
 
-    bool wasSynced = false;
+    final result = await _controller.saveSurvey();
 
-    try {
-      if (widget.patientId == 0) {
-        throw Exception('ID de paciente inválido. Por favor, reinicie el proceso.');
-      }
+    if (mounted) {
+      material.Navigator.of(context).pop(); // Cerrar diálogo de carga
+    }
 
-      // Convertir respuestas al formato ResponseModel
-      final List<ResponseModel> responses = _responses.entries.map((entry) {
-        return ResponseModel(
-          questionId: entry.key,
-          answerValue: entry.value,
-        );
-      }).toList();
+    await Future.delayed(const Duration(milliseconds: 100));
 
-      if (responses.length != 26) {
-        throw Exception('Faltan respuestas. Por favor, responda todas las preguntas.');
-      }
-
-      // Crear survey con surveyType = 3 para WHOQOL
-      final survey = SurveyModel(
-        surveyId: DateTime.now().millisecondsSinceEpoch,
-        surveyType: 3, // 3 = WHOQOL-BREF
-        patientId: widget.patientId,
-        responses: responses,
-        synced: false,
-      );
-
-      // Guardar localmente en Hive
-      Box<SurveyModel> box;
-      try {
-        box = await Hive.openBox<SurveyModel>('surveys');
-      } catch (e) {
-        await Hive.deleteBoxFromDisk('surveys');
-        box = await Hive.openBox<SurveyModel>('surveys');
-      }
-
-      await box.add(survey);
-
-      // Intentar sincronizar con Supabase
-      if (mounted) {
-        try {
-          final surveyService = context.read<SurveyService>();
-
-          wasSynced = await surveyService.syncSurveyToSupabase(survey)
-              .timeout(
-                const Duration(seconds: 10),
-                onTimeout: () {
-                  return false;
-                },
-              );
-
-          if (wasSynced) {
-            survey.synced = true;
-            await survey.save();
-          } else {
-            print('No se pudo sincronizar con Supabase');
-          }
-        } catch (e) {
-          print('Error al sincronizar: $e');
-          wasSynced = false;
-        }
-      }
-
-      if (mounted) {
-        material.Navigator.of(context).pop(); // Cerrar diálogo de carga
-      }
-
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      if (mounted) {
-        _showResultDialog(wasSynced);
-      }
-    } catch (e, stackTrace) {
-      print('Error al guardar encuesta WHOQOL: $e');
-      print('Stack trace: $stackTrace');
-
-      if (mounted) {
-        material.Navigator.of(context).pop();
-      }
-
+    if (!result.success) {
       if (mounted) {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Error'),
-            content: Text('No se pudo guardar la encuesta: $e'),
+            content: Text('No se pudo guardar la encuesta: ${result.error}'),
             actions: [
               PrimaryButton(
                 onPressed: () => material.Navigator.of(context).pop(),
@@ -214,20 +140,15 @@ class _WhoqolScreenState extends State<WhoqolScreen> {
           ),
         );
       }
-    } finally {
-      if (mounted) {
-        setState(() => _isSaving = false);
-      }
+      return;
+    }
+
+    if (mounted && result.results != null) {
+      _showResultDialog(result.wasSynced, result.results!);
     }
   }
 
-  void _showResultDialog(bool wasSynced) {
-    final q1 = _responses[1];
-    final q2 = _responses[2];
-    final dom1 = WhoqolQuestions.domainScore(domainQuestions: WhoqolQuestions.domain1Questions, responses: _responses);
-    final dom2 = WhoqolQuestions.domainScore(domainQuestions: WhoqolQuestions.domain2Questions, responses: _responses);
-    final dom3 = WhoqolQuestions.domainScore(domainQuestions: WhoqolQuestions.domain3Questions, responses: _responses);
-    final dom4 = WhoqolQuestions.domainScore(domainQuestions: WhoqolQuestions.domain4Questions, responses: _responses);
+  void _showResultDialog(bool wasSynced, WhoqolResults results) {
 
     showDialog(
       context: context,
@@ -265,17 +186,17 @@ class _WhoqolScreenState extends State<WhoqolScreen> {
                   const Gap(20),
                   const Text('Ítems Globales', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
                   const Gap(8),
-                  _ResultRow(label: 'Calidad de vida (P1)', value: q1 != null ? '$q1/5 — ${WhoqolQuestions.interpretQ1(q1)}' : 'Sin respuesta', color: _kWhoqolColor),
-                  _ResultRow(label: 'Satisfacción con la salud (P2)', value: q2 != null ? '$q2/5' : 'Sin respuesta', color: _kWhoqolColor),
+                  _ResultRow(label: 'Calidad de vida (P1)', value: results.q1Interpretation, color: _kWhoqolColor),
+                  _ResultRow(label: 'Satisfacción con la salud (P2)', value: results.q2Display, color: _kWhoqolColor),
                   const Gap(16),
                   const Text('Puntajes por Dominio', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
                   const Gap(2),
                   const Text('Mayor puntaje = mejor calidad de vida', style: TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
                   const Gap(8),
-                  _ResultRow(label: 'Salud Física (DOM1)', value: dom1 != null ? '$dom1 / ${WhoqolQuestions.domain1Questions.length * 5}' : 'Incompleto', color: const Color(0xFF0EA5E9)),
-                  _ResultRow(label: 'Salud Psicológica (DOM2)', value: dom2 != null ? '$dom2 / ${WhoqolQuestions.domain2Questions.length * 5}' : 'Incompleto', color: const Color(0xFF8B5CF6)),
-                  _ResultRow(label: 'Relaciones Sociales (DOM3)', value: dom3 != null ? '$dom3 / ${WhoqolQuestions.domain3Questions.length * 5}' : 'Incompleto', color: const Color(0xFF10B981)),
-                  _ResultRow(label: 'Ambiente (DOM4)', value: dom4 != null ? '$dom4 / ${WhoqolQuestions.domain4Questions.length * 5}' : 'Incompleto', color: const Color(0xFFF59E0B)),
+                  _ResultRow(label: 'Salud Física (DOM1)', value: results.domain1Display(), color: const Color(0xFF0EA5E9)),
+                  _ResultRow(label: 'Salud Psicológica (DOM2)', value: results.domain2Display(), color: const Color(0xFF8B5CF6)),
+                  _ResultRow(label: 'Relaciones Sociales (DOM3)', value: results.domain3Display(), color: const Color(0xFF10B981)),
+                  _ResultRow(label: 'Ambiente (DOM4)', value: results.domain4Display(), color: const Color(0xFFF59E0B)),
                   const Gap(16),
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -329,13 +250,13 @@ class _WhoqolScreenState extends State<WhoqolScreen> {
   @override
   Widget build(BuildContext context) {
     final labels = WhoqolQuestions.labelsFor(_current.scaleType);
-    final progress = (_currentIndex + 1) / _questions.length;
+    final progress = _controller.progress;
     final isReversedQuestion = _current.reversed; // true para Q3, Q4, Q26
 
     return Scaffold(
       headers: [
         AppBar(
-          title: Text('Pregunta ${_currentIndex + 1} de ${_questions.length}'),
+          title: Text('Pregunta ${_controller.currentIndex + 1} de ${_controller.questions.length}'),
           leading: [
             IconButton(
               icon: const Icon(material.Icons.arrow_back),
@@ -402,7 +323,7 @@ class _WhoqolScreenState extends State<WhoqolScreen> {
                     final optIdx = entry.key;
                     final label = entry.value;
                     final rawScore = optIdx + 1;
-                    final isSelected = _selectedOptionIndex == optIdx;
+                    final isSelected = _controller.selectedOptionIndex == optIdx;
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 10),
                       child: _WhoqolOptionCard(
@@ -418,9 +339,9 @@ class _WhoqolScreenState extends State<WhoqolScreen> {
                   }),
                   const Gap(24),
                   _WhoqolPagination(
-                    currentIndex: _currentIndex,
-                    totalQuestions: _questions.length,
-                    responses: _responses,
+                    currentIndex: _controller.currentIndex,
+                    totalQuestions: _controller.questions.length,
+                    responses: _controller.responses,
                     onPageChanged: _goToQuestion,
                   ),
                 ],
@@ -435,7 +356,7 @@ class _WhoqolScreenState extends State<WhoqolScreen> {
             ),
             child: Row(
               children: [
-                if (_currentIndex > 0) ...[
+                if (_controller.canGoPrevious) ...[
                   Expanded(
                     child: OutlineButton(
                       onPressed: _previousQuestion,
@@ -453,13 +374,13 @@ class _WhoqolScreenState extends State<WhoqolScreen> {
                 ],
                 Expanded(
                   child: PrimaryButton(
-                    onPressed: _responses.containsKey(_current.number) ? _nextQuestion : null,
+                    onPressed: _controller.canGoNext ? _nextQuestion : null,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(_currentIndex < _questions.length - 1 ? 'Siguiente' : 'Finalizar'),
+                        Text(_controller.isLastQuestion ? 'Finalizar' : 'Siguiente'),
                         const Gap(8),
-                        Icon(_currentIndex < _questions.length - 1 ? material.Icons.arrow_forward : material.Icons.check, size: 20),
+                        Icon(_controller.isLastQuestion ? material.Icons.check : material.Icons.arrow_forward, size: 20),
                       ],
                     ),
                   ),

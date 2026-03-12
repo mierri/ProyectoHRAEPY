@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart' as material show Icons, Material;
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
+import 'package:ssapp/controllers/survey_controller.dart';
 import 'package:ssapp/models/bdi_questions.dart';
-import 'package:ssapp/models/response_model.dart';
-import 'package:ssapp/models/survey_model.dart';
 import 'package:ssapp/Services/survey_service.dart';
 import 'package:ssapp/utils/theme.dart';
 import 'package:ssapp/utils/toast_helper.dart';
@@ -26,19 +24,29 @@ class SurveyScreen extends StatefulWidget {
 }
 
 class _SurveyScreenState extends State<SurveyScreen> {
-  int _currentQuestionIndex = 0;
-  final Map<int, int> _responses = {};
-  int? _selectedOptionIndex;
-  bool _isSaving = false;
+  late SurveyController _controller;
 
-  int get _surveyTypeId {
-    return widget.surveyType == 'bai' ? 2 : 1; // 1=BDI, 2=BAI
+  @override
+  void initState() {
+    super.initState();
+    final surveyService = context.read<SurveyService>();
+    _controller = SurveyController(
+      patientId: widget.patientId,
+      surveyType: widget.surveyType,
+      surveyService: surveyService,
+    );
+    _controller.addListener(_onControllerUpdate);
   }
 
-  List<SurveyQuestion> get _questions {
-    return widget.surveyType == 'bai'
-        ? BAIQuestions.questions
-        : BDIQuestions.questions;
+  @override
+  void dispose() {
+    _controller.removeListener(_onControllerUpdate);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onControllerUpdate() {
+    if (mounted) setState(() {});
   }
 
   Color get _surveyColor {
@@ -47,15 +55,8 @@ class _SurveyScreenState extends State<SurveyScreen> {
         : LightModeColors.lightPrimary;
   }
 
-  @override
-  void initState() {
-    super.initState();
-  }
-
   Future<void> _saveSurvey() async {
-    if (_isSaving) return;
-
-    setState(() => _isSaving = true);
+    if (_controller.isSaving) return;
 
     if (mounted) {
       showDialog(
@@ -87,107 +88,35 @@ class _SurveyScreenState extends State<SurveyScreen> {
       );
     }
 
-    bool wasSynced = false;
+    final result = await _controller.saveSurvey();
 
-    try {
-      if (widget.patientId == 0) {
-        throw Exception('ID de paciente inválido. Por favor, reinicie el proceso.');
-      }
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
 
-      final List<ResponseModel> responses = _responses.entries.map((entry) {
-        return ResponseModel(
-          questionId: entry.key,
-          answerValue: entry.value,
-        );
-      }).toList();
+    await Future.delayed(const Duration(milliseconds: 100));
 
-      if (responses.length != 21) {
-        throw Exception('Faltan respuestas. Por favor, responda todas las preguntas.');
-      }
-
-      final survey = SurveyModel(
-        surveyId: DateTime.now().millisecondsSinceEpoch,
-        surveyType: _surveyTypeId,
-        patientId: widget.patientId,
-        responses: responses,
-        synced: false,
-      );
-
-      Box<SurveyModel> box;
-      try {
-        box = await Hive.openBox<SurveyModel>('surveys');
-      } catch (e) {
-        await Hive.deleteBoxFromDisk('surveys');
-        box = await Hive.openBox<SurveyModel>('surveys');
-      }
-
-      await box.add(survey);
-
-      if (mounted) {
-        try {
-          final surveyService = context.read<SurveyService>();
-
-          wasSynced = await surveyService.syncSurveyToSupabase(survey)
-              .timeout(
-                const Duration(seconds: 10),
-                onTimeout: () {
-                  return false;
-                },
-              );
-
-          if (wasSynced) {
-            survey.synced = true;
-            await survey.save();
-          } else {
-            print('No se pudo sincronizar con Supabase');
-          }
-        } catch (e) {
-          wasSynced = false;
-        }
-      }
-
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      if (mounted) {
-        _showCompletionDialog(wasSynced);
-      }
-    } catch (e, stackTrace) {
-      print('Stack trace: $stackTrace');
-
-      if (mounted) {
-        try {
-          Navigator.of(context).pop();
-        } catch (popError) {
-          print('Error al cerrar diálogo: $popError');
-        }
-      }
-
+    if (!result.success) {
       if (mounted) {
         showCenteredToast(
           context,
           title: 'Error al guardar',
-          subtitle: 'Error: ${e.toString()}',
+          subtitle: 'Error: ${result.error}',
           icon: material.Icons.error_outline,
           iconColor: LightModeColors.lightError,
           location: ToastLocation.topCenter,
         );
       }
-    } finally {
-      if (mounted) {
-        setState(() => _isSaving = false);
-      }
+      return;
+    }
+
+    if (mounted && result.totalScore != null) {
+      _showCompletionDialog(result.wasSynced, result.totalScore!, result.interpretation!, result.severityLevel!);
     }
   }
 
   void _selectOption(int questionNumber, int score, int optionIndex) {
-    setState(() {
-      _responses[questionNumber] = score;
-      _selectedOptionIndex = optionIndex;
-    });
+    _controller.selectOption(questionNumber, score, optionIndex);
 
     showCenteredToast(
       context,
@@ -197,61 +126,28 @@ class _SurveyScreenState extends State<SurveyScreen> {
       location: ToastLocation.topCenter,
     );
 
-    if (_currentQuestionIndex < _questions.length - 1) {
+    if (!_controller.isLastQuestion) {
       Future.delayed(const Duration(milliseconds: 600), () {
         if (mounted) {
-          _nextQuestion();
+          _controller.nextQuestion();
         }
       });
     }
   }
 
   void _nextQuestion() {
-    if (_currentQuestionIndex < _questions.length - 1) {
-      setState(() {
-        _currentQuestionIndex++;
-        _selectedOptionIndex = null;
-        final questionNumber = _currentQuestionIndex + 1;
-        if (_responses.containsKey(questionNumber)) {
-          final savedScore = _responses[questionNumber];
-          final question = _questions[_currentQuestionIndex];
-          for (int i = 0; i < question.options.length; i++) {
-            if (question.options[i].score == savedScore) {
-              _selectedOptionIndex = i;
-              break;
-            }
-          }
-        }
-      });
+    if (!_controller.isLastQuestion) {
+      _controller.nextQuestion();
     } else {
       _saveSurvey();
     }
   }
 
   void _previousQuestion() {
-    if (_currentQuestionIndex > 0) {
-      setState(() {
-        _currentQuestionIndex--;
-        _selectedOptionIndex = null;
-        // Check if this question was already answered
-        final questionNumber = _currentQuestionIndex + 1;
-        if (_responses.containsKey(questionNumber)) {
-          // Find the option index for the saved response
-          final savedScore = _responses[questionNumber];
-          final question = _questions[_currentQuestionIndex];
-          for (int i = 0; i < question.options.length; i++) {
-            if (question.options[i].score == savedScore) {
-              _selectedOptionIndex = i;
-              break;
-            }
-          }
-        }
-      });
-    }
+    _controller.previousQuestion();
   }
 
-  void _showCompletionDialog(bool wasSynced) {
-    final totalScore = _responses.values.fold<int>(0, (sum, score) => sum + score);
+  void _showCompletionDialog(bool wasSynced, int totalScore, String interpretation, String severityLevel) {
 
     showDialog(
       context: context,
@@ -367,7 +263,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
                         child: PrimaryButton(
                           onPressed: () {
                             Navigator.of(context).pop();
-                            _showResultDialog(totalScore);
+                            _showResultDialog(totalScore, interpretation, severityLevel);
                           },
                           child: const Text('Sí'),
                         ),
@@ -383,48 +279,29 @@ class _SurveyScreenState extends State<SurveyScreen> {
     );
   }
 
-  void _showResultDialog(int totalScore) {
-
-    final String level;
-    final String levelDescription;
+  void _showResultDialog(int totalScore, String interpretation, String severityLevel) {
     final Color levelColor;
 
     if (widget.surveyType == 'bai') {
       // BAI levels
       if (totalScore <= 7) {
-        level = 'Ansiedad Mínima';
-        levelDescription = 'Los síntomas de ansiedad son mínimos o inexistentes.';
         levelColor = LightModeColors.lightTertiary;
       } else if (totalScore <= 15) {
-        level = 'Ansiedad Leve';
-        levelDescription = 'Presenta síntomas leves de ansiedad.';
         levelColor = const Color(0xFFFFA726);
       } else if (totalScore <= 25) {
-        level = 'Ansiedad Moderada';
-        levelDescription = 'Presenta síntomas moderados de ansiedad.';
         levelColor = const Color(0xFFFF7043);
       } else {
-        level = 'Ansiedad Severa';
-        levelDescription = 'Presenta síntomas severos de ansiedad.';
         levelColor = LightModeColors.lightError;
       }
     } else {
       // BDI-II levels
       if (totalScore <= 13) {
-        level = 'Depresión Mínima';
-        levelDescription = 'Los síntomas depresivos son mínimos o inexistentes.';
         levelColor = LightModeColors.lightTertiary;
       } else if (totalScore <= 19) {
-        level = 'Depresión Leve';
-        levelDescription = 'Presenta síntomas leves de depresión.';
         levelColor = const Color(0xFFFFA726);
       } else if (totalScore <= 28) {
-        level = 'Depresión Moderada';
-        levelDescription = 'Presenta síntomas moderados de depresión.';
         levelColor = const Color(0xFFFF7043);
       } else {
-        level = 'Depresión Grave';
-        levelDescription = 'Presenta síntomas graves de depresión.';
         levelColor = LightModeColors.lightError;
       }
     }
@@ -517,7 +394,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
-                                level,
+                                severityLevel,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,
@@ -555,7 +432,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
                           ),
                           const Gap(8),
                           Text(
-                            levelDescription,
+                            interpretation,
                             style: const TextStyle(height: 1.5),
                           ),
                         ],
@@ -595,13 +472,13 @@ class _SurveyScreenState extends State<SurveyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final question = _questions[_currentQuestionIndex];
-    final progress = (_currentQuestionIndex + 1) / _questions.length;
+    final question = _controller.currentQuestion;
+    final progress = _controller.progress;
 
     return Scaffold(
       headers: [
         AppBar(
-          title: Text('Pregunta ${_currentQuestionIndex + 1} de ${_questions.length}'),
+          title: Text('Pregunta ${_controller.currentQuestionIndex + 1} de ${_controller.questions.length}'),
           leading: [
             IconButton(
               icon: const Icon(material.Icons.arrow_back),
@@ -674,7 +551,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
                           ),
                           child: Center(
                             child: Text(
-                              '${_currentQuestionIndex + 1}',
+                              '${_controller.currentQuestionIndex + 1}',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 20,
@@ -724,7 +601,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
                   ...question.options.asMap().entries.map((entry) {
                     final index = entry.key;
                     final option = entry.value;
-                    final isSelected = _selectedOptionIndex == index;
+                    final isSelected = _controller.selectedOptionIndex == index;
                     const faceIcons = [
                       Symbols.sentiment_very_satisfied,
                       Symbols.sentiment_satisfied,
@@ -757,30 +634,14 @@ class _SurveyScreenState extends State<SurveyScreen> {
                     );
                   }),
                   const Gap(24),
-                  // rom a ation
+                  // Pagination
                   _SurveyPagination(
-                    currentIndex: _currentQuestionIndex,
-                    totalQuestions: _questions.length,
-                    responses: _responses,
-                    questions: _questions,
+                    currentIndex: _controller.currentQuestionIndex,
+                    totalQuestions: _controller.questions.length,
+                    responses: _controller.responses,
+                    questions: _controller.questions,
                     surveyColor: _surveyColor,
-                    onPageChanged: (index) {
-                      setState(() {
-                        _currentQuestionIndex = index;
-                        _selectedOptionIndex = null;
-                        final questionNumber = index + 1;
-                        if (_responses.containsKey(questionNumber)) {
-                          final savedScore = _responses[questionNumber];
-                          final q = _questions[index];
-                          for (int i = 0; i < q.options.length; i++) {
-                            if (q.options[i].score == savedScore) {
-                              _selectedOptionIndex = i;
-                              break;
-                            }
-                          }
-                        }
-                      });
-                    },
+                    onPageChanged: (index) => _controller.goToQuestion(index),
                   ),
                 ],
               ),
@@ -801,7 +662,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
             ),
             child: Row(
               children: [
-                if (_currentQuestionIndex > 0)
+                if (_controller.canGoPrevious)
                         Expanded(
                           child: OutlineButton(
                             onPressed: _previousQuestion,
@@ -824,16 +685,16 @@ class _SurveyScreenState extends State<SurveyScreen> {
                             ),
                           ),
                         ),
-                      if (_currentQuestionIndex > 0) const Gap(12),
+                      if (_controller.canGoPrevious) const Gap(12),
                       Expanded(
                         child: PrimaryButton(
-                          onPressed: (_responses.containsKey(_currentQuestionIndex + 1) && !_isSaving)
+                          onPressed: (_controller.canGoNext && !_controller.isSaving)
                               ? _nextQuestion
                               : null,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              if (_isSaving) ...[
+                              if (_controller.isSaving) ...[
                                 SizedBox(
                                   width: 16,
                                   height: 16,
@@ -845,18 +706,18 @@ class _SurveyScreenState extends State<SurveyScreen> {
                                 const Gap(8),
                               ],
                               Text(
-                                _isSaving
+                                _controller.isSaving
                                     ? 'Guardando...'
-                                    : (_currentQuestionIndex < _questions.length - 1
-                                        ? 'Siguiente'
-                                        : 'Finalizar'),
+                                    : (_controller.isLastQuestion
+                                        ? 'Finalizar'
+                                        : 'Siguiente'),
                               ),
-                              if (!_isSaving) ...[
+                              if (!_controller.isSaving) ...[
                                 const Gap(8),
                                 Icon(
-                                  _currentQuestionIndex < _questions.length - 1
-                                      ? material.Icons.arrow_forward
-                                      : material.Icons.check,
+                                  _controller.isLastQuestion
+                                      ? material.Icons.check
+                                      : material.Icons.arrow_forward,
                                   size: 20,
                                 ),
                               ],
