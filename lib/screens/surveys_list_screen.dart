@@ -8,9 +8,6 @@ import 'package:ssapp/Services/survey_service.dart';
 import 'package:ssapp/utils/theme.dart';
 import 'package:ssapp/utils/toast_helper.dart';
 
-class _Breakpoints {
-  static const double tablet = 600;
-}
 
 class SurveysListScreen extends StatefulWidget {
   const SurveysListScreen({super.key});
@@ -43,7 +40,7 @@ class _SurveysListScreenState extends State<SurveysListScreen> {
 
   List<Map<String, dynamic>> _filteredSurveys(List<Map<String, dynamic>> all) {
     var result = all;
-    const _typeIdMap = {'bdi': 1, 'bai': 2, 'moca': 3, 'whoqol': 4};
+    const _typeIdMap = {'bdi': 1, 'bai': 2, 'whoqol': 3, 'moca': 4};
     if (_typeIdMap.containsKey(_filterType)) {
       final typeId = _typeIdMap[_filterType]!;
       result = result.where((s) => (s['survey_type'] ?? 1) == typeId).toList();
@@ -81,30 +78,13 @@ class _SurveysListScreenState extends State<SurveysListScreen> {
       ],
       child: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : LayoutBuilder(
-              builder: (context, constraints) {
-                final isWide = constraints.maxWidth >= _Breakpoints.tablet;
-
-                if (isWide) {
-                  return _WideLayout(
-                    stats: stats,
-                    surveys: surveys,
-                    filterType: _filterType,
-                    filterStatus: _filterStatus,
-                    onFilterTypeChanged: (v) => setState(() => _filterType = v),
-                    onFilterStatusChanged: (v) => setState(() => _filterStatus = v),
-                  );
-                }
-
-                return _NarrowLayout(
-                  stats: stats,
-                  surveys: surveys,
-                  filterType: _filterType,
-                  filterStatus: _filterStatus,
-                  onFilterTypeChanged: (v) => setState(() => _filterType = v),
-                  onFilterStatusChanged: (v) => setState(() => _filterStatus = v),
-                );
-              },
+          : _NarrowLayout(
+              stats: stats,
+              surveys: surveys,
+              filterType: _filterType,
+              filterStatus: _filterStatus,
+              onFilterTypeChanged: (v) => setState(() => _filterType = v),
+              onFilterStatusChanged: (v) => setState(() => _filterStatus = v),
             ),
     );
   }
@@ -150,80 +130,11 @@ class _NarrowLayout extends StatelessWidget {
   }
 }
 
-class _WideLayout extends StatelessWidget {
-  final Map<String, dynamic> stats;
-  final List<Map<String, dynamic>> surveys;
-  final String filterType;
-  final String filterStatus;
-  final ValueChanged<String> onFilterTypeChanged;
-  final ValueChanged<String> onFilterStatusChanged;
-
-  const _WideLayout({
-    required this.stats,
-    required this.surveys,
-    required this.filterType,
-    required this.filterStatus,
-    required this.onFilterTypeChanged,
-    required this.onFilterStatusChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 1200),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: 280,
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border(
-                    right: BorderSide(
-                      color: LightModeColors.lightOutline.withValues(alpha: 0.2),
-                    ),
-                  ),
-                ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _StatsSection(stats: stats, compact: true),
-                      const Gap(24),
-                      const Divider(),
-                      const Gap(16),
-                      _FiltersSection(
-                        filterType: filterType,
-                        filterStatus: filterStatus,
-                        onFilterTypeChanged: onFilterTypeChanged,
-                        onFilterStatusChanged: onFilterStatusChanged,
-                        vertical: true,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            Expanded(
-              child: surveys.isEmpty
-                  ? const _EmptyState()
-                  : _SurveyList(surveys: surveys, wideMode: true),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _StatsSection extends StatelessWidget {
   final Map<String, dynamic> stats;
-  final bool compact;
 
-  const _StatsSection({required this.stats, this.compact = false});
+  const _StatsSection({required this.stats});
 
   @override
   Widget build(BuildContext context) {
@@ -237,53 +148,24 @@ class _StatsSection extends StatelessWidget {
           icon: item.$1, label: item.$2, value: item.$3, color: item.$4);
 
     return Padding(
-      padding: compact ? EdgeInsets.zero : const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text('Estadísticas').medium(),
           const Gap(12),
-          if (compact)
-            Column(
-              children: items
-                  .map((item) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: card(item),
-                      ))
-                  .toList(),
-            )
-          else
-            LayoutBuilder(builder: (context, constraints) {
-              const minCardWidth = 90.0;
-              final fits3 = constraints.maxWidth >= minCardWidth * 3 + 20;
-
-              if (fits3) {
-                return IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(child: card(items[0])),
-                      const Gap(10),
-                      Expanded(child: card(items[1])),
-                      const Gap(10),
-                      Expanded(child: card(items[2])),
-                    ],
-                  ),
-                );
-              }
-
-              return Column(
-                children: [
-                  Row(children: [
-                    Expanded(child: card(items[0])),
-                    const Gap(10),
-                    Expanded(child: card(items[1])),
-                  ]),
-                  const Gap(10),
-                  card(items[2]),
-                ],
-              );
-            }),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: card(items[0])),
+                const Gap(10),
+                Expanded(child: card(items[1])),
+                const Gap(10),
+                Expanded(child: card(items[2])),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -295,14 +177,12 @@ class _FiltersSection extends StatelessWidget {
   final String filterStatus;
   final ValueChanged<String> onFilterTypeChanged;
   final ValueChanged<String> onFilterStatusChanged;
-  final bool vertical;
 
   const _FiltersSection({
     required this.filterType,
     required this.filterStatus,
     required this.onFilterTypeChanged,
     required this.onFilterStatusChanged,
-    this.vertical = false,
   });
 
   @override
@@ -310,6 +190,7 @@ class _FiltersSection extends StatelessWidget {
     final typeDropdown = _FilterDropdown(
       label: 'Tipo de encuesta',
       options: const [
+        _FilterOption(value: 'all', label: 'Todas'),
         _FilterOption(value: 'bdi', label: 'BDI-II'),
         _FilterOption(value: 'bai', label: 'BAI'),
         _FilterOption(value: 'moca', label: 'MoCA'),
@@ -323,6 +204,7 @@ class _FiltersSection extends StatelessWidget {
     final statusDropdown = _FilterDropdown(
       label: 'Estado',
       options: const [
+        _FilterOption(value: 'all', label: 'Todas'),
         _FilterOption(value: 'synced', label: 'Sincronizadas'),
         _FilterOption(value: 'pending', label: 'Pendientes'),
       ],
@@ -331,18 +213,6 @@ class _FiltersSection extends StatelessWidget {
       onChanged: (v) => onFilterStatusChanged(v ?? 'all'),
     );
 
-    if (vertical) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Filtros').small().muted(),
-          const Gap(12),
-          typeDropdown,
-          const Gap(12),
-          statusDropdown,
-        ],
-      );
-    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -398,7 +268,7 @@ class _FilterDropdown extends StatelessWidget {
               children: [
                 for (final opt in options)
                   SelectItemButton(
-                    value: opt.value,
+                    value: opt.value == 'all' ? null : opt.value,
                     child: Text(opt.label),
                   ),
               ],
@@ -413,28 +283,13 @@ class _FilterDropdown extends StatelessWidget {
 
 class _SurveyList extends StatelessWidget {
   final List<Map<String, dynamic>> surveys;
-  final bool wideMode;
 
-  const _SurveyList({required this.surveys, this.wideMode = false});
+  const _SurveyList({required this.surveys});
 
   @override
   Widget build(BuildContext context) {
-    if (wideMode) {
-      return GridView.builder(
-        padding: const EdgeInsets.all(20),
-        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 480,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 2.4,
-        ),
-        itemCount: surveys.length,
-        itemBuilder: (context, index) => _SurveyCard(survey: surveys[index]),
-      );
-    }
-
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       itemCount: surveys.length,
       itemBuilder: (context, index) => Padding(
         padding: const EdgeInsets.only(bottom: 12),
@@ -520,13 +375,31 @@ class _SurveyCard extends StatelessWidget {
   const _SurveyCard({required this.survey});
 
   Color get _surveyColor {
-    return (survey['survey_type'] as int? ?? 1) == 1
-        ? LightModeColors.lightPrimary
-        : LightModeColors.lightTertiary;
+    switch (survey['survey_type'] as int? ?? 1) {
+      case 1: return LightModeColors.lightPrimary;
+      case 2: return LightModeColors.lightTertiary;
+      case 3: return const Color(0xFF7C3AED); // WHOQOL - violeta
+      case 4: return const Color(0xFF0EA5E9); // MoCA - celeste
+      default: return LightModeColors.lightPrimary;
+    }
   }
 
   String get _surveyTypeName {
-    return (survey['survey_type'] as int? ?? 1) == 1 ? 'BDI-II' : 'BAI';
+    switch (survey['survey_type'] as int? ?? 1) {
+      case 1: return 'BDI-II';
+      case 2: return 'BAI';
+      case 3: return 'WHOQOL-BREF';
+      case 4: return 'MoCA';
+      default: return 'Encuesta';
+    }
+  }
+
+  int get _expectedResponses {
+    switch (survey['survey_type'] as int? ?? 1) {
+      case 3: return 26; // WHOQOL
+      case 4: return 0;  // MoCA no usa responses table del mismo modo
+      default: return 21; // BDI / BAI
+    }
   }
 
   int get _score {
@@ -536,16 +409,21 @@ class _SurveyCard extends StatelessWidget {
   }
 
   String _level(int score, int type) {
-    if (type == 1) {
+    if (type == 1) { // BDI
       if (score <= 13) return 'Mínima';
       if (score <= 19) return 'Leve';
       if (score <= 28) return 'Moderada';
       return 'Grave';
     }
-    if (score <= 7)  return 'Mínima';
-    if (score <= 15) return 'Leve';
-    if (score <= 25) return 'Moderada';
-    return 'Severa';
+    if (type == 2) { // BAI
+      if (score <= 7)  return 'Mínima';
+      if (score <= 15) return 'Leve';
+      if (score <= 25) return 'Moderada';
+      return 'Severa';
+    }
+    if (type == 3) return 'WHOQOL'; // WHOQOL - no single score
+    if (type == 4) return 'MoCA';   // MoCA
+    return '';
   }
 
   Color _levelColor(int score, int type) {
@@ -555,10 +433,15 @@ class _SurveyCard extends StatelessWidget {
       if (score <= 28) return const Color(0xFFFF7043);
       return LightModeColors.lightError;
     }
-    if (score <= 7)  return LightModeColors.lightTertiary;
-    if (score <= 15) return const Color(0xFFFFA726);
-    if (score <= 25) return const Color(0xFFFF7043);
-    return LightModeColors.lightError;
+    if (type == 2) {
+      if (score <= 7)  return LightModeColors.lightTertiary;
+      if (score <= 15) return const Color(0xFFFFA726);
+      if (score <= 25) return const Color(0xFFFF7043);
+      return LightModeColors.lightError;
+    }
+    if (type == 3) return const Color(0xFF7C3AED);
+    if (type == 4) return const Color(0xFF0EA5E9);
+    return LightModeColors.lightPrimary;
   }
 
   @override
@@ -581,12 +464,16 @@ class _SurveyCard extends StatelessWidget {
     final isSynced     = survey['synced'] == true;
     final responses    = survey['responses'] as List?;
     final totalResp    = responses?.length ?? 0;
-    final isComplete   = totalResp >= 21;
     final surveyType   = survey['survey_type'] as int? ?? 1;
+    final expected     = _expectedResponses;
+    final isComplete   = surveyType == 4 ? true : (expected == 0 ? true : totalResp >= expected);
     final score        = _score;
     final level        = _level(score, surveyType);
     final levelColor   = _levelColor(score, surveyType);
     final surveyColor  = _surveyColor;
+    final respLabel    = surveyType == 4
+        ? 'MoCA'
+        : (isComplete ? 'Completa' : '$totalResp/$expected respuestas');
 
     return GestureDetector(
       onTap: isComplete
@@ -653,7 +540,7 @@ class _SurveyCard extends StatelessWidget {
                   color: isComplete ? LightModeColors.lightTertiary : LightModeColors.lightOnSurfaceVariant,
                 ),
                 const Gap(5),
-                Text(isComplete ? 'Completa' : '$totalResp/21 respuestas').small().muted(),
+                Text(respLabel).small().muted(),
               ],
             ),
           ],

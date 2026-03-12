@@ -144,12 +144,126 @@ class _WhoqolScreenState extends State<WhoqolScreen> {
     }
 
     if (mounted && result.results != null) {
-      _showResultDialog(result.wasSynced, result.results!);
+      _showCompletionDialog(result.wasSynced, result.results!);
     }
   }
 
-  void _showResultDialog(bool wasSynced, WhoqolResults results) {
+  void _showCompletionDialog(bool wasSynced, WhoqolResults results) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 400),
+          margin: const EdgeInsets.all(24),
+          decoration: material.BoxDecoration(
+            color: material.Colors.white,
+            borderRadius: material.BorderRadius.circular(16),
+            boxShadow: [
+              material.BoxShadow(
+                color: material.Colors.black.withValues(alpha: 0.1),
+                blurRadius: 20,
+                offset: const material.Offset(0, 8),
+              ),
+            ],
+          ),
+          child: material.Material(
+            color: material.Colors.transparent,
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(material.Icons.celebration, color: _kWhoqolColor, size: 32),
+                      const Gap(12),
+                      const Expanded(
+                        child: Text(
+                          '¡Gracias por participar!',
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Gap(16),
+                  const Text(
+                    'La encuesta ha sido completada exitosamente.',
+                    style: TextStyle(fontSize: 15),
+                  ),
+                  const Gap(16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: wasSynced
+                          ? const Color(0xFF10B981).withValues(alpha: 0.1)
+                          : const Color(0xFFF59E0B).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: wasSynced
+                            ? const Color(0xFF10B981)
+                            : const Color(0xFFF59E0B),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          wasSynced ? material.Icons.cloud_done : material.Icons.cloud_upload,
+                          color: wasSynced ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                        ),
+                        const Gap(12),
+                        Expanded(
+                          child: Text(
+                            wasSynced ? 'Datos sincronizados' : 'Pendiente de sincronización',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: wasSynced ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Gap(20),
+                  const Text(
+                    '¿Desea ver su resultado?',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                  const Gap(20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlineButton(
+                          onPressed: () {
+                            material.Navigator.of(ctx).pop();
+                            context.go('/new-survey');
+                          },
+                          child: const Text('No'),
+                        ),
+                      ),
+                      const Gap(12),
+                      Expanded(
+                        child: PrimaryButton(
+                          onPressed: () {
+                            material.Navigator.of(ctx).pop();
+                            _showResultDialog(wasSynced, results);
+                          },
+                          child: const Text('Sí'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
+  void _showResultDialog(bool wasSynced, WhoqolResults results) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -201,14 +315,14 @@ class _WhoqolScreenState extends State<WhoqolScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: wasSynced 
-                          ? const Color(0xFF10B981).withValues(alpha: 0.06) 
+                      color: wasSynced
+                          ? const Color(0xFF10B981).withValues(alpha: 0.06)
                           : const Color(0xFFF59E0B).withValues(alpha: 0.06),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: wasSynced 
-                            ? const Color(0xFF10B981).withValues(alpha: 0.25) 
-                            : const Color(0xFFF59E0B).withValues(alpha: 0.25)
+                        color: wasSynced
+                            ? const Color(0xFF10B981).withValues(alpha: 0.25)
+                            : const Color(0xFFF59E0B).withValues(alpha: 0.25),
                       ),
                     ),
                     child: Row(
@@ -221,9 +335,7 @@ class _WhoqolScreenState extends State<WhoqolScreen> {
                         const Gap(8),
                         Expanded(
                           child: Text(
-                            wasSynced
-                                ? 'Datos sincronizados.'
-                                : 'Sincronización pendiente.',
+                            wasSynced ? 'Datos sincronizados.' : 'Sincronización pendiente.',
                             style: const TextStyle(fontSize: 12, height: 1.4),
                           ),
                         ),

@@ -61,9 +61,9 @@ class SurveyService extends ChangeNotifier {
     };
   }
   
-  /// Obtiene encuestas por tipo (BDI=1, BAI=2)
-  List<Map<String, dynamic>> getSurveysByType(int surveyId) {
-    return _surveys.where((survey) => survey['survey_id'] == surveyId).toList();
+  /// Obtiene encuestas por tipo (BDI=1, BAI=2, WHOQOL=3, MoCA=4)
+  List<Map<String, dynamic>> getSurveysByType(int surveyType) {
+    return _surveys.where((survey) => survey['survey_type'] == surveyType).toList();
   }
 
   /// Obtiene el nombre del tipo de encuesta
@@ -73,6 +73,10 @@ class SurveyService extends ChangeNotifier {
         return 'BDI-II';
       case 2:
         return 'BAI';
+      case 3:
+        return 'WHOQOL-BREF';
+      case 4:
+        return 'MoCA';
       default:
         return 'Encuesta #$surveyId';
     }
@@ -82,9 +86,13 @@ class SurveyService extends ChangeNotifier {
   String getSurveyTypeColor(int surveyId) {
     switch (surveyId) {
       case 1:
-        return 'primary'; // BDI - Azul
+        return 'primary';   // BDI - Azul
       case 2:
-        return 'tertiary'; // BAI - Verde-azul
+        return 'tertiary';  // BAI - Verde-azul
+      case 3:
+        return 'secondary'; // WHOQOL - Violeta
+      case 4:
+        return 'secondary'; // MoCA
       default:
         return 'secondary';
     }
