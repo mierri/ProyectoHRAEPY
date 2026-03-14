@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/Services/patient_service.dart';
+import 'package:ssapp/models/patient_model.dart';
 import 'package:provider/provider.dart';
 import 'package:ssapp/utils/theme.dart';
 
@@ -18,15 +19,48 @@ class ConsentFormScreen extends StatefulWidget {
 class _ConsentFormScreenState extends State<ConsentFormScreen> {
   final _nameController = TextEditingController();
   DateTime? _dateOfBirth;
-  String _gender = 'Masculino';
+  String _gender = 'M'; // Masculino
   bool _consentGiven = false;
   bool _isLoading = false;
+  PatientModel? _selectedPatient;
+  List<PatientModel> _availablePatients = [];
+  bool _isLoadingPatients = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAvailablePatients();
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
     super.dispose();
   }
+
+  Future<void> _loadAvailablePatients() async {
+    setState(() => _isLoadingPatients = true);
+    try {
+      final patientService = context.read<PatientService>();
+      setState(() {
+        _availablePatients = patientService.patients;
+      });
+    } catch (e) {
+      print('Error loading patients: $e');
+    } finally {
+      setState(() => _isLoadingPatients = false);
+    }
+  }
+
+  void _selectPatient(PatientModel patient) {
+    setState(() {
+      _selectedPatient = patient;
+      _nameController.text = patient.name;
+      _dateOfBirth = patient.birthDate;
+      _gender = patient.gender;
+    });
+  }
+
 
   void _showError(String message) {
     showToast(
@@ -59,6 +93,8 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
         return LightModeColors.lightSecondary;
       case 'whoqol':
         return const Color(0xFF7C3AED);
+      case 'sf36':
+        return const Color(0xFF06B6D4);
       case 'bdi':
       default:
         return LightModeColors.lightPrimary;
@@ -67,7 +103,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
 
   Future<void> _submit() async {
     if (_nameController.text.trim().isEmpty) {
-      _showError('Por favor ingrese el nombre completo');
+      _showError('Por favor ingrese el nombre completo o seleccione un paciente');
       return;
     }
     if (_dateOfBirth == null) {
@@ -83,11 +119,18 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
 
     try {
       final patientService = context.read<PatientService>();
-      final patient = await patientService.createPatient(
-        name: _nameController.text.trim(),
-        birthDate: _dateOfBirth!,
-        gender: _gender,
-      );
+
+      // Si ya existe el paciente seleccionado, usarlo; si no, crear uno nuevo
+      PatientModel? patient;
+      if (_selectedPatient != null) {
+        patient = _selectedPatient;
+      } else {
+        patient = await patientService.createPatient(
+          name: _nameController.text.trim(),
+          birthDate: _dateOfBirth!,
+          gender: _gender,
+        );
+      }
 
       if (!mounted) return;
 
@@ -128,6 +171,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
     final isBai = surveyType == 'bai';
     final isMoca = surveyType == 'moca';
     final isWhoqol = surveyType == 'whoqol';
+    final isSf36 = surveyType == 'sf36';
 
     String surveyTitle;
     String surveyInstructions;
@@ -140,6 +184,9 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
     } else if (isWhoqol) {
       surveyTitle = 'Cuestionario de Calidad de Vida (WHOQOL-BREF)';
       surveyInstructions = 'Este cuestionario le pregunta cómo se ha sentido acerca de su calidad de vida, su salud y otros aspectos de su vida durante las dos últimas semanas. Por favor, responda todas las preguntas. Si no está seguro/a de qué respuesta dar a una pregunta, escoja la que le parezca más apropiada.';
+    } else if (isSf36) {
+      surveyTitle = 'Encuesta de Salud de 36 Items (SF-36)';
+      surveyInstructions = 'Este cuestionario evalúa diferentes aspectos de su salud y bienestar. Por favor, responda cada pregunta según cómo se ha sentido o qué ha podido hacer durante las últimas cuatro semanas. No hay respuestas correctas o incorrectas, simplemente elija la opción que mejor describa su situación.';
     } else {
       surveyTitle = 'Inventario de Depresión de Beck (BDI-II)';
       surveyInstructions = 'Este cuestionario consta de 21 grupos de afirmaciones. Por favor, lea con cuidado cada grupo y elija la que mejor describe cómo se ha sentido durante las últimas dos semanas, incluyendo hoy.';
@@ -284,28 +331,28 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                     ] else ...[
                       _ScaleItem(
                         icon: Symbols.sentiment_very_satisfied,
-                        label: 'Opción 0',
+                        label: 'Opción 1',
                         description: 'No lo experimento o no me aplica en este momento.',
                         color: const Color(0xFF16A34A),
                       ),
                       const Gap(8),
                       _ScaleItem(
                         icon: Symbols.sentiment_satisfied,
-                        label: 'Opción 1',
+                        label: 'Opción 2',
                         description: 'Lo experimento algunas veces o de manera leve.',
                         color: const Color(0xFF65A30D),
                       ),
                       const Gap(8),
                       _ScaleItem(
                         icon: Symbols.sentiment_dissatisfied,
-                        label: 'Opción 2',
+                        label: 'Opción 3',
                         description: 'Lo experimento con más frecuencia o de forma notable.',
                         color: const Color(0xFFF59E0B),
                       ),
                       const Gap(8),
                       _ScaleItem(
                         icon: Symbols.sentiment_very_dissatisfied,
-                        label: 'Opción 3',
+                        label: 'Opción 4',
                         description: 'Lo experimento casi siempre o de manera muy intensa.',
                         color: const Color(0xFFDC2626),
                       ),
@@ -387,13 +434,80 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
             const Text('Datos del Paciente').textLarge().bold(),
             const Gap(16),
 
-            const Text('Nombre completo').medium(),
-            const Gap(5),
-            TextField(
-              controller: _nameController,
-              placeholder: const Text('Nombre completo'),
-            ),
+            const Text('Seleccionar paciente existente o crear nuevo').medium(),
+            const Gap(8),
+            _isLoadingPatients
+                ? Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: LightModeColors.lightOutline.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: _getSurveyColor(),
+                          ),
+                        ),
+                        const Gap(12),
+                        const Text('Cargando pacientes...'),
+                      ],
+                    ),
+                  )
+                : Select<PatientModel?>(
+                    value: _selectedPatient,
+                    onChanged: (patient) {
+                      if (patient != null) {
+                        _selectPatient(patient);
+                      } else {
+                        setState(() {
+                          _selectedPatient = null;
+                          _nameController.clear();
+                          _dateOfBirth = null;
+                        });
+                      }
+                    },
+                    itemBuilder: (context, patient) {
+                      if (patient == null) {
+                        return const Text('Crear nuevo paciente');
+                      }
+                      return Text('${patient.name} (${patient.age} años)');
+                    },
+                    popup: SelectPopup(
+                      items: SelectItemList(
+                        children: [
+                          const SelectItemButton(
+                            value: null,
+                            child: Text('Crear nuevo paciente'),
+                          ),
+                          ..._availablePatients.map((patient) {
+                            return SelectItemButton(
+                              value: patient,
+                              child: Text('${patient.name} (${patient.age} años)'),
+                            );
+                          }),
+                        ],
+                      ),
+                    ).call,
+                    placeholder: const Text('Seleccionar o crear paciente'),
+                  ),
             const Gap(16),
+
+            if (_selectedPatient == null) ...[
+              const Text('Nombre completo').medium(),
+              const Gap(5),
+              TextField(
+                controller: _nameController,
+                placeholder: const Text('Nombre completo'),
+              ),
+              const Gap(16),
+            ],
 
             const Text('Fecha de Nacimiento').medium(),
             const Gap(5),
@@ -416,43 +530,38 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
             const Gap(16),
 
             const Text('Sexo').medium(),
-            const Gap(5),
-            Column(
+            const Gap(8),
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
               children: [
-                GestureDetector(
-                  onTap: () => setState(() => _gender = 'Masculino'),
-                  child: Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(4.0),
-                      child: Row(
-                        children: [
-                          Radio(
-                            value: _gender == 'Masculino',
-                          ),
-                          const Gap(8),
-                          const Text('Masculino'),
-                        ],
-                      ),
-                    ),
-                  ),
+                _GenderOption(
+                  label: 'Masculino',
+                  code: 'M',
+                  isSelected: _gender == 'M',
+                  icon: material.Icons.male,
+                  onTap: () => setState(() => _gender = 'M'),
                 ),
-                const Gap(8),
-                GestureDetector(
-                  onTap: () => setState(() => _gender = 'Femenino'),
-                  child: Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(4.0),
-                      child: Row(
-                        children: [
-                          Radio(
-                            value: _gender == 'Femenino',
-                          ),
-                          const Gap(8),
-                          const Text('Femenino'),
-                        ],
-                      ),
-                    ),
-                  ),
+                _GenderOption(
+                  label: 'Femenino',
+                  code: 'F',
+                  isSelected: _gender == 'F',
+                  icon: material.Icons.female,
+                  onTap: () => setState(() => _gender = 'F'),
+                ),
+                _GenderOption(
+                  label: 'Otro',
+                  code: 'O',
+                  isSelected: _gender == 'O',
+                  icon: material.Icons.transgender,
+                  onTap: () => setState(() => _gender = 'O'),
+                ),
+                _GenderOption(
+                  label: 'Prefiero no decir',
+                  code: 'N',
+                  isSelected: _gender == 'N',
+                  icon: material.Icons.help_outline,
+                  onTap: () => setState(() => _gender = 'N'),
                 ),
               ],
             ),
@@ -531,6 +640,65 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
   }
 }
 
+class _GenderOption extends StatelessWidget {
+  final String label;
+  final String code;
+  final bool isSelected;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _GenderOption({
+    required this.label,
+    required this.code,
+    required this.isSelected,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: OutlinedContainer(
+        backgroundColor: isSelected ? LightModeColors.lightPrimary.withValues(alpha: 0.1) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        borderColor: isSelected
+            ? LightModeColors.lightPrimary
+            : LightModeColors.lightOutline.withValues(alpha: 0.5),
+        borderWidth: isSelected ? 2 : 1.5,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 20,
+              color: isSelected ? LightModeColors.lightPrimary : LightModeColors.lightOnSurface,
+            ),
+            const Gap(8),
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                fontSize: 14,
+                color: isSelected ? LightModeColors.lightPrimary : LightModeColors.lightOnSurface,
+              ),
+            ),
+            if (isSelected) ...[
+              const Gap(8),
+              Icon(
+                material.Icons.check_circle,
+                size: 18,
+                color: LightModeColors.lightPrimary,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class ConsentInfoCard extends StatelessWidget {
   final String? surveyType;
 
@@ -544,6 +712,8 @@ class ConsentInfoCard extends StatelessWidget {
         return 'Esta evaluación cognitiva evalúa diferentes dominios cognitivos mediante la Evaluación Cognitiva Montreal (MoCA). Evalúa atención, concentración, funciones ejecutivas, memoria, lenguaje, habilidades visuoconstructivas, pensamiento conceptual, cálculo y orientación. Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
       case 'whoqol':
         return 'Este cuestionario evalúa la calidad de vida en cuatro dominios: salud física, salud psicológica, relaciones sociales y ambiente, mediante el instrumento WHOQOL-BREF de la Organización Mundial de la Salud. Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
+      case 'sf36':
+        return 'Este cuestionario evalúa diferentes aspectos de la salud y el bienestar mediante la Encuesta de Salud de 36 Items (SF-36). Evalúa funcionamiento físico, rol físico, dolor corporal, salud general, vitalidad, funcionamiento social, rol emocional y salud mental. Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
       case 'bdi':
       default:
         return 'Este cuestionario evalúa síntomas de depresión mediante el Inventario de Depresión de Beck (BDI-II). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
@@ -558,6 +728,8 @@ class ConsentInfoCard extends StatelessWidget {
         return LightModeColors.lightSecondary;
       case 'whoqol':
         return const Color(0xFF7C3AED);
+      case 'sf36':
+        return const Color(0xFF06B6D4);
       case 'bdi':
       default:
         return LightModeColors.lightPrimary;

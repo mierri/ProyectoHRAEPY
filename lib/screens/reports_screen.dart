@@ -46,6 +46,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
         ? ReportsController.computeWhoqolReport(surveys)
         : null;
 
+    // SF-36 report data
+    final sf36Data = _selectedSurveyType == 5
+        ? ReportsController.computeSF36Report(surveys)
+        : null;
+
     return Scaffold(
       headers: [
         AppBar(
@@ -61,189 +66,196 @@ class _ReportsScreenState extends State<ReportsScreen> {
       ],
       child: surveys.isEmpty
           ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(material.Icons.bar_chart, size: 80,
-                      color: Theme.of(context).colorScheme.mutedForeground),
-                  const Gap(16),
-                  Text(
-                    allSurveys.isEmpty
-                        ? 'No hay encuestas completadas'
-                        : 'No hay encuestas de este tipo',
-                    style: TextStyle(fontSize: 20,
-                        color: Theme.of(context).colorScheme.mutedForeground),
-                  ),
-                  const Gap(8),
-                  Text(allSurveys.isEmpty
-                      ? 'Completa algunas encuestas para ver estadísticas'
-                      : 'Selecciona otro tipo de encuesta en el selector')
-                      .muted().small(),
-                  const Gap(24),
-                  _buildTypeSelector(),
-                ],
-              ),
-            )
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(material.Icons.bar_chart, size: 80,
+                color: Theme.of(context).colorScheme.mutedForeground),
+            const Gap(16),
+            Text(
+              allSurveys.isEmpty
+                  ? 'No hay encuestas completadas'
+                  : 'No hay encuestas de este tipo',
+              style: TextStyle(fontSize: 20,
+                  color: Theme.of(context).colorScheme.mutedForeground),
+            ),
+            const Gap(8),
+            Text(allSurveys.isEmpty
+                ? 'Completa algunas encuestas para ver estadísticas'
+                : 'Selecciona otro tipo de encuesta en el selector')
+                .muted().small(),
+            const Gap(24),
+            _buildTypeSelector(),
+          ],
+        ),
+      )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Selector
-                  SurfaceCard(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      child: Row(
-                        children: [
-                          const Text('Tipo:').semiBold(),
-                          const Gap(10),
-                          Expanded(child: _buildTypeSelector()),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const Gap(24),
-
-                  // export buttons
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      OutlineButton(
-                        onPressed: surveys.isEmpty ? null : () {
-                          if (_selectedSurveyType == 3) {
-                            _exportWhoqolCSV(context, surveys);
-                          } else {
-                            _exportToSPSS(context, surveys, surveyService);
-                          }
-                        },
-                        child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(material.Icons.table_chart, size: 14),
-                          const Gap(4),
-                          const Text('Exportar CSV'),
-                        ]),
-                      ),
-                      PrimaryButton(
-                        onPressed: surveys.isEmpty ? null : () {
-                          if (_selectedSurveyType == 3) {
-                            final wd = ReportsController.computeWhoqolReport(surveys);
-                            _generateWhoqolPDFReport(context, surveys, wd);
-                          } else {
-                            _generatePDFReport(context, surveys, surveyService, _calculateStatistics(surveys, surveyService));
-                          }
-                        },
-                        child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(material.Icons.picture_as_pdf, size: 14),
-                          const Gap(4),
-                          const Text('Exportar PDF'),
-                        ]),
-                      ),
-                    ],
-                  ),
-                  const Gap(24),
-
-                  // whoqol layout
-                  if (_selectedSurveyType == 3 && whoqolData != null) ...[
-                    _WhoqolReportSection(data: whoqolData),
-                  ] else ...[
-                    // bdi y bai layout
-                    Text('Medidas de Tendencia Central',
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                    const Gap(12),
-                    LayoutBuilder(builder: (context, constraints) {
-                      final cardW = (constraints.maxWidth - 12) / 2;
-                      final statH = (cardW * 0.48).clamp(72.0, 110.0);
-                      final infoH = (cardW * 0.32).clamp(56.0, 80.0);
-                      return Column(children: [
-                        GridView.count(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 12, mainAxisSpacing: 12,
-                          shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
-                          childAspectRatio: cardW / statH,
-                          children: [
-                            _StatCard(title: 'Media', value: stats.mean.toStringAsFixed(1),
-                                icon: material.Icons.analytics, color: const Color(0xFF3B82F6)),
-                            _StatCard(title: 'Mediana', value: stats.median.toStringAsFixed(1),
-                                icon: material.Icons.show_chart, color: const Color(0xFF10B981)),
-                            _StatCard(title: 'Moda', value: stats.mode.toStringAsFixed(0),
-                                icon: material.Icons.timeline, color: const Color(0xFF8B5CF6)),
-                            _StatCard(title: 'Desv. Estándar', value: stats.stdDev.toStringAsFixed(2),
-                                icon: material.Icons.scatter_plot, color: const Color(0xFFF59E0B)),
-                          ],
-                        ),
-                        const Gap(12),
-                        GridView.count(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 12, mainAxisSpacing: 12,
-                          shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
-                          childAspectRatio: cardW / infoH,
-                          children: [
-                            _InfoCard(title: 'Total de Encuestas', value: surveys.length.toString()),
-                            _InfoCard(title: 'Puntaje Mínimo', value: stats.min.toInt().toString()),
-                            _InfoCard(title: 'Puntaje Máximo', value: stats.max.toInt().toString()),
-                            _InfoCard(title: 'Rango', value: stats.range.toInt().toString()),
-                          ],
-                        ),
-                      ]);
-                    }),
-                    const Gap(24),
-
-                    Text('Distribución de Resultados',
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                    const Gap(16),
-
-                    SurfaceCard(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          const Text('Distribución por Nivel de Severidad').semiBold().large(),
-                          const Gap(24),
-                          SizedBox(height: 300,
-                            child: _LevelDistributionChart(surveys: surveys,
-                                surveyService: surveyService, surveyType: _selectedSurveyType)),
-                        ]),
-                      ),
-                    ),
-                    const Gap(24),
-
-                    SurfaceCard(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          const Text('Tendencia Temporal de Puntajes').semiBold().large(),
-                          const Gap(24),
-                          SizedBox(height: 300,
-                            child: _TimelineChart(surveys: surveys, surveyService: surveyService)),
-                        ]),
-                      ),
-                    ),
-                    const Gap(24),
-
-                    SurfaceCard(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          const Text('Proporción por Nivel de Severidad').semiBold().large(),
-                          const Gap(4),
-                          Text('Distribución porcentual de encuestados por nivel',
-                              style: TextStyle(fontSize: 12,
-                                  color: Theme.of(context).colorScheme.mutedForeground)),
-                          const Gap(24),
-                          LayoutBuilder(builder: (context, constraints) {
-                            final isNarrow = constraints.maxWidth < 400;
-                            return SizedBox(
-                              height: isNarrow ? 480 : 320,
-                              child: _SeverityPieChart(surveys: surveys,
-                                  surveyService: surveyService, surveyType: _selectedSurveyType),
-                            );
-                          }),
-                        ]),
-                      ),
-                    ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Selector
+            SurfaceCard(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(
+                  children: [
+                    const Text('Tipo:').semiBold(),
+                    const Gap(10),
+                    Expanded(child: _buildTypeSelector()),
                   ],
-                ],
+                ),
               ),
             ),
+            const Gap(24),
+
+            // export buttons
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                OutlineButton(
+                  onPressed: surveys.isEmpty ? null : () {
+                    if (_selectedSurveyType == 3) {
+                      _exportWhoqolCSV(context, surveys);
+                    } else if (_selectedSurveyType == 5) {
+                      _exportSf36CSV(context, surveys);
+                    } else {
+                      _exportToSPSS(context, surveys, surveyService);
+                    }
+                  },
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(material.Icons.table_chart, size: 14),
+                    const Gap(4),
+                    const Text('Exportar CSV'),
+                  ]),
+                ),
+                PrimaryButton(
+                  onPressed: surveys.isEmpty ? null : () {
+                    if (_selectedSurveyType == 3) {
+                      final wd = ReportsController.computeWhoqolReport(surveys);
+                      _generateWhoqolPDFReport(context, surveys, wd);
+                    } else if (_selectedSurveyType == 5) {
+                      final sd = ReportsController.computeSF36Report(surveys);
+                      _generateSf36PDFReport(context, surveys, sd);
+                    } else {
+                      _generatePDFReport(context, surveys, surveyService, _calculateStatistics(surveys, surveyService), _selectedSurveyType);
+                    }
+                  },
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(material.Icons.picture_as_pdf, size: 14),
+                    const Gap(4),
+                    const Text('Exportar PDF'),
+                  ]),
+                ),
+              ],
+            ),
+            const Gap(24),
+
+            // whoqol layout
+            if (_selectedSurveyType == 3 && whoqolData != null) ...[
+              _WhoqolReportSection(data: whoqolData),
+            ] else if (_selectedSurveyType == 5 && sf36Data != null) ...[
+              _Sf36ReportSection(data: sf36Data),
+            ] else ...[
+              // bdi y bai layout
+              Text('Medidas de Tendencia Central',
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const Gap(12),
+              LayoutBuilder(builder: (context, constraints) {
+                final cardW = (constraints.maxWidth - 12) / 2;
+                final statH = (cardW * 0.48).clamp(72.0, 110.0);
+                final infoH = (cardW * 0.32).clamp(56.0, 80.0);
+                return Column(children: [
+                  GridView.count(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12, mainAxisSpacing: 12,
+                    shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+                    childAspectRatio: cardW / statH,
+                    children: [
+                      _StatCard(title: 'Media', value: stats.mean.toStringAsFixed(1),
+                          icon: material.Icons.analytics, color: const Color(0xFF3B82F6)),
+                      _StatCard(title: 'Mediana', value: stats.median.toStringAsFixed(1),
+                          icon: material.Icons.show_chart, color: const Color(0xFF10B981)),
+                      _StatCard(title: 'Moda', value: stats.mode.toStringAsFixed(0),
+                          icon: material.Icons.timeline, color: const Color(0xFF8B5CF6)),
+                      _StatCard(title: 'Desv. Estándar', value: stats.stdDev.toStringAsFixed(2),
+                          icon: material.Icons.scatter_plot, color: const Color(0xFFF59E0B)),
+                    ],
+                  ),
+                  const Gap(12),
+                  GridView.count(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12, mainAxisSpacing: 12,
+                    shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+                    childAspectRatio: cardW / infoH,
+                    children: [
+                      _InfoCard(title: 'Total de Encuestas', value: surveys.length.toString()),
+                      _InfoCard(title: 'Puntaje Mínimo', value: stats.min.toInt().toString()),
+                      _InfoCard(title: 'Puntaje Máximo', value: stats.max.toInt().toString()),
+                      _InfoCard(title: 'Rango', value: stats.range.toInt().toString()),
+                    ],
+                  ),
+                ]);
+              }),
+              const Gap(24),
+
+              Text('Distribución de Resultados',
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const Gap(16),
+
+              SurfaceCard(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const Text('Distribución por Nivel de Severidad').semiBold().large(),
+                    const Gap(24),
+                    SizedBox(height: 300,
+                        child: _LevelDistributionChart(surveys: surveys,
+                            surveyService: surveyService, surveyType: _selectedSurveyType)),
+                  ]),
+                ),
+              ),
+              const Gap(24),
+
+              SurfaceCard(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const Text('Tendencia Temporal de Puntajes').semiBold().large(),
+                    const Gap(24),
+                    SizedBox(height: 300,
+                        child: _TimelineChart(surveys: surveys, surveyService: surveyService)),
+                  ]),
+                ),
+              ),
+              const Gap(24),
+
+              SurfaceCard(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const Text('Proporción por Nivel de Severidad').semiBold().large(),
+                    const Gap(4),
+                    Text('Distribución porcentual de encuestados por nivel',
+                        style: TextStyle(fontSize: 12,
+                            color: Theme.of(context).colorScheme.mutedForeground)),
+                    const Gap(24),
+                    LayoutBuilder(builder: (context, constraints) {
+                      final isNarrow = constraints.maxWidth < 400;
+                      return SizedBox(
+                        height: isNarrow ? 480 : 320,
+                        child: _SeverityPieChart(surveys: surveys,
+                            surveyService: surveyService, surveyType: _selectedSurveyType),
+                      );
+                    }),
+                  ]),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 
@@ -252,7 +264,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       value: _selectedSurveyType,
       onChanged: (v) { if (v != null) setState(() => _selectedSurveyType = v); },
       itemBuilder: (context, item) {
-        const names = {1: 'BDI-II', 2: 'BAI', 3: 'WHOQOL-BREF'};
+        const names = {1: 'BDI-II', 2: 'BAI', 3: 'WHOQOL-BREF', 5: 'SF-36'};
         return Text(names[item] ?? '$item');
       },
       popup: SelectPopup(
@@ -260,15 +272,16 @@ class _ReportsScreenState extends State<ReportsScreen> {
           SelectItemButton(value: 1, child: const Text('BDI-II — Inventario de Depresión de Beck')),
           SelectItemButton(value: 2, child: const Text('BAI — Inventario de Ansiedad de Beck')),
           SelectItemButton(value: 3, child: const Text('WHOQOL-BREF — Calidad de Vida')),
+          SelectItemButton(value: 5, child: const Text('SF-36 — Estado de Salud')),
         ]),
       ).call,
     );
   }
 
   Map<String, double> _calculateStatistics(
-    List<Map<String, dynamic>> surveys,
-    SurveyService surveyService,
-  ) {
+      List<Map<String, dynamic>> surveys,
+      SurveyService surveyService,
+      ) {
     final scores = surveys.map((s) => ReportsController.calculateSurveyScore(s)).toList();
     final s = ReportsController.computeBasicStats(scores);
     return {
@@ -280,9 +293,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
   Future<void> _exportToSPSS(BuildContext context, List<Map<String, dynamic>> surveys, SurveyService surveyService) async {
     try {
       final surveyTypeName = _selectedSurveyType == 1 ? 'BDI-II' : 'BAI';
+      final questionCount = _selectedSurveyType == 1 ? 21 : 21; // BDI-II y BAI tienen 21 items
 
+      // Header
       List<List<dynamic>> rows = [
-        ['ID_Encuesta', 'ID_Paciente', 'Fecha', 'Tipo_Encuesta', 'Puntaje_Total', 'Nivel_Severidad']
+        [
+          'ID_Encuesta', 'ID_Paciente', 'Fecha', 'Tipo_Encuesta', 'Puntaje_Total', 'Nivel_Severidad',
+          ...List.generate(questionCount, (i) => 'Q${i + 1}'),
+        ]
       ];
 
       for (var survey in surveys) {
@@ -292,14 +310,28 @@ class _ReportsScreenState extends State<ReportsScreen> {
         final score = ReportsController.calculateSurveyScore(survey);
         final level = _getLevelText(score, _selectedSurveyType);
 
-        rows.add([
+        // Extraer respuestas individuales
+        final responses = survey['responses'] as List? ?? [];
+        final responseMap = <int, int>{};
+        for (final r in responses) {
+          final qId = r['question_id'] as int?;
+          final val = r['answer_value'] as int?;
+          if (qId != null && val != null) {
+            responseMap[qId] = val;
+          }
+        }
+
+        final row = [
           surveyId,
           patientId,
           date,
           surveyTypeName,
           score,
           level,
-        ]);
+          ...List.generate(questionCount, (i) => responseMap[i + 1] ?? ''),
+        ];
+
+        rows.add(row);
       }
 
       String csvString = '';
@@ -330,23 +362,27 @@ class _ReportsScreenState extends State<ReportsScreen> {
         );
       }
 
-      showCenteredToast(
-        context,
-        title: 'Datos exportados',
-        subtitle: 'Archivo CSV descargado exitosamente',
-        icon: material.Icons.check_circle,
-        iconColor: const Color(0xFF10B981),
-        location: ToastLocation.bottomCenter,
-      );
+      if (context.mounted) {
+        showCenteredToast(
+          context,
+          title: 'Datos exportados',
+          subtitle: 'Archivo CSV descargado exitosamente (${surveys.length} encuestas)',
+          icon: material.Icons.check_circle,
+          iconColor: const Color(0xFF10B981),
+          location: ToastLocation.bottomCenter,
+        );
+      }
     } catch (e) {
-      showCenteredToast(
-        context,
-        title: 'Error al exportar',
-        subtitle: 'No se pudo generar el archivo: $e',
-        icon: material.Icons.error,
-        iconColor: const Color(0xFFEF4444),
-        location: ToastLocation.bottomCenter,
-      );
+      if (context.mounted) {
+        showCenteredToast(
+          context,
+          title: 'Error al exportar',
+          subtitle: 'No se pudo generar el archivo: $e',
+          icon: material.Icons.error,
+          iconColor: const Color(0xFFEF4444),
+          location: ToastLocation.bottomCenter,
+        );
+      }
     }
   }
 
@@ -357,9 +393,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   // csv del whoqol
   Future<void> _exportWhoqolCSV(
-    BuildContext context,
-    List<Map<String, dynamic>> surveys,
-  ) async {
+      BuildContext context,
+      List<Map<String, dynamic>> surveys,
+      ) async {
     try {
       // header
       final header = [
@@ -451,30 +487,30 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
       if (context.mounted) {
         showCenteredToast(context,
-          title: 'CSV exportado',
-          subtitle: '${surveys.length} encuestas WHOQOL exportadas',
-          icon: material.Icons.check_circle,
-          iconColor: const Color(0xFF10B981),
-          location: ToastLocation.bottomCenter);
+            title: 'CSV exportado',
+            subtitle: '${surveys.length} encuestas WHOQOL exportadas',
+            icon: material.Icons.check_circle,
+            iconColor: const Color(0xFF10B981),
+            location: ToastLocation.bottomCenter);
       }
     } catch (e) {
       if (context.mounted) {
         showCenteredToast(context,
-          title: 'Error al exportar',
-          subtitle: 'No se pudo generar el CSV: $e',
-          icon: material.Icons.error,
-          iconColor: const Color(0xFFEF4444),
-          location: ToastLocation.bottomCenter);
+            title: 'Error al exportar',
+            subtitle: 'No se pudo generar el CSV: $e',
+            icon: material.Icons.error,
+            iconColor: const Color(0xFFEF4444),
+            location: ToastLocation.bottomCenter);
       }
     }
   }
 
   // pdf de whoqol
   Future<void> _generateWhoqolPDFReport(
-    BuildContext context,
-    List<Map<String, dynamic>> surveys,
-    WhoqolReportData data,
-  ) async {
+      BuildContext context,
+      List<Map<String, dynamic>> surveys,
+      WhoqolReportData data,
+      ) async {
     try {
       final pdf = pw.Document();
       final fontRegular = await PdfGoogleFonts.notoSansRegular();
@@ -704,9 +740,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 style: st(sz: 13, color: PdfColors.grey700)),
             pw.SizedBox(height: 4),
             pw.Text(
-              'Generado el ${now.day}/${now.month}/${now.year}  |  '
-              'Total: ${surveys.length} encuestas',
-              style: st(sz: 11, color: PdfColors.grey600)),
+                'Generado el ${now.day}/${now.month}/${now.year}  |  '
+                    'Total: ${surveys.length} encuestas',
+                style: st(sz: 11, color: PdfColors.grey600)),
             pw.Divider(thickness: 2, color: whoqolColor),
           ]),
           pw.SizedBox(height: 16),
@@ -715,8 +751,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
           pw.Container(
             padding: const pw.EdgeInsets.all(12),
             decoration: pw.BoxDecoration(
-              color: const PdfColor(0.94, 0.90, 1.0),
-              borderRadius: pw.BorderRadius.circular(8)),
+                color: const PdfColor(0.94, 0.90, 1.0),
+                borderRadius: pw.BorderRadius.circular(8)),
             child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
               pw.Text('Resumen Estadistico Global (26 preguntas)',
                   style: st(sz: 13, bold: true, color: PdfColors.deepPurple800)),
@@ -753,9 +789,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
           ]),
           pw.SizedBox(height: 4),
           pw.Text(
-            'Escala Q1/Q2: 1=Muy mala/Muy insatisfecho, 2=Poco/Insatisfecho, '
-            '3=Lo normal, 4=Bastante buena/Satisfecho, 5=Muy buena/Muy satisfecho',
-            style: st(sz: 8, color: PdfColors.grey600)),
+              'Escala Q1/Q2: 1=Muy mala/Muy insatisfecho, 2=Poco/Insatisfecho, '
+                  '3=Lo normal, 4=Bastante buena/Satisfecho, 5=Muy buena/Muy satisfecho',
+              style: st(sz: 8, color: PdfColors.grey600)),
           pw.SizedBox(height: 20),
 
           // dimensiones
@@ -894,10 +930,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
               pw.Text('Nota Importante:', style: st(sz: 10, bold: true)),
               pw.SizedBox(height: 4),
               pw.Text(
-                'Este reporte es generado automaticamente con fines estadisticos. '
-                'Los resultados deben ser interpretados por un profesional de la salud calificado. '
-                'El WHOQOL-BREF es un instrumento de la Organizacion Mundial de la Salud.',
-                style: st(sz: 9)),
+                  'Este reporte es generado automaticamente con fines estadisticos. '
+                      'Los resultados deben ser interpretados por un profesional de la salud calificado. '
+                      'El WHOQOL-BREF es un instrumento de la Organizacion Mundial de la Salud.',
+                  style: st(sz: 9)),
             ]),
           ),
         ],
@@ -919,20 +955,20 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
       if (context.mounted) {
         showCenteredToast(context,
-          title: 'Reporte generado',
-          subtitle: 'PDF WHOQOL-BREF descargado',
-          icon: material.Icons.check_circle,
-          iconColor: const Color(0xFF10B981),
-          location: ToastLocation.bottomCenter);
+            title: 'Reporte generado',
+            subtitle: 'PDF WHOQOL-BREF descargado',
+            icon: material.Icons.check_circle,
+            iconColor: const Color(0xFF10B981),
+            location: ToastLocation.bottomCenter);
       }
     } catch (e) {
       if (context.mounted) {
         showCenteredToast(context,
-          title: 'Error al generar PDF',
-          subtitle: 'No se pudo crear el reporte: $e',
-          icon: material.Icons.error,
-          iconColor: const Color(0xFFEF4444),
-          location: ToastLocation.bottomCenter);
+            title: 'Error al generar PDF',
+            subtitle: 'No se pudo crear el reporte: $e',
+            icon: material.Icons.error,
+            iconColor: const Color(0xFFEF4444),
+            location: ToastLocation.bottomCenter);
       }
     }
   }
@@ -1008,10 +1044,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   // ignore: unused_element
   Future<void> _generateFullPDFReport(
-    BuildContext context,
-    List<Map<String, dynamic>> allSurveys,
-    SurveyService surveyService,
-  ) async {
+      BuildContext context,
+      List<Map<String, dynamic>> allSurveys,
+      SurveyService surveyService,
+      ) async {
     try {
       final bdSurveys = allSurveys.where((s) => (s['survey_type'] as int? ?? 1) == 1).toList();
       final baiSurveys = allSurveys.where((s) => (s['survey_type'] as int? ?? 1) == 2).toList();
@@ -1023,12 +1059,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
       final fontBold = await PdfGoogleFonts.notoSansBold();
 
       pw.Widget buildSection(
-        String title,
-        String fullName,
-        List<Map<String, dynamic>> secSurveys,
-        Map<String, double> stats,
-        int surveyType,
-      ) {
+          String title,
+          String fullName,
+          List<Map<String, dynamic>> secSurveys,
+          Map<String, double> stats,
+          int surveyType,
+          ) {
         final dist = <String, int>{'Mínima': 0, 'Leve': 0, 'Moderada': 0, 'Severa': 0};
         for (var s in secSurveys) {
           final score = ReportsController.calculateSurveyScore(s);
@@ -1175,14 +1211,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
                           child: pw.Row(
                             children: [
                               pw.Container(width: 10, height: 10,
-                                decoration: pw.BoxDecoration(color: pieColors[e.key], borderRadius: pw.BorderRadius.circular(2))),
+                                  decoration: pw.BoxDecoration(color: pieColors[e.key], borderRadius: pw.BorderRadius.circular(2))),
                               pw.SizedBox(width: 5),
                               pw.Expanded(child: pw.Column(
                                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                                 children: [
                                   pw.Text(e.value.key, style: st(sz: 9, bold: true)),
                                   pw.Text('${e.value.value} (${pct2.toStringAsFixed(1)}%)  ${sRanges[e.value.key] ?? ''}',
-                                    style: st(sz: 8, color: PdfColors.grey700)),
+                                      style: st(sz: 8, color: PdfColors.grey700)),
                                 ],
                               )),
                             ],
@@ -1202,7 +1238,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   child: pw.Chart(
                     grid: pw.CartesianGrid(
                       xAxis: pw.FixedAxis(
-                        () {
+                            () {
                           final n = tScores.length;
                           final maxLabels = 8;
                           final step = (n / maxLabels).ceil().clamp(1, n);
@@ -1257,14 +1293,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
             return [
               pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
                 pw.Text('Reporte Completo de Analisis Estadistico',
-                  style: pw.TextStyle(font: fontBold, fontSize: 22, color: PdfColors.blue800)),
+                    style: pw.TextStyle(font: fontBold, fontSize: 22, color: PdfColors.blue800)),
                 pw.SizedBox(height: 4),
                 pw.Text('BDI-II (Depresion) y BAI (Ansiedad)',
-                  style: pw.TextStyle(font: fontRegular, fontSize: 14, color: PdfColors.grey700)),
+                    style: pw.TextStyle(font: fontRegular, fontSize: 14, color: PdfColors.grey700)),
                 pw.SizedBox(height: 4),
                 pw.Text(
-                  'Generado el ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}  |  Total: ${allSurveys.length} encuestas',
-                  style: pw.TextStyle(font: fontRegular, fontSize: 11, color: PdfColors.grey600)),
+                    'Generado el ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}  |  Total: ${allSurveys.length} encuestas',
+                    style: pw.TextStyle(font: fontRegular, fontSize: 11, color: PdfColors.grey600)),
                 pw.Divider(thickness: 2.5, color: PdfColors.blue800),
                 pw.SizedBox(height: 20),
               ]),
@@ -1277,8 +1313,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   pw.Text('Nota Importante:', style: pw.TextStyle(font: fontBold, fontSize: 10)),
                   pw.SizedBox(height: 4),
                   pw.Text(
-                    'Este reporte es generado automaticamente con fines estadisticos. Los resultados deben ser interpretados por un profesional de la salud mental calificado.',
-                    style: pw.TextStyle(font: fontRegular, fontSize: 9)),
+                      'Este reporte es generado automaticamente con fines estadisticos. Los resultados deben ser interpretados por un profesional de la salud mental calificado.',
+                      style: pw.TextStyle(font: fontRegular, fontSize: 9)),
                 ]),
               ),
             ];
@@ -1318,19 +1354,452 @@ class _ReportsScreenState extends State<ReportsScreen> {
           location: ToastLocation.bottomCenter,
         );
       }
+      }
+    }
+  }
+
+  Future<void> _exportSf36CSV(
+      BuildContext context,
+      List<Map<String, dynamic>> surveys,
+      ) async {
+    try {
+      // Header
+      List<List<dynamic>> rows = [
+        [
+          'ID_Encuesta', 'ID_Paciente', 'Fecha',
+          'Funcion_Fisica', 'Rol_Fisico', 'Dolor_Corporal', 'Salud_General',
+          'Vitalidad', 'Funcion_Social', 'Rol_Emocional', 'Salud_Mental',
+          'Puntaje_Global',
+          ...List.generate(36, (i) => 'Q${i + 1}'),
+        ]
+      ];
+
+      for (var survey in surveys) {
+        final surveyId = survey['survey_id'];
+        final patientId = survey['patient_id'] ?? 'N/A';
+        final date = DateTime.parse(survey['created_at']).toString().split(' ')[0];
+
+        // Extraer respuestas
+        final responses = survey['responses'] as List? ?? [];
+        final responseMap = <int, int>{};
+        for (final r in responses) {
+          final qId = r['question_id'] as int?;
+          final val = r['answer_value'] as int?;
+          if (qId != null && val != null) {
+            responseMap[qId] = val;
+          }
+        }
+
+        // Calcular puntuaciones de dimensiones (implementación simplificada)
+        final pf = responseMap[1] ?? 0; // Función Física (simplificado)
+        final rp = responseMap[2] ?? 0; // Rol Físico
+        final bp = responseMap[8] ?? 0; // Dolor Corporal
+        final gh = responseMap[5] ?? 0; // Salud General
+        final vt = responseMap[9] ?? 0; // Vitalidad
+        final sf = responseMap[6] ?? 0; // Función Social
+        final re = responseMap[3] ?? 0; // Rol Emocional
+        final mh = responseMap[10] ?? 0; // Salud Mental
+        final global = (pf + rp + bp + gh + vt + sf + re + mh) ~/ 8;
+
+        final row = [
+          surveyId,
+          patientId,
+          date,
+          pf,
+          rp,
+          bp,
+          gh,
+          vt,
+          sf,
+          re,
+          mh,
+          global,
+          ...List.generate(36, (i) => responseMap[i + 1] ?? ''),
+        ];
+
+        rows.add(row);
+      }
+
+      String csvString = '';
+      for (var row in rows) {
+        csvString += '${row.map((cell) {
+          final cellStr = cell.toString();
+          if (cellStr.contains(',') || cellStr.contains('"') || cellStr.contains('\n')) {
+            return '"${cellStr.replaceAll('"', '""')}"';
+          }
+          return cellStr;
+        }).join(',')}\n';
+      }
+
+      final bom = [0xEF, 0xBB, 0xBF];
+      final bytes = Uint8List.fromList(bom + utf8.encode(csvString));
+      final fileName = 'datos_SF36_${DateTime.now().millisecondsSinceEpoch}.csv';
+
+      if (kIsWeb) {
+        await Printing.sharePdf(bytes: bytes, filename: fileName);
+      } else {
+        final dir = await getTemporaryDirectory();
+        final file = File('${dir.path}/$fileName');
+        await file.writeAsBytes(bytes);
+        await SharePlus.instance.share(
+          ShareParams(files: [XFile(file.path)], text: 'Datos SF-36 CSV'),
+        );
+      }
+
+      if (context.mounted) {
+        showCenteredToast(
+          context,
+          title: 'CSV exportado',
+          subtitle: '${surveys.length} encuestas SF-36 exportadas',
+          icon: material.Icons.check_circle,
+          iconColor: const Color(0xFF10B981),
+          location: ToastLocation.bottomCenter,
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        showCenteredToast(
+          context,
+          title: 'Error al exportar',
+          subtitle: 'No se pudo generar el CSV: $e',
+          icon: material.Icons.error,
+          iconColor: const Color(0xFFEF4444),
+          location: ToastLocation.bottomCenter,
+        );
+      }
+    }
+  }
+
+  Future<void> _generateSf36PDFReport(
+      BuildContext context,
+      List<Map<String, dynamic>> surveys,
+      SF36ReportData data,
+      ) async {
+    try {
+      final pdf = pw.Document();
+      final fontRegular = await PdfGoogleFonts.notoSansRegular();
+      final fontBold = await PdfGoogleFonts.notoSansBold();
+
+      // Colores muy distintos para el pie chart
+      final dimColors = [
+        PdfColors.red500,      // Función Física
+        PdfColors.orange500,   // Rol Físico
+        PdfColors.yellow600,   // Dolor Corporal
+        PdfColors.green500,    // Salud General
+        PdfColors.blue500,     // Vitalidad
+        PdfColors.indigo600,   // Función Social
+        PdfColors.purple500,   // Rol Emocional
+        PdfColors.pink500,     // Salud Mental
+      ];
+
+      pw.TextStyle pdfStyle({double fontSize = 10, bool bold = false, PdfColor? color}) =>
+          pw.TextStyle(font: bold ? fontBold : fontRegular, fontSize: fontSize, color: color);
+
+      final dimensions = [
+        ('Función Física', 'FF', data.physicalFunctioning),
+        ('Rol Físico', 'RF', data.rolePhysical),
+        ('Dolor Corporal', 'DC', data.bodilyPain),
+        ('Salud General', 'SG', data.generalHealth),
+        ('Vitalidad', 'VT', data.vitality),
+        ('Función Social', 'FS', data.socialFunctioning),
+        ('Rol Emocional', 'RE', data.roleEmotional),
+        ('Salud Mental', 'SM', data.mentalHealth),
+      ];
+
+      pdf.addPage(
+        pw.MultiPage(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(40),
+          theme: pw.ThemeData.withFont(base: fontRegular, bold: fontBold),
+          build: (pw.Context ctx) => [
+            pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+              pw.Text('Reporte de Salud SF-36',
+                  style: pw.TextStyle(font: fontBold, fontSize: 22, color: PdfColors.blue800)),
+              pw.SizedBox(height: 4),
+              pw.Text('Encuesta de Salud de 36 Items',
+                  style: pw.TextStyle(font: fontRegular, fontSize: 14, color: PdfColors.grey700)),
+              pw.SizedBox(height: 4),
+              pw.Text(
+                  'Generado el ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}  |  Total: ${surveys.length} encuestas',
+                  style: pw.TextStyle(font: fontRegular, fontSize: 11, color: PdfColors.grey600)),
+              pw.Divider(thickness: 2, color: PdfColors.blue800),
+            ]),
+            pw.SizedBox(height: 16),
+            pw.Container(
+              padding: const pw.EdgeInsets.all(12),
+              decoration: pw.BoxDecoration(color: PdfColors.blue50, borderRadius: pw.BorderRadius.circular(8)),
+              child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+                pw.Text('Resumen Ejecutivo', style: pdfStyle(fontSize: 14, bold: true, color: PdfColors.blue900)),
+                pw.SizedBox(height: 8),
+                pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
+                  _buildStatItemF('Total', surveys.length.toString(), fontRegular, fontBold),
+                  _buildStatItemF('Promedio Global', data.globalStats.mean.toStringAsFixed(1), fontRegular, fontBold),
+                  _buildStatItemF('Mínimo', data.globalStats.min.toInt().toString(), fontRegular, fontBold),
+                  _buildStatItemF('Máximo', data.globalStats.max.toInt().toString(), fontRegular, fontBold),
+                ]),
+              ]),
+            ),
+            pw.SizedBox(height: 20),
+            pw.Text('Estadísticas Completas por Dimensión', style: pdfStyle(fontSize: 16, bold: true)),
+            pw.SizedBox(height: 8),
+            pw.Table(border: pw.TableBorder.all(color: PdfColors.grey400), children: [
+              pw.TableRow(decoration: const pw.BoxDecoration(color: PdfColors.grey200), children: [
+                _buildTableHeaderF('Dim', fontBold),
+                _buildTableHeaderF('Media', fontBold),
+                _buildTableHeaderF('Med', fontBold),
+                _buildTableHeaderF('D.E.', fontBold),
+                _buildTableHeaderF('Mín', fontBold),
+                _buildTableHeaderF('Máx', fontBold),
+              ]),
+              ...dimensions.map((dim) => pw.TableRow(children: [
+                pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(dim.$2, style: pdfStyle(fontSize: 9, bold: true))),
+                pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(dim.$3.mean.toStringAsFixed(1), style: pdfStyle(fontSize: 9))),
+                pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(dim.$3.median.toStringAsFixed(1), style: pdfStyle(fontSize: 9))),
+                pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(dim.$3.stdDev.toStringAsFixed(2), style: pdfStyle(fontSize: 8))),
+                pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(dim.$3.min.toInt().toString(), style: pdfStyle(fontSize: 9))),
+                pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(dim.$3.max.toInt().toString(), style: pdfStyle(fontSize: 9))),
+              ])).toList(),
+            ]),
+            pw.SizedBox(height: 20),
+            pw.Text('Gráfica 1: Dimensiones (por Abreviación)', style: pdfStyle(fontSize: 14, bold: true)),
+            pw.SizedBox(height: 4),
+            pw.Text('FF=Función Física, RF=Rol Físico, DC=Dolor Corporal, SG=Salud General, VT=Vitalidad, FS=Función Social, RE=Rol Emocional, SM=Salud Mental',
+                style: pdfStyle(fontSize: 8, color: PdfColors.grey700)),
+            pw.SizedBox(height: 8),
+            pw.SizedBox(
+              height: 200,
+              child: pw.Chart(
+                grid: pw.CartesianGrid(
+                  xAxis: pw.FixedAxis.fromStrings(dimensions.map((d) => d.$2).toList(), marginStart: 15, marginEnd: 15, ticks: true),
+                  yAxis: pw.FixedAxis([0, 100], divisions: true),
+                ),
+                datasets: [
+                  pw.BarDataSet(
+                    color: PdfColors.blue400,
+                    width: 20, offset: 0,
+                    borderColor: PdfColors.blue700,
+                    data: dimensions
+                        .asMap()
+                        .entries
+                        .map((e) => pw.PointChartValue(e.key.toDouble(), e.value.$3.mean))
+                        .toList(),
+                  ),
+                ],
+              ),
+            ),
+            pw.SizedBox(height: 20),
+            pw.Text('Gráfica 2: Proporción de Dimensiones', style: pdfStyle(fontSize: 14, bold: true)),
+            pw.SizedBox(height: 8),
+            pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.center, children: [
+              pw.SizedBox(
+                width: 150, height: 150,
+                child: pw.CustomPaint(
+                  painter: (canvas, size) {
+                    final cx = size.x / 2;
+                    final cy = size.y / 2;
+                    final r = size.x / 2 - 4;
+                    final vals = dimensions.map((d) => d.$3.mean).toList();
+                    final tv = vals.fold<double>(0.0, (a, b) => a + b);
+                    if (tv == 0) return;
+                    double startAng = -math.pi / 2;
+                    for (int i = 0; i < vals.length; i++) {
+                      final sweepAng = vals[i] / tv * 2 * math.pi;
+                      canvas.setFillColor(dimColors[i]);
+                      _drawPdfSector(canvas, cx, cy, r, startAng, sweepAng);
+                      startAng += sweepAng;
+                    }
+                    canvas.setFillColor(PdfColors.white);
+                    _drawPdfCircle(canvas, cx, cy, r * 0.4);
+                  },
+                ),
+              ),
+              pw.SizedBox(width: 16),
+              pw.Expanded(
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    ...dimensions.asMap().entries.map((e) {
+                      final pct = (e.value.$3.mean / dimensions.fold(0.0, (s, d) => s + d.$3.mean) * 100);
+                      return pw.Padding(
+                        padding: const pw.EdgeInsets.only(bottom: 6),
+                        child: pw.Row(children: [
+                          pw.Container(width: 8, height: 8, decoration: pw.BoxDecoration(color: dimColors[e.key], shape: pw.BoxShape.circle)),
+                          pw.SizedBox(width: 4),
+                          pw.Expanded(child: pw.Text('${e.value.$2}: ${pct.toStringAsFixed(1)}%', style: pdfStyle(fontSize: 8))),
+                        ]),
+                      );
+                    }).toList(),
+                  ],
+                ),
+              ),
+            ]),
+            pw.SizedBox(height: 20),
+            if (data.globalTimeline.isNotEmpty && data.globalTimeline.length > 1) ...[
+              pw.Text('Gráfica 3: Tendencia Temporal del Puntaje Global', style: pdfStyle(fontSize: 14, bold: true)),
+              pw.SizedBox(height: 4),
+              pw.Text('Evolución del puntaje general de salud por encuesta', style: pdfStyle(fontSize: 9, color: PdfColors.grey700)),
+              pw.SizedBox(height: 8),
+              pw.SizedBox(
+                height: 180,
+                child: pw.Chart(
+                  grid: pw.CartesianGrid(
+                    xAxis: pw.FixedAxis(
+                      () {
+                        final n = data.globalTimeline.length;
+                        const maxLabels = 8;
+                        final step = (n / maxLabels).ceil().clamp(1, n);
+                        return [
+                          for (int i = 0; i < n; i += step) i.toDouble(),
+                          if ((n - 1) % step != 0) (n - 1).toDouble(),
+                        ];
+                      }(),
+                      divisions: false,
+                      ticks: true,
+                    ),
+                    yAxis: pw.FixedAxis([0, 100], divisions: true),
+                  ),
+                  datasets: [
+                    pw.LineDataSet(
+                      color: PdfColors.blue600,
+                      lineWidth: 2, drawPoints: true,
+                      pointColor: PdfColors.blue900,
+                      data: data.globalTimeline.asMap().entries
+                          .map((e) => pw.PointChartValue(e.key.toDouble(), e.value))
+                          .toList(),
+                    ),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 20),
+            ],
+            pw.SizedBox(height: 20),
+            pw.Text('Gráfica 4: Tendencias Temporales por Dimensión', style: pdfStyle(fontSize: 14, bold: true)),
+            pw.SizedBox(height: 4),
+            pw.Text('Evolución temporal de cada dimensión del SF-36', style: pdfStyle(fontSize: 9, color: PdfColors.grey700)),
+            pw.SizedBox(height: 12),
+            ...dimensions.asMap().entries.map((dimEntry) {
+              final dimIndex = dimEntry.key;
+              final dimData = dimEntry.value;
+              final dimLabel = dimData.$1;
+              final dimStats = dimData.$3;
+              final timeline = dimStats.timeline;
+
+              if (timeline.isEmpty || timeline.length < 2) {
+                return pw.SizedBox.shrink();
+              }
+
+              return pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text('${dimData.$2}: $dimLabel', style: pdfStyle(fontSize: 11, bold: true, color: dimColors[dimIndex])),
+                  pw.SizedBox(height: 3),
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text('Media: ${dimStats.mean.toStringAsFixed(1)} | Mín: ${dimStats.min.toInt()} | Máx: ${dimStats.max.toInt()} | D.E: ${dimStats.stdDev.toStringAsFixed(2)}',
+                        style: pdfStyle(fontSize: 8, color: PdfColors.grey700)),
+                    ],
+                  ),
+                  pw.SizedBox(height: 6),
+                  pw.SizedBox(
+                    height: 120,
+                    child: pw.Chart(
+                      grid: pw.CartesianGrid(
+                        xAxis: pw.FixedAxis(
+                          () {
+                            final n = timeline.length;
+                            const maxLabels = 6;
+                            final step = (n / maxLabels).ceil().clamp(1, n);
+                            return [
+                              for (int i = 0; i < n; i += step) i.toDouble(),
+                              if ((n - 1) % step != 0) (n - 1).toDouble(),
+                            ];
+                          }(),
+                          divisions: false,
+                          ticks: true,
+                        ),
+                        yAxis: pw.FixedAxis([0, 100], divisions: true),
+                      ),
+                      datasets: [
+                        pw.LineDataSet(
+                          color: dimColors[dimIndex],
+                          lineWidth: 1.5,
+                          drawPoints: true,
+                          pointColor: dimColors[dimIndex],
+                          data: timeline.asMap().entries
+                              .map((e) => pw.PointChartValue(e.key.toDouble(), e.value))
+                              .toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  pw.SizedBox(height: 12),
+                ],
+              );
+            }).toList(),
+            pw.SizedBox(height: 20),
+            pw.Container(
+              padding: const pw.EdgeInsets.all(10),
+              decoration: const pw.BoxDecoration(color: PdfColors.grey100),
+              child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+                pw.Text('Nota Importante:', style: pdfStyle(fontSize: 10, bold: true)),
+                pw.SizedBox(height: 4),
+                pw.Text(
+                    'Este reporte es generado automáticamente con fines estadísticos. Los resultados deben ser interpretados por un profesional de la salud calificado.',
+                    style: pw.TextStyle(font: fontRegular, fontSize: 9)),
+              ]),
+            ),
+          ],
+        ),
+      );
+
+      final pdfBytes = await pdf.save();
+      final fileName = 'reporte_SF36_${DateTime.now().millisecondsSinceEpoch}.pdf';
+
+      if (kIsWeb) {
+        await Printing.sharePdf(bytes: pdfBytes, filename: fileName);
+      } else {
+        final dir = await getTemporaryDirectory();
+        final file = File('${dir.path}/$fileName');
+        await file.writeAsBytes(pdfBytes);
+        await SharePlus.instance.share(ShareParams(files: [XFile(file.path)], text: 'Reporte PDF SF-36'));
+      }
+
+      if (context.mounted) {
+        showCenteredToast(
+          context,
+          title: 'Reporte generado',
+          subtitle: 'PDF SF-36 descargado exitosamente',
+          icon: material.Icons.check_circle,
+          iconColor: const Color(0xFF10B981),
+          location: ToastLocation.bottomCenter,
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        showCenteredToast(
+          context,
+          title: 'Error al generar PDF',
+          subtitle: 'No se pudo crear el reporte: $e',
+          icon: material.Icons.error,
+          iconColor: const Color(0xFFEF4444),
+          location: ToastLocation.bottomCenter,
+        );
+      }
     }
   }
 
   Future<void> _generatePDFReport(
-    BuildContext context,
-    List<Map<String, dynamic>> surveys,
-    SurveyService surveyService,
-    Map<String, double> stats,
-  ) async {
+      BuildContext context,
+      List<Map<String, dynamic>> surveys,
+      SurveyService surveyService,
+      Map<String, double> stats,
+      int surveyType,
+      ) async {
     try {
       final pdf = pw.Document();
-      final surveyTypeName = _selectedSurveyType == 1 ? 'BDI-II' : 'BAI';
-      final surveyFullName = _selectedSurveyType == 1
+      final surveyTypeName = surveyType == 1 ? 'BDI-II' : 'BAI';
+      final surveyFullName = surveyType == 1
           ? 'Inventario de Depresión de Beck II'
           : 'Inventario de Ansiedad de Beck';
 
@@ -1349,13 +1818,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
       for (var survey in surveys) {
         final score = ReportsController.calculateSurveyScore(survey);
-        final level = _getLevelText(score, _selectedSurveyType);
+        final level = _getLevelText(score, surveyType);
         if (distribution.containsKey(level)) {
           distribution[level] = distribution[level]! + 1;
         }
       }
 
-      final scoreRanges = _selectedSurveyType == 1
+      final scoreRanges = surveyType == 1
           ? {'Mínima': '0-13', 'Leve': '14-19', 'Moderada': '20-28', 'Severa': '29-63'}
           : {'Mínima': '0-7', 'Leve': '8-15', 'Moderada': '16-25', 'Severa': '26-63'};
 
@@ -1391,14 +1860,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
           build: (pw.Context ctx) => [
             pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
               pw.Text('Reporte de Analisis Estadistico',
-                style: pw.TextStyle(font: fontBold, fontSize: 22, color: PdfColors.blue800)),
+                  style: pw.TextStyle(font: fontBold, fontSize: 22, color: PdfColors.blue800)),
               pw.SizedBox(height: 4),
               pw.Text(surveyFullName,
-                style: pw.TextStyle(font: fontRegular, fontSize: 14, color: PdfColors.grey700)),
+                  style: pw.TextStyle(font: fontRegular, fontSize: 14, color: PdfColors.grey700)),
               pw.SizedBox(height: 4),
               pw.Text(
-                'Generado el ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}  |  Total: ${surveys.length} encuestas',
-                style: pw.TextStyle(font: fontRegular, fontSize: 11, color: PdfColors.grey600)),
+                  'Generado el ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}  |  Total: ${surveys.length} encuestas',
+                  style: pw.TextStyle(font: fontRegular, fontSize: 11, color: PdfColors.grey600)),
               pw.Divider(thickness: 2, color: PdfColors.blue800),
             ]),
             pw.SizedBox(height: 16),
@@ -1451,22 +1920,22 @@ class _ReportsScreenState extends State<ReportsScreen> {
               }).toList(),
             ]),
             pw.SizedBox(height: 20),
-            pw.Text('Grafica 1: Distribucion por Nivel de Severidad', style: pdfStyle(fontSize: 16, bold: true)),
+            pw.Text('Gráfica 1: Distribución por Nivel de Severidad', style: pdfStyle(fontSize: 16, bold: true)),
             pw.SizedBox(height: 4),
-            pw.Text('Eje X: Nivel  |  Eje Y: Numero de encuestados', style: pdfStyle(fontSize: 9, color: PdfColors.grey600)),
+            pw.Text('Mín=Mínima, Lev=Leve, Mod=Moderada, Sev=Severa  |  Eje Y: Número de encuestados', style: pdfStyle(fontSize: 9, color: PdfColors.grey600)),
             pw.SizedBox(height: 8),
             pw.SizedBox(
               height: 200,
               child: pw.Chart(
                 grid: pw.CartesianGrid(
-                  xAxis: pw.FixedAxis.fromStrings(['Minima', 'Leve', 'Moderada', 'Severa'], marginStart: 10, marginEnd: 10, ticks: true),
+                  xAxis: pw.FixedAxis.fromStrings(['Mín', 'Lev', 'Mod', 'Sev'], marginStart: 10, marginEnd: 10, ticks: true),
                   yAxis: pw.FixedAxis([0, (maxDist + 1).toDouble()], divisions: true),
                 ),
                 datasets: [
                   pw.BarDataSet(
-                    color: _selectedSurveyType == 1 ? PdfColors.blue400 : PdfColors.teal400,
+                    color: surveyType == 1 ? PdfColors.blue400 : PdfColors.teal400,
                     width: 30, offset: 0,
-                    borderColor: _selectedSurveyType == 1 ? PdfColors.blue700 : PdfColors.teal700,
+                    borderColor: surveyType == 1 ? PdfColors.blue700 : PdfColors.teal700,
                     data: [
                       pw.PointChartValue(0, (distribution['Mínima'] ?? 0).toDouble()),
                       pw.PointChartValue(1, (distribution['Leve'] ?? 0).toDouble()),
@@ -1478,9 +1947,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
               ),
             ),
             pw.SizedBox(height: 20),
-            pw.Text('Grafica 2: Proporcion por Nivel de Severidad', style: pdfStyle(fontSize: 16, bold: true)),
+            pw.Text('Gráfica 2: Proporción por Nivel de Severidad', style: pdfStyle(fontSize: 16, bold: true)),
             pw.SizedBox(height: 4),
-            pw.Text('Distribucion porcentual de encuestados por nivel', style: pdfStyle(fontSize: 9, color: PdfColors.grey600)),
+            pw.Text('Distribución porcentual de encuestados por nivel', style: pdfStyle(fontSize: 9, color: PdfColors.grey600)),
             pw.SizedBox(height: 12),
             pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.center, children: [
               pw.SizedBox(
@@ -1506,7 +1975,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       _drawPdfSector(canvas, cx, cy, r, startAng, sweepAng);
                       startAng += sweepAng;
                     }
-                    // Agujero central (donut)
                     canvas.setFillColor(PdfColors.white);
                     _drawPdfCircle(canvas, cx, cy, r * 0.38);
                   },
@@ -1518,40 +1986,47 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   mainAxisAlignment: pw.MainAxisAlignment.center,
                   children: [
-                    pw.Text('Total: $total encuestados', style: pdfStyle(fontSize: 11, bold: true)),
-                    pw.SizedBox(height: 10),
-                    ...distribution.entries.toList().asMap().entries.map((e) {
-                      final pct2 = total == 0 ? 0.0 : e.value.value / total * 100;
-                      return pw.Padding(
-                        padding: const pw.EdgeInsets.only(bottom: 8),
-                        child: pw.Row(children: [
-                          pw.Container(width: 12, height: 12,
-                            decoration: pw.BoxDecoration(color: pieColors[e.key], borderRadius: pw.BorderRadius.circular(2))),
-                          pw.SizedBox(width: 6),
-                          pw.Expanded(child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-                            pw.Text(e.value.key, style: pdfStyle(fontSize: 10, bold: true)),
-                            pw.Text('${e.value.value} (${pct2.toStringAsFixed(1)}%)  Rango: ${scoreRanges[e.value.key] ?? ''}',
-                              style: pdfStyle(fontSize: 9, color: PdfColors.grey700)),
-                          ])),
-                        ]),
-                      );
-                    }).toList(),
+                    pw.Text('Total: $total', style: pdfStyle(fontSize: 10, bold: true)),
+                    pw.SizedBox(height: 8),
+                    pw.Row(children: [
+                      pw.Container(width: 10, height: 10, decoration: pw.BoxDecoration(color: pieColors[0], borderRadius: pw.BorderRadius.circular(2))),
+                      pw.SizedBox(width: 6),
+                      pw.Expanded(child: pw.Text('Mín: ${distribution['Mínima']} (${((distribution['Mínima'] ?? 0) / total * 100).toStringAsFixed(1)}%)', style: pdfStyle(fontSize: 9))),
+                    ]),
+                    pw.SizedBox(height: 4),
+                    pw.Row(children: [
+                      pw.Container(width: 10, height: 10, decoration: pw.BoxDecoration(color: pieColors[1], borderRadius: pw.BorderRadius.circular(2))),
+                      pw.SizedBox(width: 6),
+                      pw.Expanded(child: pw.Text('Lev: ${distribution['Leve']} (${((distribution['Leve'] ?? 0) / total * 100).toStringAsFixed(1)}%)', style: pdfStyle(fontSize: 9))),
+                    ]),
+                    pw.SizedBox(height: 4),
+                    pw.Row(children: [
+                      pw.Container(width: 10, height: 10, decoration: pw.BoxDecoration(color: pieColors[2], borderRadius: pw.BorderRadius.circular(2))),
+                      pw.SizedBox(width: 6),
+                      pw.Expanded(child: pw.Text('Mod: ${distribution['Moderada']} (${((distribution['Moderada'] ?? 0) / total * 100).toStringAsFixed(1)}%)', style: pdfStyle(fontSize: 9))),
+                    ]),
+                    pw.SizedBox(height: 4),
+                    pw.Row(children: [
+                      pw.Container(width: 10, height: 10, decoration: pw.BoxDecoration(color: pieColors[3], borderRadius: pw.BorderRadius.circular(2))),
+                      pw.SizedBox(width: 6),
+                      pw.Expanded(child: pw.Text('Sev: ${distribution['Severa']} (${((distribution['Severa'] ?? 0) / total * 100).toStringAsFixed(1)}%)', style: pdfStyle(fontSize: 9))),
+                    ]),
                   ],
                 ),
               ),
             ]),
             pw.SizedBox(height: 20),
             if (timelineScores.length > 1) ...[
-              pw.Text('Grafica 3: Tendencia Temporal de Puntajes', style: pdfStyle(fontSize: 16, bold: true)),
+              pw.Text('Gráfica 3: Tendencia Temporal de Puntajes', style: pdfStyle(fontSize: 16, bold: true)),
               pw.SizedBox(height: 4),
-              pw.Text('Eje X: N de encuesta (cronologico)  |  Eje Y: Puntaje', style: pdfStyle(fontSize: 9, color: PdfColors.grey600)),
+              pw.Text('Evolución de puntajes en el tiempo (Eje X: # de encuesta, Eje Y: Puntaje)', style: pdfStyle(fontSize: 9, color: PdfColors.grey600)),
               pw.SizedBox(height: 8),
               pw.SizedBox(
                 height: 200,
                 child: pw.Chart(
                   grid: pw.CartesianGrid(
                     xAxis: pw.FixedAxis(
-                      () {
+                          () {
                         final n = timelineScores.length;
                         const maxLabels = 8;
                         final step = (n / maxLabels).ceil().clamp(1, n);
@@ -1567,9 +2042,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
                   datasets: [
                     pw.LineDataSet(
-                      color: _selectedSurveyType == 1 ? PdfColors.blue600 : PdfColors.teal600,
+                      color: surveyType == 1 ? PdfColors.blue600 : PdfColors.teal600,
                       lineWidth: 2, drawPoints: true,
-                      pointColor: _selectedSurveyType == 1 ? PdfColors.blue900 : PdfColors.teal900,
+                      pointColor: surveyType == 1 ? PdfColors.blue900 : PdfColors.teal900,
                       data: timelineScores.asMap().entries
                           .map((e) => pw.PointChartValue(e.key.toDouble(), e.value.toDouble())).toList(),
                     ),
@@ -1584,7 +2059,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
                 pw.Text('Interpretacion de Resultados', style: pdfStyle(fontSize: 13, bold: true, color: PdfColors.blue900)),
                 pw.SizedBox(height: 6),
-                pw.Text(_getInterpretation(statMean, _selectedSurveyType), style: pdfStyle(fontSize: 10)),
+                pw.Text(_getInterpretation(statMean, surveyType), style: pdfStyle(fontSize: 10)),
               ]),
             ),
             pw.SizedBox(height: 16),
@@ -1595,8 +2070,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 pw.Text('Nota Importante:', style: pdfStyle(fontSize: 10, bold: true)),
                 pw.SizedBox(height: 4),
                 pw.Text(
-                  'Este reporte es generado automaticamente con fines estadisticos. Los resultados deben ser interpretados por un profesional de la salud mental calificado.',
-                  style: pw.TextStyle(font: fontRegular, fontSize: 9)),
+                    'Este reporte es generado automaticamente con fines estadisticos. Los resultados deben ser interpretados por un profesional de la salud mental calificado.',
+                    style: pw.TextStyle(font: fontRegular, fontSize: 9)),
               ]),
             ),
           ],
@@ -1642,13 +2117,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   void _drawPdfSector(
-    PdfGraphics canvas,
-    double cx,
-    double cy,
-    double r,
-    double startAngle,
-    double sweepAngle,
-  ) {
+      PdfGraphics canvas,
+      double cx,
+      double cy,
+      double r,
+      double startAngle,
+      double sweepAngle,
+      ) {
     const maxStep = math.pi / 2;
     canvas.moveTo(cx, cy);
     double a = startAngle;
@@ -1664,13 +2139,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   void _addArcSegment(
-    PdfGraphics canvas,
-    double cx,
-    double cy,
-    double r,
-    double startAngle,
-    double sweepAngle,
-  ) {
+      PdfGraphics canvas,
+      double cx,
+      double cy,
+      double r,
+      double startAngle,
+      double sweepAngle,
+      ) {
     final endAngle = startAngle + sweepAngle;
     final k = (4.0 / 3.0) * math.tan(sweepAngle / 4);
     final x0 = cx + r * math.cos(startAngle);
@@ -1717,11 +2192,16 @@ class _ReportsScreenState extends State<ReportsScreen> {
     );
   }
 
+  String _getLevelText(int score, int surveyType) {
+    final intScore = score.toInt();
+    if (surveyType == 1) return ReportsController.bdiLevel(intScore);
+    return ReportsController.baiLevel(intScore);
+  }
+
   String _getInterpretation(double mean, int surveyType) {
     if (surveyType == 1) return ReportsController.bdiInterpretation(mean);
     return ReportsController.baiInterpretation(mean);
   }
-}
 
 class _StatCard extends StatelessWidget {
   final String title;
@@ -2629,8 +3109,8 @@ class _WhoqolItemBarChart extends StatelessWidget {
           ),
           const Gap(6),
           Wrap(spacing: 8, runSpacing: 4, children: labels.asMap().entries.map((e) =>
-            Text('${e.key + 1}: ${e.value}',
-                style: TextStyle(fontSize: 9, color: Theme.of(context).colorScheme.mutedForeground)),
+              Text('${e.key + 1}: ${e.value}',
+                  style: TextStyle(fontSize: 9, color: Theme.of(context).colorScheme.mutedForeground)),
           ).toList()),
         ],
       )),
@@ -2744,9 +3224,9 @@ class _WhoqolDomainBarChart extends StatelessWidget {
             getTitlesWidget: (v, _) {
               final labels = ['Física', 'Psicológica', 'Relaciones', 'Ambiente'];
               return Padding(padding: const EdgeInsets.only(top: 6),
-                child: Text(labels[v.toInt()],
-                    style: TextStyle(fontSize: 11,
-                        color: Theme.of(context).colorScheme.mutedForeground)));
+                  child: Text(labels[v.toInt()],
+                      style: TextStyle(fontSize: 11,
+                          color: Theme.of(context).colorScheme.mutedForeground)));
             },
           )),
           leftTitles: AxisTitles(sideTitles: SideTitles(
@@ -2835,8 +3315,8 @@ class _WhoqolTimelineChart extends StatelessWidget {
           axisNameSize: 22,
           sideTitles: SideTitles(showTitles: true,
             getTitlesWidget: (v, _) => Padding(padding: const EdgeInsets.only(top: 6),
-              child: Text('#${v.toInt() + 1}', style: TextStyle(fontSize: 11,
-                  color: Theme.of(context).colorScheme.mutedForeground))),
+                child: Text('#${v.toInt() + 1}', style: TextStyle(fontSize: 11,
+                    color: Theme.of(context).colorScheme.mutedForeground))),
           ),
         ),
         rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -2894,8 +3374,8 @@ class _WhoqolMultiTimelineChart extends StatelessWidget {
           )),
           bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true,
             getTitlesWidget: (v, _) => Padding(padding: const EdgeInsets.only(top: 6),
-              child: Text('#${v.toInt() + 1}', style: TextStyle(fontSize: 10,
-                  color: Theme.of(context).colorScheme.mutedForeground))),
+                child: Text('#${v.toInt() + 1}', style: TextStyle(fontSize: 10,
+                    color: Theme.of(context).colorScheme.mutedForeground))),
           )),
           rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -2908,7 +3388,7 @@ class _WhoqolMultiTimelineChart extends StatelessWidget {
       ))),
       const Gap(8),
       Wrap(spacing: 16, runSpacing: 4, alignment: WrapAlignment.center,
-        children: series.map((s) => _LegendItem(color: s.$2, label: s.$3)).toList()),
+          children: series.map((s) => _LegendItem(color: s.$2, label: s.$3)).toList()),
     ]);
   }
 }
@@ -3012,3 +3492,537 @@ class _WhoqolDomainPieChartState extends State<_WhoqolDomainPieChart> {
   }
 }
 
+// ─────────────────────────────────────────────────────────────
+// SF-36 Report Section
+// ─────────────────────────────────────────────────────────────
+
+const _kSf36Color = Color(0xFF06B6D4);
+const _kSf36Dim1Color = Color(0xFF0EA5E9); // Función Física
+const _kSf36Dim2Color = Color(0xFF06B6D4); // Rol Físico
+const _kSf36Dim3Color = Color(0xFF14B8A6); // Dolor Corporal
+const _kSf36Dim4Color = Color(0xFF10B981); // Salud General
+const _kSf36Dim5Color = Color(0xFFF97316); // Vitalidad
+const _kSf36Dim6Color = Color(0xFFF59E0B); // Función Social
+const _kSf36Dim7Color = Color(0xFF6366F1); // Rol Emocional
+const _kSf36Dim8Color = Color(0xFF8B5CF6); // Salud Mental
+
+class _Sf36ReportSection extends StatelessWidget {
+  final SF36ReportData data;
+  const _Sf36ReportSection({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Global stats ──────────────────────────────────
+        const Text('Estadísticas Globales',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        const Gap(12),
+        LayoutBuilder(builder: (context, constraints) {
+          final cardW = (constraints.maxWidth - 12) / 2;
+          final statH = (cardW * 0.48).clamp(72.0, 110.0);
+          final infoH = (cardW * 0.32).clamp(56.0, 80.0);
+          return Column(children: [
+            GridView.count(
+              crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12,
+              shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+              childAspectRatio: cardW / statH,
+              children: [
+                _StatCard(title: 'Media Global', value: data.globalStats.mean.toStringAsFixed(1),
+                    icon: material.Icons.analytics, color: _kSf36Color),
+                _StatCard(title: 'Mediana', value: data.globalStats.median.toStringAsFixed(1),
+                    icon: material.Icons.show_chart, color: const Color(0xFF3B82F6)),
+                _StatCard(title: 'Desv. Estándar', value: data.globalStats.stdDev.toStringAsFixed(2),
+                    icon: material.Icons.scatter_plot, color: const Color(0xFFF59E0B)),
+                _StatCard(title: 'Encuestas', value: data.surveyCount.toString(),
+                    icon: material.Icons.assignment, color: const Color(0xFF10B981)),
+              ],
+            ),
+            const Gap(12),
+            GridView.count(
+              crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12,
+              shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+              childAspectRatio: cardW / infoH,
+              children: [
+                _InfoCard(title: 'Puntaje Mínimo', value: data.globalStats.min.toInt().toString()),
+                _InfoCard(title: 'Puntaje Máximo', value: data.globalStats.max.toInt().toString()),
+                _InfoCard(title: 'Rango', value: data.globalStats.range.toInt().toString()),
+                _InfoCard(title: 'Max. posible', value: '100'),
+              ],
+            ),
+          ]);
+        }),
+        const Gap(24),
+
+        // ── Dimension stats cards ───────────────────────────
+        const Text('Estadísticas por Dimensión',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        const Gap(12),
+        _Sf36DimensionCards(data: data),
+        const Gap(24),
+
+        // ── Dimension bar chart ─────────────────────────────
+        SurfaceCard(
+          child: Padding(padding: const EdgeInsets.all(24), child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Distribución por Dimensión (media)').semiBold().large(),
+              const Gap(4),
+              Text('Mayor puntaje = mejor salud',
+                  style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.mutedForeground)),
+              const Gap(24),
+              SizedBox(height: 280, child: _Sf36DimensionBarChart(data: data)),
+            ],
+          )),
+        ),
+        const Gap(24),
+
+        // ── Timeline: global ────────────────────────────
+        SurfaceCard(
+          child: Padding(padding: const EdgeInsets.all(24), child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Tendencia Temporal — Puntaje Global').semiBold().large(),
+              const Gap(24),
+              SizedBox(height: 280, child: _Sf36TimelineChart(
+                scores: data.globalTimeline,
+                color: _kSf36Color,
+                maxY: 100,
+              )),
+            ],
+          )),
+        ),
+        const Gap(24),
+
+        // ── Timeline: dimensions ────────────────────────────
+        SurfaceCard(
+          child: Padding(padding: const EdgeInsets.all(24), child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Tendencia Temporal por Dimensión').semiBold().large(),
+              const Gap(24),
+              SizedBox(height: 280, child: _Sf36MultiTimelineChart(data: data)),
+            ],
+          )),
+        ),
+        const Gap(24),
+
+        // ── Pie: dimension proportion ───────────────────────
+        SurfaceCard(
+          child: Padding(padding: const EdgeInsets.all(24), child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Proporción por Dimensión (suma total)').semiBold().large(),
+              const Gap(4),
+              Text('Basado en la suma de medias de cada dimensión',
+                  style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.mutedForeground)),
+              const Gap(24),
+              LayoutBuilder(builder: (ctx, c) {
+                final isNarrow = c.maxWidth < 400;
+                return SizedBox(
+                  height: isNarrow ? 460 : 300,
+                  child: _Sf36DimensionPieChart(data: data, isNarrow: isNarrow),
+                );
+              }),
+            ],
+          )),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Dimension summary cards ─────────────────────────────────────
+
+class _Sf36DimensionCards extends StatelessWidget {
+  final SF36ReportData data;
+  const _Sf36DimensionCards({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final dims = [
+      (data.physicalFunctioning, _kSf36Dim1Color),
+      (data.rolePhysical, _kSf36Dim2Color),
+      (data.bodilyPain, _kSf36Dim3Color),
+      (data.generalHealth, _kSf36Dim4Color),
+      (data.vitality, _kSf36Dim5Color),
+      (data.socialFunctioning, _kSf36Dim6Color),
+      (data.roleEmotional, _kSf36Dim7Color),
+      (data.mentalHealth, _kSf36Dim8Color),
+    ];
+    return Column(
+      children: dims.map((pair) {
+        final dim = pair.$1;
+        final color = pair.$2;
+        final pct = dim.maxPossible == 0 ? 0.0 : dim.mean / dim.maxPossible * 100;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: OutlinedContainer(
+            borderRadius: BorderRadius.circular(12),
+            padding: const EdgeInsets.all(14),
+            borderColor: color.withValues(alpha: 0.3),
+            borderWidth: 1.5,
+            backgroundColor: color.withValues(alpha: 0.04),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Container(width: 10, height: 10,
+                    decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+                const Gap(8),
+                Expanded(child: Text(dim.label,
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600))),
+                Text('${dim.mean.toStringAsFixed(1)} / ${dim.maxPossible}',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: color)),
+              ]),
+              const Gap(8),
+              // progress bar
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: material.LinearProgressIndicator(
+                  value: pct / 100,
+                  minHeight: 8,
+                  backgroundColor: color.withValues(alpha: 0.1),
+                  valueColor: AlwaysStoppedAnimation<Color>(color),
+                ),
+              ),
+              const Gap(6),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text('Media: ${dim.mean.toStringAsFixed(1)}  |  '
+                    'σ: ${dim.stdDev.toStringAsFixed(1)}  |  '
+                    'n: ${dim.count}',
+                    style: TextStyle(fontSize: 11,
+                        color: Theme.of(context).colorScheme.mutedForeground)),
+                Text('${pct.toStringAsFixed(1)}%',
+                    style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
+              ]),
+              const Gap(4),
+              Text(ReportsController.sf36DimensionInterpretation(dim),
+                  style: TextStyle(fontSize: 11,
+                      color: Theme.of(context).colorScheme.mutedForeground)),
+            ]),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+// ── Dimension grouped bar chart ─────────────────────────────────
+
+class _Sf36DimensionBarChart extends StatelessWidget {
+  final SF36ReportData data;
+  const _Sf36DimensionBarChart({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final dimData = [
+      (data.physicalFunctioning, _kSf36Dim1Color, 'PF'),
+      (data.rolePhysical, _kSf36Dim2Color, 'RP'),
+      (data.bodilyPain, _kSf36Dim3Color, 'BP'),
+      (data.generalHealth, _kSf36Dim4Color, 'GH'),
+      (data.vitality, _kSf36Dim5Color, 'VT'),
+      (data.socialFunctioning, _kSf36Dim6Color, 'SF'),
+      (data.roleEmotional, _kSf36Dim7Color, 'RE'),
+      (data.mentalHealth, _kSf36Dim8Color, 'MH'),
+    ];
+    final barGroups = dimData.asMap().entries.map((e) {
+      return BarChartGroupData(x: e.key, barRods: [
+        BarChartRodData(
+          toY: e.value.$1.mean,
+          color: e.value.$2,
+          width: 36,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+        ),
+      ]);
+    }).toList();
+
+    return Column(children: [
+      Expanded(child: BarChart(BarChartData(
+        alignment: BarChartAlignment.spaceAround,
+        maxY: 100,
+        barGroups: barGroups,
+        titlesData: FlTitlesData(
+          bottomTitles: AxisTitles(sideTitles: SideTitles(
+            showTitles: true,
+            getTitlesWidget: (v, _) {
+              final labels = ['PF', 'RP', 'BP', 'GH', 'VT', 'SF', 'RE', 'MH'];
+              return Padding(padding: const EdgeInsets.only(top: 6),
+                  child: Text(labels[v.toInt()],
+                      style: TextStyle(fontSize: 11,
+                          color: Theme.of(context).colorScheme.mutedForeground)));
+            },
+          )),
+          leftTitles: AxisTitles(sideTitles: SideTitles(
+            showTitles: true, reservedSize: 36,
+            getTitlesWidget: (v, _) => Text(v.toInt().toString(),
+                style: TextStyle(fontSize: 10,
+                    color: Theme.of(context).colorScheme.mutedForeground)),
+          )),
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        gridData: FlGridData(show: true, drawVerticalLine: false,
+            getDrawingHorizontalLine: (v) =>
+                FlLine(color: Theme.of(context).colorScheme.border, strokeWidth: 1)),
+        borderData: FlBorderData(show: false),
+        barTouchData: BarTouchData(
+          touchTooltipData: BarTouchTooltipData(
+            getTooltipItem: (group, _, rod, __) {
+              final labels = ['Función Física','Rol Físico','Dolor Corporal','Salud General','Vitalidad','Función Social','Rol Emocional','Salud Mental'];
+              final dim = dimData[group.x].$1;
+              return BarTooltipItem(
+                '${labels[group.x]}\nMedia: ${rod.toY.toStringAsFixed(1)} / ${dim.maxPossible}',
+                const TextStyle(color: material.Colors.white, fontSize: 11),
+              );
+            },
+          ),
+        ),
+      ))),
+      const Gap(8),
+      Wrap(spacing: 16, runSpacing: 4, alignment: WrapAlignment.center, children: [
+        _LegendItem(color: _kSf36Dim1Color, label: 'Función Física'),
+        _LegendItem(color: _kSf36Dim2Color, label: 'Rol Físico'),
+        _LegendItem(color: _kSf36Dim3Color, label: 'Dolor Corporal'),
+        _LegendItem(color: _kSf36Dim4Color, label: 'Salud General'),
+        _LegendItem(color: _kSf36Dim5Color, label: 'Vitalidad'),
+        _LegendItem(color: _kSf36Dim6Color, label: 'Función Social'),
+        _LegendItem(color: _kSf36Dim7Color, label: 'Rol Emocional'),
+        _LegendItem(color: _kSf36Dim8Color, label: 'Salud Mental'),
+      ]),
+    ]);
+  }
+}
+
+// ── Single-series timeline ───────────────────────────────────
+
+class _Sf36TimelineChart extends StatelessWidget {
+  final List<double> scores;
+  final Color color;
+  final double maxY;
+
+  const _Sf36TimelineChart({
+    required this.scores,
+    required this.color,
+    required this.maxY,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (scores.length < 2) {
+      return Center(child: Text('Se necesitan al menos 2 encuestas para mostrar tendencia',
+          style: TextStyle(color: Theme.of(context).colorScheme.mutedForeground)));
+    }
+    final spots = scores.asMap().entries
+        .map((e) => FlSpot(e.key.toDouble(), e.value))
+        .toList();
+
+    return LineChart(LineChartData(
+      lineBarsData: [
+        LineChartBarData(
+          spots: spots, isCurved: true, color: color, barWidth: 3,
+          dotData: FlDotData(show: true, getDotPainter: (_, __, ___, ____) =>
+              FlDotCirclePainter(radius: 4, color: color, strokeWidth: 2,
+                  strokeColor: Theme.of(context).colorScheme.background)),
+          belowBarData: BarAreaData(show: true, color: color.withValues(alpha: 0.1)),
+        ),
+      ],
+      titlesData: FlTitlesData(
+        leftTitles: AxisTitles(
+          axisNameWidget: Text('Puntaje', style: TextStyle(
+              fontSize: 11, color: Theme.of(context).colorScheme.mutedForeground)),
+          axisNameSize: 22,
+          sideTitles: SideTitles(showTitles: true, reservedSize: 40,
+            getTitlesWidget: (v, _) => Text(v.toInt().toString(),
+                style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.mutedForeground)),
+          ),
+        ),
+        bottomTitles: AxisTitles(
+          axisNameWidget: Text('N.° de encuesta (cronológico)', style: TextStyle(
+              fontSize: 11, color: Theme.of(context).colorScheme.mutedForeground)),
+          axisNameSize: 22,
+          sideTitles: SideTitles(showTitles: true,
+            getTitlesWidget: (v, _) => Padding(padding: const EdgeInsets.only(top: 6),
+                child: Text('#${v.toInt() + 1}', style: TextStyle(fontSize: 11,
+                    color: Theme.of(context).colorScheme.mutedForeground))),
+          ),
+        ),
+        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+      ),
+      gridData: FlGridData(show: true, drawVerticalLine: false,
+          getDrawingHorizontalLine: (v) =>
+              FlLine(color: Theme.of(context).colorScheme.border, strokeWidth: 1)),
+      borderData: FlBorderData(show: false),
+      minY: 0, maxY: maxY,
+      lineTouchData: LineTouchData(
+        touchTooltipData: LineTouchTooltipData(
+          getTooltipItems: (touchedSpots) => touchedSpots.map((s) => LineTooltipItem(
+            'Encuesta #${s.x.toInt() + 1}\nPuntaje: ${s.y.toInt()}',
+            const TextStyle(color: material.Colors.white, fontSize: 12),
+          )).toList(),
+        ),
+      ),
+    ));
+  }
+}
+
+// ── Multi-series dimension timeline ──────────────────────────
+
+class _Sf36MultiTimelineChart extends StatelessWidget {
+  final SF36ReportData data;
+  const _Sf36MultiTimelineChart({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final series = [
+      (data.physicalFunctioning, _kSf36Dim1Color, 'Función Física'),
+      (data.rolePhysical, _kSf36Dim2Color, 'Rol Físico'),
+      (data.bodilyPain, _kSf36Dim3Color, 'Dolor Corporal'),
+      (data.generalHealth, _kSf36Dim4Color, 'Salud General'),
+      (data.vitality, _kSf36Dim5Color, 'Vitalidad'),
+      (data.socialFunctioning, _kSf36Dim6Color, 'Función Social'),
+      (data.roleEmotional, _kSf36Dim7Color, 'Rol Emocional'),
+      (data.mentalHealth, _kSf36Dim8Color, 'Salud Mental'),
+    ].where((s) => s.$1.timeline.length >= 2).toList();
+
+    if (series.isEmpty) {
+      return Center(child: Text('Se necesitan al menos 2 encuestas',
+          style: TextStyle(color: Theme.of(context).colorScheme.mutedForeground)));
+    }
+
+    return Column(children: [
+      Expanded(child: LineChart(LineChartData(
+        lineBarsData: series.map((s) => LineChartBarData(
+          spots: s.$1.timeline.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value)).toList(),
+          isCurved: true, color: s.$2, barWidth: 2,
+          dotData: FlDotData(show: s.$1.timeline.length <= 10),
+          belowBarData: BarAreaData(show: false),
+        )).toList(),
+        titlesData: FlTitlesData(
+          leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 36,
+            getTitlesWidget: (v, _) => Text(v.toInt().toString(), style: TextStyle(fontSize: 10,
+                color: Theme.of(context).colorScheme.mutedForeground)),
+          )),
+          bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true,
+            getTitlesWidget: (v, _) => Padding(padding: const EdgeInsets.only(top: 6),
+                child: Text('#${v.toInt() + 1}', style: TextStyle(fontSize: 10,
+                    color: Theme.of(context).colorScheme.mutedForeground))),
+          )),
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        gridData: FlGridData(show: true, drawVerticalLine: false,
+            getDrawingHorizontalLine: (v) =>
+                FlLine(color: Theme.of(context).colorScheme.border, strokeWidth: 1)),
+        borderData: FlBorderData(show: false),
+        minY: 0,
+      ))),
+      const Gap(8),
+      Wrap(spacing: 16, runSpacing: 4, alignment: WrapAlignment.center,
+          children: series.map((s) => _LegendItem(color: s.$2, label: s.$3)).toList()),
+    ]);
+  }
+}
+
+// ── Dimension proportion pie chart ──────────────────────────────
+
+class _Sf36DimensionPieChart extends StatefulWidget {
+  final SF36ReportData data;
+  final bool isNarrow;
+  const _Sf36DimensionPieChart({required this.data, required this.isNarrow});
+
+  @override
+  State<_Sf36DimensionPieChart> createState() => _Sf36DimensionPieChartState();
+}
+
+class _Sf36DimensionPieChartState extends State<_Sf36DimensionPieChart> {
+  int _touchedIndex = -1;
+
+  @override
+  Widget build(BuildContext context) {
+    final dims = [
+      (widget.data.physicalFunctioning, _kSf36Dim1Color, 'Función Física'),
+      (widget.data.rolePhysical, _kSf36Dim2Color, 'Rol Físico'),
+      (widget.data.bodilyPain, _kSf36Dim3Color, 'Dolor Corporal'),
+      (widget.data.generalHealth, _kSf36Dim4Color, 'Salud General'),
+      (widget.data.vitality, _kSf36Dim5Color, 'Vitalidad'),
+      (widget.data.socialFunctioning, _kSf36Dim6Color, 'Función Social'),
+      (widget.data.roleEmotional, _kSf36Dim7Color, 'Rol Emocional'),
+      (widget.data.mentalHealth, _kSf36Dim8Color, 'Salud Mental'),
+    ];
+    final total = dims.fold<double>(0, (s, d) => s + d.$1.mean);
+
+    final sections = dims.asMap().entries.map((e) {
+      final idx = e.key;
+      final dim = e.value.$1;
+      final color = e.value.$2;
+      final pct = total == 0 ? 0.0 : dim.mean / total * 100;
+      final isTouched = idx == _touchedIndex;
+      return PieChartSectionData(
+        value: dim.mean == 0 ? 0.001 : dim.mean,
+        color: color,
+        title: pct < 8 ? '' : '${pct.toStringAsFixed(1)}%',
+        radius: isTouched ? 90 : 72,
+        titleStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold,
+            color: material.Colors.white,
+            shadows: [Shadow(blurRadius: 2, color: material.Color(0x88000000))]),
+      );
+    }).toList();
+
+    final legend = Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: dims.asMap().entries.map((e) {
+        final dim = e.value.$1;
+        final color = e.value.$2;
+        final name = e.value.$3;
+        final pct = total == 0 ? 0.0 : dim.mean / total * 100;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Container(width: 12, height: 12, margin: const EdgeInsets.only(top: 2),
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+            const Gap(8),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+              Text('Media: ${dim.mean.toStringAsFixed(1)} (${pct.toStringAsFixed(1)}%)',
+                  style: TextStyle(fontSize: 11,
+                      color: Theme.of(context).colorScheme.mutedForeground)),
+            ])),
+          ]),
+        );
+      }).toList(),
+    );
+
+    final pieWidget = PieChart(PieChartData(
+      sections: sections,
+      centerSpaceRadius: widget.isNarrow ? 40 : 50,
+      sectionsSpace: 3,
+      pieTouchData: PieTouchData(
+        touchCallback: (FlTouchEvent event, resp) {
+          setState(() {
+            if (!event.isInterestedForInteractions || resp == null ||
+                resp.touchedSection == null) {
+              _touchedIndex = -1;
+              return;
+            }
+            _touchedIndex = resp.touchedSection!.touchedSectionIndex;
+          });
+        },
+      ),
+    ));
+
+    if (widget.isNarrow) {
+      return Column(children: [
+        SizedBox(height: 220, child: pieWidget),
+        const Gap(16),
+        legend,
+      ]);
+    }
+    return Row(children: [
+      Expanded(flex: 3, child: pieWidget),
+      const Gap(12),
+      Expanded(flex: 2, child: legend),
+    ]);
+  }
+}

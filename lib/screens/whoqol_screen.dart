@@ -635,15 +635,6 @@ class _WhoqolOptionCardState extends State<_WhoqolOptionCard> with SingleTickerP
                 child: Center(child: Icon(_icon, color: color, size: 24, fill: widget.isSelected ? 1 : 0)),
               ),
               const Gap(10),
-              Container(
-                width: 26, height: 26,
-                decoration: BoxDecoration(
-                  color: widget.isSelected ? _kWhoqolColor : _kWhoqolColor.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(child: Text('${widget.score}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: widget.isSelected ? Colors.white : _kWhoqolColor))),
-              ),
-              const Gap(10),
               Expanded(
                 child: Text(widget.label, style: TextStyle(fontSize: 15, height: 1.4, fontWeight: widget.isSelected ? FontWeight.w600 : FontWeight.normal, color: widget.isSelected ? _kWhoqolColor : LightModeColors.lightOnSurface)),
               ),

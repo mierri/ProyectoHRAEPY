@@ -40,7 +40,7 @@ class _SurveysListScreenState extends State<SurveysListScreen> {
 
   List<Map<String, dynamic>> _filteredSurveys(List<Map<String, dynamic>> all) {
     var result = all;
-    const _typeIdMap = {'bdi': 1, 'bai': 2, 'whoqol': 3, 'moca': 4};
+    const _typeIdMap = {'bdi': 1, 'bai': 2, 'whoqol': 3, 'moca': 4, 'sf36': 5};
     if (_typeIdMap.containsKey(_filterType)) {
       final typeId = _typeIdMap[_filterType]!;
       result = result.where((s) => (s['survey_type'] ?? 1) == typeId).toList();
@@ -380,6 +380,7 @@ class _SurveyCard extends StatelessWidget {
       case 2: return LightModeColors.lightTertiary;
       case 3: return const Color(0xFF7C3AED); // WHOQOL - violeta
       case 4: return const Color(0xFF0EA5E9); // MoCA - celeste
+      case 5: return const Color(0xFF06B6D4); // SF-36 - cyan
       default: return LightModeColors.lightPrimary;
     }
   }
@@ -390,6 +391,7 @@ class _SurveyCard extends StatelessWidget {
       case 2: return 'BAI';
       case 3: return 'WHOQOL-BREF';
       case 4: return 'MoCA';
+      case 5: return 'SF-36';
       default: return 'Encuesta';
     }
   }
@@ -398,6 +400,7 @@ class _SurveyCard extends StatelessWidget {
     switch (survey['survey_type'] as int? ?? 1) {
       case 3: return 26; // WHOQOL
       case 4: return 0;  // MoCA no usa responses table del mismo modo
+      case 5: return 36; // SF-36
       default: return 21; // BDI / BAI
     }
   }
@@ -423,6 +426,7 @@ class _SurveyCard extends StatelessWidget {
     }
     if (type == 3) return 'WHOQOL'; // WHOQOL - no single score
     if (type == 4) return 'MoCA';   // MoCA
+    if (type == 5) return 'SF-36';  // SF-36
     return '';
   }
 
@@ -441,6 +445,7 @@ class _SurveyCard extends StatelessWidget {
     }
     if (type == 3) return const Color(0xFF7C3AED);
     if (type == 4) return const Color(0xFF0EA5E9);
+    if (type == 5) return const Color(0xFF06B6D4); // SF-36 cyan
     return LightModeColors.lightPrimary;
   }
 

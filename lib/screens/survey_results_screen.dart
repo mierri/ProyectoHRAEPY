@@ -60,6 +60,16 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         return const Color(0xFFF97316); // Orange
       case 'severa':
         return LightModeColors.lightError;
+      case 'excelente':
+        return LightModeColors.lightTertiary;
+      case 'muy bueno':
+        return const Color(0xFFFBBF24);
+      case 'bueno':
+        return const Color(0xFFF97316);
+      case 'regular':
+        return const Color(0xFFFF7043);
+      case 'bajo':
+        return LightModeColors.lightError;
       default:
         return LightModeColors.lightSecondary;
     }
@@ -76,46 +86,124 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         return material.Icons.sentiment_dissatisfied;
       case 'severa':
         return material.Icons.sentiment_very_dissatisfied;
+      case 'excelente':
+        return material.Icons.sentiment_very_satisfied;
+      case 'muy bueno':
+        return material.Icons.sentiment_satisfied;
+      case 'bueno':
+        return material.Icons.sentiment_neutral;
+      case 'regular':
+        return material.Icons.sentiment_dissatisfied;
+      case 'bajo':
+        return material.Icons.sentiment_very_dissatisfied;
       default:
         return material.Icons.help_outline;
     }
   }
 
   String _getScoreLevel(int score, int surveyType) {
-    if (surveyType == 1) {
-      // BDI-II
-      if (score <= 13) return 'Mínima';
-      if (score <= 19) return 'Leve';
-      if (score <= 28) return 'Moderada';
-      return 'Severa';
-    } else {
-      // BAI
-      if (score <= 7) return 'Mínima';
-      if (score <= 15) return 'Leve';
-      if (score <= 25) return 'Moderada';
-      return 'Severa';
+    switch (surveyType) {
+      case 1: // BDI-II
+        if (score <= 13) return 'Mínima';
+        if (score <= 19) return 'Leve';
+        if (score <= 28) return 'Moderada';
+        return 'Severa';
+      case 2: // BAI
+        if (score <= 7) return 'Mínima';
+        if (score <= 15) return 'Leve';
+        if (score <= 25) return 'Moderada';
+        return 'Severa';
+      case 3: // WHOQOL
+        if (score >= 4) return 'Excelente';
+        if (score >= 3.5) return 'Muy bueno';
+        if (score >= 3) return 'Bueno';
+        if (score >= 2.5) return 'Regular';
+        return 'Bajo';
+      case 4: // MoCA
+        return 'MoCA';
+      case 5: // SF-36
+        if (score >= 4) return 'Excelente';
+        if (score >= 3.5) return 'Muy bueno';
+        if (score >= 3) return 'Bueno';
+        if (score >= 2.5) return 'Regular';
+        return 'Bajo';
+      default:
+        return 'Resultado';
     }
   }
 
   String _getRecommendation(String level, int surveyType) {
-    final surveyTypeName = surveyType == 1 ? 'depresión' : 'ansiedad';
-
-    switch (level.toLowerCase()) {
-      case 'mínima':
-      case 'minima':
-        return 'Los resultados indican ausencia de síntomas clínicamente relevantes de $surveyTypeName. '
-            'Se recomienda mantener hábitos saludables y seguimiento preventivo.';
-      case 'leve':
-        return 'Los resultados sugieren síntomas leves de $surveyTypeName. '
-            'Se recomienda evaluación con un profesional de salud mental y considerar intervenciones psicoterapéuticas.';
-      case 'moderada':
-        return 'Los resultados indican $surveyTypeName moderada. '
-            'Es importante buscar atención profesional. Se recomienda evaluación psiquiátrica y psicoterapia.';
-      case 'severa':
-        return 'Los resultados sugieren $surveyTypeName severa. '
-            'Se requiere atención profesional inmediata. Consulte con un psiquiatra para evaluación y tratamiento integral.';
+    switch (surveyType) {
+      case 1: // BDI-II
+        switch (level.toLowerCase()) {
+          case 'mínima':
+          case 'minima':
+            return 'Los resultados indican ausencia de síntomas clínicamente relevantes de depresión. '
+                'Se recomienda mantener hábitos saludables y seguimiento preventivo.';
+          case 'leve':
+            return 'Los resultados sugieren síntomas leves de depresión. '
+                'Se recomienda evaluación con un profesional de salud mental y considerar intervenciones psicoterapéuticas.';
+          case 'moderada':
+            return 'Los resultados indican depresión moderada. '
+                'Es importante buscar atención profesional. Se recomienda evaluación psiquiátrica y psicoterapia.';
+          case 'severa':
+            return 'Los resultados sugieren depresión severa. '
+                'Se requiere atención profesional inmediata. Consulte con un psiquiatra para evaluación y tratamiento integral.';
+          default:
+            return 'Se recomienda consultar con un profesional de salud mental para una evaluación completa.';
+        }
+      case 2: // BAI
+        switch (level.toLowerCase()) {
+          case 'mínima':
+          case 'minima':
+            return 'Los resultados indican ausencia de síntomas clínicamente relevantes de ansiedad. '
+                'Se recomienda mantener hábitos saludables y seguimiento preventivo.';
+          case 'leve':
+            return 'Los resultados sugieren síntomas leves de ansiedad. '
+                'Se recomienda evaluación con un profesional de salud mental y considerar intervenciones psicoterapéuticas.';
+          case 'moderada':
+            return 'Los resultados indican ansiedad moderada. '
+                'Es importante buscar atención profesional. Se recomienda evaluación psiquiátrica y psicoterapia.';
+          case 'severa':
+            return 'Los resultados sugieren ansiedad severa. '
+                'Se requiere atención profesional inmediata. Consulte con un psiquiatra para evaluación y tratamiento integral.';
+          default:
+            return 'Se recomienda consultar con un profesional de salud mental para una evaluación completa.';
+        }
+      case 3: // WHOQOL
+        switch (level.toLowerCase()) {
+          case 'excelente':
+            return 'Su calidad de vida es excelente. Continúe con sus hábitos y rutinas que le mantienen en este nivel de bienestar.';
+          case 'muy bueno':
+            return 'Su calidad de vida es muy buena. Mantenga sus actividades y hábitos positivos.';
+          case 'bueno':
+            return 'Su calidad de vida es buena. Se pueden identificar áreas para mejorar.';
+          case 'regular':
+            return 'Su calidad de vida es regular. Se recomienda evaluar aspectos de salud física, mental, social y ambiental.';
+          case 'bajo':
+            return 'Su calidad de vida requiere atención. Se recomienda consultar con profesionales para mejorar su bienestar.';
+          default:
+            return 'Se recomienda una evaluación más detallada de su calidad de vida.';
+        }
+      case 4: // MoCA
+        return 'La evaluación cognitiva ha sido completada. Consulte con su médico para interpretar los resultados en detalle.';
+      case 5: // SF-36
+        switch (level.toLowerCase()) {
+          case 'excelente':
+            return 'Su salud general es excelente. Continúe manteniendo sus hábitos de vida saludables.';
+          case 'muy bueno':
+            return 'Su salud general es muy buena. Mantenga sus actividades y rutinas positivas.';
+          case 'bueno':
+            return 'Su salud general es buena. Se pueden identificar áreas para optimizar su bienestar.';
+          case 'regular':
+            return 'Su salud general es regular. Se recomienda evaluar aspectos físicos, emocionales y sociales.';
+          case 'bajo':
+            return 'Su salud general requiere atención. Se recomienda consultar con profesionales de salud.';
+          default:
+            return 'Se recomienda una evaluación más detallada de su salud general.';
+        }
       default:
-        return 'Se recomienda consultar con un profesional de salud mental para una evaluación completa.';
+        return 'Se recomienda consultar con un profesional de salud para una evaluación completa.';
     }
   }
 
@@ -181,10 +269,32 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
     final responses = _survey!['responses'] as List?;
     final score = surveyService.calculateSurveyScore(_survey!);
     final surveyType = _survey!['survey_type'] as int? ?? 1;
-    final surveyTypeName = surveyType == 1 ? 'BDI-II' : 'BAI';
-    final surveyFullName = surveyType == 1
-        ? 'Inventario de Depresión de Beck II'
-        : 'Inventario de Ansiedad de Beck';
+
+    // Map surveyType to names
+    String getSurveyTypeName(int type) {
+      switch (type) {
+        case 1: return 'BDI-II';
+        case 2: return 'BAI';
+        case 3: return 'WHOQOL-BREF';
+        case 4: return 'MoCA';
+        case 5: return 'SF-36';
+        default: return 'Encuesta';
+      }
+    }
+
+    String getSurveyFullName(int type) {
+      switch (type) {
+        case 1: return 'Inventario de Depresión de Beck II';
+        case 2: return 'Inventario de Ansiedad de Beck';
+        case 3: return 'Cuestionario de Calidad de Vida WHOQOL-BREF';
+        case 4: return 'Evaluación Cognitiva Montreal';
+        case 5: return 'Encuesta de Salud de 36 Items';
+        default: return 'Encuesta';
+      }
+    }
+
+    final surveyTypeName = getSurveyTypeName(surveyType);
+    final surveyFullName = getSurveyFullName(surveyType);
     final level = _getScoreLevel(score, surveyType);
     final color = _getLevelColor(level);
     final createdAt = DateTime.parse(_survey!['created_at']);
@@ -440,19 +550,51 @@ class _ScoreInterpretationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ranges = surveyType == 1
-        ? [
-            {'range': '0-13', 'label': 'Depresión mínima', 'color': LightModeColors.lightTertiary},
-            {'range': '14-19', 'label': 'Depresión leve', 'color': const Color(0xFFFBBF24)},
-            {'range': '20-28', 'label': 'Depresión moderada', 'color': const Color(0xFFF97316)},
-            {'range': '29-63', 'label': 'Depresión severa', 'color': LightModeColors.lightError},
-          ]
-        : [
-            {'range': '0-7', 'label': 'Ansiedad mínima', 'color': LightModeColors.lightTertiary},
-            {'range': '8-15', 'label': 'Ansiedad leve', 'color': const Color(0xFFFBBF24)},
-            {'range': '16-25', 'label': 'Ansiedad moderada', 'color': const Color(0xFFF97316)},
-            {'range': '26-63', 'label': 'Ansiedad severa', 'color': LightModeColors.lightError},
-          ];
+    List<Map<String, dynamic>> ranges = [];
+
+    switch (surveyType) {
+      case 1: // BDI-II
+        ranges = [
+          {'range': '0-13', 'label': 'Depresión mínima', 'color': LightModeColors.lightTertiary},
+          {'range': '14-19', 'label': 'Depresión leve', 'color': const Color(0xFFFBBF24)},
+          {'range': '20-28', 'label': 'Depresión moderada', 'color': const Color(0xFFF97316)},
+          {'range': '29-63', 'label': 'Depresión severa', 'color': LightModeColors.lightError},
+        ];
+        break;
+      case 2: // BAI
+        ranges = [
+          {'range': '0-7', 'label': 'Ansiedad mínima', 'color': LightModeColors.lightTertiary},
+          {'range': '8-15', 'label': 'Ansiedad leve', 'color': const Color(0xFFFBBF24)},
+          {'range': '16-25', 'label': 'Ansiedad moderada', 'color': const Color(0xFFF97316)},
+          {'range': '26-63', 'label': 'Ansiedad severa', 'color': LightModeColors.lightError},
+        ];
+        break;
+      case 3: // WHOQOL
+        ranges = [
+          {'range': '4.0-5.0', 'label': 'Calidad de vida excelente', 'color': LightModeColors.lightTertiary},
+          {'range': '3.5-3.9', 'label': 'Calidad de vida muy buena', 'color': const Color(0xFFFBBF24)},
+          {'range': '3.0-3.4', 'label': 'Calidad de vida buena', 'color': const Color(0xFFF97316)},
+          {'range': '2.5-2.9', 'label': 'Calidad de vida regular', 'color': const Color(0xFFFF7043)},
+          {'range': '1.0-2.4', 'label': 'Calidad de vida baja', 'color': LightModeColors.lightError},
+        ];
+        break;
+      case 4: // MoCA
+        ranges = [
+          {'range': 'N/A', 'label': 'Evaluación cognitiva completada', 'color': const Color(0xFF0EA5E9)},
+        ];
+        break;
+      case 5: // SF-36
+        ranges = [
+          {'range': '4.0-5.0', 'label': 'Salud excelente', 'color': LightModeColors.lightTertiary},
+          {'range': '3.5-3.9', 'label': 'Salud muy buena', 'color': const Color(0xFFFBBF24)},
+          {'range': '3.0-3.4', 'label': 'Salud buena', 'color': const Color(0xFFF97316)},
+          {'range': '2.5-2.9', 'label': 'Salud regular', 'color': const Color(0xFFFF7043)},
+          {'range': '1.0-2.4', 'label': 'Salud baja', 'color': LightModeColors.lightError},
+        ];
+        break;
+      default:
+        ranges = [];
+    }
 
     return SurfaceCard(
       child: Padding(

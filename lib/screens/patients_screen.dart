@@ -780,9 +780,21 @@ class _PatientDetailsDialog extends StatelessWidget {
                   final isComplete = responses != null && responses.isNotEmpty;
                   final score = isComplete ? surveyService.calculateSurveyScore(survey) : 0;
                   final surveyType = survey['survey_type'] as int? ?? 1;
-                  final surveyTypeName = surveyType == 1 ? 'BDI-II' : 'BAI';
+                  String getSurveyTypeName(int type) {
+                    switch (type) {
+                      case 1: return 'BDI-II';
+                      case 2: return 'BAI';
+                      case 3: return 'WHOQOL-BREF';
+                      case 4: return 'MoCA';
+                      case 5: return 'SF-36';
+                      default: return 'Encuesta';
+                    }
+                  }
+
                   final createdAt = DateTime.parse(survey['created_at']);
                   final isSynced = survey['synced'] == true;
+
+                  final surveyTypeName = getSurveyTypeName(surveyType);
 
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 12),
@@ -867,14 +879,30 @@ class _PatientDetailsDialog extends StatelessWidget {
                                   ).muted().small(),
                                   if (isComplete) ...[
                                     const Gap(4),
-                                    Text(
-                                      'Puntaje: $score - ${_getScoreLevel(score, surveyType)}',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: _getScoreLevelColor(score, surveyType),
-                                        fontWeight: FontWeight.w500,
+                                    if (surveyType == 1 || surveyType == 2)
+                                      Text(
+                                        'Puntaje: $score - ${_getScoreLevel(score, surveyType)}',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: _getScoreLevelColor(score, surveyType),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      )
+                                    else if (surveyType == 3)
+                                      // WHOQOL: calcular promedio de dominios
+                                      _buildWhoqolScore(survey)
+                                    else if (surveyType == 5)
+                                      // SF-36: calcular promedio de dimensiones
+                                      _buildSF36Score(survey)
+                                    else
+                                      Text(
+                                        'Encuesta completada',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: _getScoreLevelColor(0, surveyType),
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                       ),
-                                    ),
                                   ],
                                 ],
                               ),
@@ -955,36 +983,120 @@ class _PatientDetailsDialog extends StatelessWidget {
   }
 
   String _getScoreLevel(int score, int surveyType) {
-    if (surveyType == 1) {
-      // BDI-II
-      if (score <= 13) return 'Mínima';
-      if (score <= 19) return 'Leve';
-      if (score <= 28) return 'Moderada';
-      return 'Severa';
-    } else {
-      // BAI
-      if (score <= 7) return 'Mínima';
-      if (score <= 15) return 'Leve';
-      if (score <= 25) return 'Moderada';
-      return 'Severa';
+    switch (surveyType) {
+      case 1: // BDI-II
+        if (score <= 13) return 'Mínima';
+        if (score <= 19) return 'Leve';
+        if (score <= 28) return 'Moderada';
+        return 'Severa';
+      case 2: // BAI
+        if (score <= 7) return 'Mínima';
+        if (score <= 15) return 'Leve';
+        if (score <= 25) return 'Moderada';
+        return 'Severa';
+      case 3: // WHOQOL-BREF
+        return 'WHOQOL';
+      case 4: // MoCA
+        return 'MoCA';
+      case 5: // SF-36
+        return 'SF-36';
+      default:
+        return '';
     }
   }
 
   Color _getScoreLevelColor(int score, int surveyType) {
-    if (surveyType == 1) {
-      // BDI-II
-      if (score <= 13) return LightModeColors.lightTertiary;
-      if (score <= 19) return const Color(0xFFFBBF24);
-      if (score <= 28) return const Color(0xFFF97316);
-      return LightModeColors.lightError;
-    } else {
-      // BAI
-      if (score <= 7) return LightModeColors.lightTertiary;
-      if (score <= 15) return const Color(0xFFFBBF24);
-      if (score <= 25) return const Color(0xFFF97316);
-      return LightModeColors.lightError;
+    switch (surveyType) {
+      case 1: // BDI-II
+        if (score <= 13) return LightModeColors.lightTertiary;
+        if (score <= 19) return const Color(0xFFFBBF24);
+        if (score <= 28) return const Color(0xFFF97316);
+        return LightModeColors.lightError;
+      case 2: // BAI
+        if (score <= 7) return LightModeColors.lightTertiary;
+        if (score <= 15) return const Color(0xFFFBBF24);
+        if (score <= 25) return const Color(0xFFF97316);
+        return LightModeColors.lightError;
+      case 3: // WHOQOL-BREF
+        return const Color(0xFF7C3AED);
+      case 4: // MoCA
+        return const Color(0xFF0EA5E9);
+      case 5: // SF-36
+        return const Color(0xFF06B6D4);
+      default:
+        return LightModeColors.lightPrimary;
     }
   }
 
+  Widget _buildWhoqolScore(Map<String, dynamic> survey) {
+    final responses = survey['responses'] as List? ?? [];
+    if (responses.isEmpty) {
+      return Text(
+        'Sin puntaje',
+        style: TextStyle(fontSize: 12, color: LightModeColors.lightOnSurfaceVariant),
+      );
+    }
+
+    // Calcular promedio de todas las respuestas como indicador de WHOQOL
+    int totalScore = 0;
+    for (final response in responses) {
+      final value = response['answer_value'] as int? ?? 0;
+      totalScore += value;
+    }
+    final avgScore = (totalScore / responses.length).toStringAsFixed(1);
+
+    String getWhoqolLevel(double score) {
+      if (score >= 4.0) return 'Excelente';
+      if (score >= 3.5) return 'Muy bueno';
+      if (score >= 3.0) return 'Bueno';
+      if (score >= 2.5) return 'Regular';
+      return 'Bajo';
+    }
+
+    return Text(
+      'Promedio: $avgScore/5 - ${getWhoqolLevel(totalScore / responses.length)}',
+      style: TextStyle(
+        fontSize: 12,
+        color: const Color(0xFF7C3AED),
+        fontWeight: FontWeight.w500,
+      ),
+    );
+  }
+
+  Widget _buildSF36Score(Map<String, dynamic> survey) {
+    final responses = survey['responses'] as List? ?? [];
+    if (responses.isEmpty) {
+      return Text(
+        'Sin puntaje',
+        style: TextStyle(fontSize: 12, color: LightModeColors.lightOnSurfaceVariant),
+      );
+    }
+
+    // Calcular promedio de todas las respuestas como indicador de SF-36
+    // SF-36 usa escala 0-100 transformada
+    int totalScore = 0;
+    for (final response in responses) {
+      final value = response['answer_value'] as int? ?? 0;
+      totalScore += value;
+    }
+    final avgScore = (totalScore / responses.length).toStringAsFixed(1);
+
+    String getSF36Level(double score) {
+      if (score >= 4.0) return 'Excelente';
+      if (score >= 3.5) return 'Muy bueno';
+      if (score >= 3.0) return 'Bueno';
+      if (score >= 2.5) return 'Regular';
+      return 'Bajo';
+    }
+
+    return Text(
+      'Promedio: $avgScore/5 - ${getSF36Level(totalScore / responses.length)}',
+      style: TextStyle(
+        fontSize: 12,
+        color: const Color(0xFF06B6D4),
+        fontWeight: FontWeight.w500,
+      ),
+    );
+  }
 }
 

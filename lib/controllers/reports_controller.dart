@@ -75,6 +75,58 @@ class WhoqolGlobalItemStats {
   });
 }
 
+class SF36DimensionStats {
+  final String label;
+  final double mean;
+  final double median;
+  final double stdDev;
+  final double min;
+  final double max;
+  final int count;
+  final List<double> timeline;
+
+  int get maxPossible => 100;
+
+  const SF36DimensionStats({
+    required this.label,
+    required this.mean,
+    required this.median,
+    required this.stdDev,
+    required this.min,
+    required this.max,
+    required this.count,
+    required this.timeline,
+  });
+}
+
+class SF36ReportData {
+  final BasicStats globalStats;
+  final SF36DimensionStats physicalFunctioning;
+  final SF36DimensionStats rolePhysical;
+  final SF36DimensionStats bodilyPain;
+  final SF36DimensionStats generalHealth;
+  final SF36DimensionStats vitality;
+  final SF36DimensionStats socialFunctioning;
+  final SF36DimensionStats roleEmotional;
+  final SF36DimensionStats mentalHealth;
+  final List<double> globalTimeline;
+  final int surveyCount;
+
+  const SF36ReportData({
+    required this.globalStats,
+    required this.physicalFunctioning,
+    required this.rolePhysical,
+    required this.bodilyPain,
+    required this.generalHealth,
+    required this.vitality,
+    required this.socialFunctioning,
+    required this.roleEmotional,
+    required this.mentalHealth,
+    required this.globalTimeline,
+    required this.surveyCount,
+  });
+}
+
 class WhoqolReportData {
   final BasicStats globalStats;
   final WhoqolDomainStats dom1;
@@ -336,6 +388,188 @@ class ReportsController {
     } else {
       return 'Puntuación BAJA (${pct.toStringAsFixed(1)}%). Se recomienda atención profesional en esta área.';
     }
+  }
+
+  static String sf36DimensionInterpretation(SF36DimensionStats dim) {
+    final pct = dim.mean;
+    if (pct >= 75) {
+      return 'Puntuación ALTA (${pct.toStringAsFixed(1)}%). Excelente estado en esta dimensión.';
+    } else if (pct >= 50) {
+      return 'Puntuación MEDIA (${pct.toStringAsFixed(1)}%). Estado aceptable, con aspectos a mejorar.';
+    } else if (pct >= 25) {
+      return 'Puntuación BAJA (${pct.toStringAsFixed(1)}%). Se recomienda atención en esta área.';
+    } else {
+      return 'Puntuación MUY BAJA (${pct.toStringAsFixed(1)}%). Se requiere evaluación y atención profesional.';
+    }
+  }
+
+  static SF36ReportData computeSF36Report(List<Map<String, dynamic>> surveys) {
+    final sorted = List<Map<String, dynamic>>.from(surveys)
+      ..sort((a, b) =>
+          DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
+
+    final globalScores = <double>[];
+    final pfScores = <double>[];
+    final rpScores = <double>[];
+    final bpScores = <double>[];
+    final ghScores = <double>[];
+    final vtScores = <double>[];
+    final sfScores = <double>[];
+    final reScores = <double>[];
+    final mhScores = <double>[];
+
+    for (final survey in sorted) {
+      final responses = survey['responses'] as List? ?? [];
+      if (responses.isEmpty) continue;
+
+      // Crear mapa de question_id -> answer_value
+      final responseMap = <int, int>{};
+      for (final r in responses) {
+        final qId = r['question_id'] as int?;
+        final val = r['answer_value'] as int?;
+        if (qId != null && val != null) {
+          responseMap[qId] = val;
+        }
+      }
+
+      // Función Física (3-12): suma min=10, max=30, rango=20, INVERTIDAS
+      final pf = _sumSF36ItemsInverted(responseMap, [3, 4, 5, 6, 7, 8, 9, 10, 11, 12], 3);
+      final pfScore = (pf - 10) / 20 * 100;
+      if (pfScore >= 0 && pfScore <= 100) pfScores.add(pfScore);
+
+      // Rol Físico (13-16): suma min=4, max=8, rango=4, INVERTIDAS
+      final rp = _sumSF36ItemsInverted(responseMap, [13, 14, 15, 16], 2);
+      final rpScore = (rp - 4) / 4 * 100;
+      if (rpScore >= 0 && rpScore <= 100) rpScores.add(rpScore);
+
+      // Dolor Corporal (21+22): suma min=2, max=12, rango=10, item 21 INVERTIDO, item 22 especial
+      int bp = responseMap[21] ?? 0;
+      // Invertir item 21 (máximo es 6, entonces 7 - valor)
+      bp = 7 - bp;
+      // Item 22 depende de item 21
+      if ((responseMap[21] ?? 0) == 1) {
+        bp += 6; // Sin dolor
+      } else {
+        bp += (6 - (responseMap[22] ?? 1)).clamp(1, 6).toInt();
+      }
+      final bpScore = (bp - 2) / 10 * 100;
+      if (bpScore >= 0 && bpScore <= 100) bpScores.add(bpScore);
+
+      // Salud General (1, 25-28): suma min=5, max=25, rango=20
+      // Item 1 NO se invierte, items 25-28 SÍ se invierten (escala 1-5)
+      int gh = responseMap[1] ?? 0; // item 1, sin invertir
+      gh += _invertScore(responseMap[25] ?? 0, 5);
+      gh += _invertScore(responseMap[26] ?? 0, 5);
+      gh += _invertScore(responseMap[27] ?? 0, 5);
+      gh += _invertScore(responseMap[28] ?? 0, 5);
+      final ghScore = (gh - 5) / 20 * 100;
+      if (ghScore >= 0 && ghScore <= 100) ghScores.add(ghScore);
+
+      // Vitalidad (23, 27, 29, 31): suma min=4, max=24, rango=20
+      // Items 23 y 27 se invierten (escala 1-6), items 29 y 31 NO se invierten
+      int vt = _invertScore(responseMap[23] ?? 0, 6);
+      vt += _invertScore(responseMap[27] ?? 0, 6);
+      vt += responseMap[29] ?? 0;
+      vt += responseMap[31] ?? 0;
+      final vtScore = (vt - 4) / 20 * 100;
+      if (vtScore >= 0 && vtScore <= 100) vtScores.add(vtScore);
+
+      // Función Social (20, 32): suma min=2, max=10, rango=8
+      // Item 20 se invierte (escala 1-5), item 32 NO se invierte (escala 1-5)
+      int sf = _invertScore(responseMap[20] ?? 0, 5);
+      sf += responseMap[32] ?? 0;
+      final sfScore = (sf - 2) / 8 * 100;
+      if (sfScore >= 0 && sfScore <= 100) sfScores.add(sfScore);
+
+      // Rol Emocional (17-19): suma min=3, max=6, rango=3
+      // Items 17-19 se invierten (escala 1-2)
+      int re = _invertScore(responseMap[17] ?? 0, 2);
+      re += _invertScore(responseMap[18] ?? 0, 2);
+      re += _invertScore(responseMap[19] ?? 0, 2);
+      final reScore = (re - 3) / 3 * 100;
+      if (reScore >= 0 && reScore <= 100) reScores.add(reScore);
+
+      // Salud Mental (24, 25, 26, 28, 30): suma min=5, max=30, rango=25
+      // Items 24, 25, 26, 28 se invierten (escala 1-6), item 30 NO se invierte
+      int mh = _invertScore(responseMap[24] ?? 0, 6);
+      mh += _invertScore(responseMap[25] ?? 0, 6);
+      mh += _invertScore(responseMap[26] ?? 0, 6);
+      mh += _invertScore(responseMap[28] ?? 0, 6);
+      mh += responseMap[30] ?? 0;
+      final mhScore = (mh - 5) / 25 * 100;
+      if (mhScore >= 0 && mhScore <= 100) mhScores.add(mhScore);
+
+      // Promedio global de dimensiones
+      final allDimensions = [pfScore, rpScore, bpScore, ghScore, vtScore, sfScore, reScore, mhScore];
+      final avgGlobal = allDimensions.fold(0.0, (a, b) => a + b) / allDimensions.length;
+      globalScores.add(avgGlobal);
+    }
+
+    return SF36ReportData(
+      globalStats: computeBasicStats(globalScores.map((s) => s.toInt()).toList()),
+      physicalFunctioning: _sf36DimensionStats('Función Física', pfScores),
+      rolePhysical: _sf36DimensionStats('Rol Físico', rpScores),
+      bodilyPain: _sf36DimensionStats('Dolor Corporal', bpScores),
+      generalHealth: _sf36DimensionStats('Salud General', ghScores),
+      vitality: _sf36DimensionStats('Vitalidad', vtScores),
+      socialFunctioning: _sf36DimensionStats('Función Social', sfScores),
+      roleEmotional: _sf36DimensionStats('Rol Emocional', reScores),
+      mentalHealth: _sf36DimensionStats('Salud Mental', mhScores),
+      globalTimeline: globalScores,
+      surveyCount: sorted.length,
+    );
+  }
+
+  static int _invertScore(int rawScore, int maxScore) {
+    // Invertir puntuación: si máximo es 5, entonces 6 - valor, si máximo es 6, entonces 7 - valor
+    return (maxScore + 1 - rawScore).clamp(1, maxScore);
+  }
+
+  static int _sumSF36ItemsInverted(Map<int, int> responseMap, List<int> questionIds, int maxScore) {
+    int sum = 0;
+    for (final qId in questionIds) {
+      final val = responseMap[qId] ?? 0;
+      sum += _invertScore(val, maxScore);
+    }
+    return sum;
+  }
+
+  static SF36DimensionStats _sf36DimensionStats(
+    String label,
+    List<double> scores,
+  ) {
+    if (scores.isEmpty) {
+      return SF36DimensionStats(
+        label: label,
+        mean: 0,
+        median: 0,
+        stdDev: 0,
+        min: 0,
+        max: 0,
+        count: 0,
+        timeline: [],
+      );
+    }
+
+    final sorted = List<double>.from(scores)..sort();
+    final n = sorted.length;
+    final mean = sorted.reduce((a, b) => a + b) / n;
+    final median =
+        n.isOdd ? sorted[n ~/ 2] : (sorted[n ~/ 2 - 1] + sorted[n ~/ 2]) / 2.0;
+    final variance =
+        sorted.map((s) => math.pow(s - mean, 2)).reduce((a, b) => a + b) / n;
+    final stdDev = math.sqrt(variance);
+
+    return SF36DimensionStats(
+      label: label,
+      mean: mean,
+      median: median,
+      stdDev: stdDev,
+      min: sorted.first,
+      max: sorted.last,
+      count: n,
+      timeline: scores,
+    );
   }
 }
 

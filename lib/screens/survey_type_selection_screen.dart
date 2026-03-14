@@ -8,6 +8,7 @@ enum SurveyType {
   bdi,
   whoqol,
   moca,
+  sf36,
 }
 
 extension SurveyTypeExtension on SurveyType {
@@ -21,6 +22,8 @@ extension SurveyTypeExtension on SurveyType {
         return 'MoCA';
       case SurveyType.whoqol:
         return 'WHOQOL-BREF';
+      case SurveyType.sf36:
+        return 'SF-36';
     }
   }
 
@@ -34,6 +37,8 @@ extension SurveyTypeExtension on SurveyType {
         return 'Montreal Cognitive Assessment';
       case SurveyType.whoqol:
         return 'World Health Organization Quality of Life';
+      case SurveyType.sf36:
+        return 'Short Form 36 Health Survey';
     }
   }
 
@@ -47,6 +52,8 @@ extension SurveyTypeExtension on SurveyType {
         return 'Evaluación Cognitiva Montreal';
       case SurveyType.whoqol:
         return 'Cuestionario de Calidad de Vida';
+      case SurveyType.sf36:
+        return 'Encuesta de Salud de 36 Items';
     }
   }
 
@@ -60,6 +67,8 @@ extension SurveyTypeExtension on SurveyType {
         return material.Icons.spa_outlined;
       case SurveyType.whoqol:
         return material.Icons.self_improvement_outlined;
+      case SurveyType.sf36:
+        return material.Icons.health_and_safety_outlined;
     }
   }
 
@@ -73,6 +82,8 @@ extension SurveyTypeExtension on SurveyType {
         return LightModeColors.lightSecondary;
       case SurveyType.whoqol:
         return const Color(0xFF7C3AED);
+      case SurveyType.sf36:
+        return const Color(0xFF06B6D4);
     }
   }
 }
