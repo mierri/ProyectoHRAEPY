@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/Services/patient_service.dart';
 import 'package:ssapp/Services/survey_service.dart';
+import 'package:ssapp/models/assist_questions.dart';
 import 'package:ssapp/utils/theme.dart';
 import 'package:ssapp/utils/toast_helper.dart';
 
@@ -70,6 +71,10 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         return const Color(0xFFFF7043);
       case 'bajo':
         return LightModeColors.lightError;
+      case 'moderado':
+        return const Color(0xFFF59E0B);
+      case 'alto':
+        return LightModeColors.lightError;
       default:
         return LightModeColors.lightSecondary;
     }
@@ -127,6 +132,8 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         if (score >= 3) return 'Bueno';
         if (score >= 2.5) return 'Regular';
         return 'Bajo';
+      case 6: // ASSIST
+        return 'ASSIST';
       default:
         return 'Resultado';
     }
@@ -202,6 +209,8 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
           default:
             return 'Se recomienda una evaluación más detallada de su salud general.';
         }
+      case 6: // ASSIST
+        return 'La intervención se define por sustancia según nivel de riesgo: Bajo (sin intervención), Moderado (intervención breve), Alto (tratamiento intensivo).';
       default:
         return 'Se recomienda consultar con un profesional de salud para una evaluación completa.';
     }
@@ -278,6 +287,7 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         case 3: return 'WHOQOL-BREF';
         case 4: return 'MoCA';
         case 5: return 'SF-36';
+        case 6: return 'ASSIST V3.0';
         default: return 'Encuesta';
       }
     }
@@ -289,6 +299,7 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         case 3: return 'Cuestionario de Calidad de Vida WHOQOL-BREF';
         case 4: return 'Evaluación Cognitiva Montreal';
         case 5: return 'Encuesta de Salud de 36 Items';
+        case 6: return 'OMS-ASSIST V3.0';
         default: return 'Encuesta';
       }
     }
@@ -311,6 +322,70 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
       } catch (e) {
         patientName = 'Paciente no encontrado';
       }
+    }
+
+    if (surveyType == 6) {
+      final assistResults = AssistQuestions.computeFromPersistedResponses(
+        List.from(responses ?? []),
+      );
+
+      return Scaffold(
+        headers: [
+          AppBar(
+            title: Text('Resultados $surveyTypeName'),
+            leading: [
+              IconButton(
+                icon: const Icon(material.Icons.arrow_back),
+                onPressed: () => context.pop(),
+                variance: ButtonVariance.ghost,
+              ),
+            ],
+          ),
+        ],
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _PatientInfoCard(patientName: patientName, createdAt: createdAt),
+              const Gap(24),
+              _AssistResultsCard(results: assistResults),
+              const Gap(24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlineButton(
+                      onPressed: () => context.pop(),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(material.Icons.arrow_back, size: 20),
+                          Gap(8),
+                          Text('Volver'),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const Gap(12),
+                  Expanded(
+                    child: PrimaryButton(
+                      onPressed: () => context.go('/'),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(material.Icons.home, size: 20),
+                          Gap(8),
+                          Text('Inicio'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     return Scaffold(
@@ -784,6 +859,142 @@ class _ResponseDetailsCard extends StatelessWidget {
               'Puntaje promedio por pregunta: ${(responses.fold<int>(0, (sum, r) => sum + (r['answer_value'] as int? ?? 0)) / responses.length).toStringAsFixed(1)}',
               style: const TextStyle(fontSize: 14),
             ).muted(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AssistResultsCard extends StatelessWidget {
+  final AssistComputedResults results;
+
+  const _AssistResultsCard({required this.results});
+
+  Color _riskColor(String level) {
+    switch (level.toLowerCase()) {
+      case 'bajo':
+        return LightModeColors.lightTertiary;
+      case 'moderado':
+        return const Color(0xFFF59E0B);
+      case 'alto':
+        return LightModeColors.lightError;
+      default:
+        return LightModeColors.lightSecondary;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final orderedResults = AssistQuestions.substances
+        .where((item) => results.resultsBySubstance.containsKey(item.id))
+        .map((item) => results.resultsBySubstance[item.id]!)
+        .toList();
+
+    return SurfaceCard(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(material.Icons.medication_outlined, color: LightModeColors.lightSecondary),
+                const Gap(10),
+                Expanded(child: Text('Resultados OMS-ASSIST V3.0').semiBold().large()),
+              ],
+            ),
+            const Gap(14),
+            if (!results.hasAnyLifetimeUse)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: LightModeColors.lightTertiary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: LightModeColors.lightTertiary.withValues(alpha: 0.4),
+                  ),
+                ),
+                child: const Text('No se reporta consumo de sustancias alguna vez en la vida. Recomendación: Sin intervención.'),
+              ),
+            ...orderedResults.map((item) {
+              final color = _riskColor(item.riskLevel);
+              return Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: color.withValues(alpha: 0.35)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.substance.label,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            item.riskLevel,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Gap(6),
+                    Text('Puntaje: ${item.score}'),
+                    const Gap(2),
+                    Text('Intervención: ${item.recommendation}'),
+                  ],
+                ),
+              );
+            }),
+            if (results.hasInjectedInLast3Months)
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(top: 6),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: LightModeColors.lightError.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: LightModeColors.lightError.withValues(alpha: 0.35),
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      material.Icons.warning_amber,
+                      color: LightModeColors.lightError,
+                      size: 20,
+                    ),
+                    const Gap(10),
+                    const Expanded(
+                      child: Text(
+                        'Advertencia: uso por vía inyectada en los últimos 3 meses. Se recomienda valoración clínica prioritaria.',
+                        style: TextStyle(height: 1.5),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),

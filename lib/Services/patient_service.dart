@@ -235,13 +235,29 @@ class PatientService extends ChangeNotifier {
     int syncedCount = 0;
 
     try {
+      // Asegurar que también tomamos pendientes guardados en Hive,
+      // incluso si la lista en memoria aún no fue cargada.
+      if (_patients.isEmpty) {
+        _patients = await _getLocalPatients();
+      }
+
       final pendingPatients = _patients.where((p) => !p.synced).toList();
 
       if (pendingPatients.isEmpty) {
+        final localPatients = await _getLocalPatients();
+        final localPending = localPatients.where((p) => !p.synced).toList();
+        if (localPending.isNotEmpty) {
+          _patients = localPatients;
+        }
+      }
+
+      final patientsToSync = _patients.where((p) => !p.synced).toList();
+
+      if (patientsToSync.isEmpty) {
         return 0;
       }
 
-      for (var patient in pendingPatients) {
+      for (var patient in patientsToSync) {
         final success = await syncPatientToSupabase(patient);
         if (success) {
           patient.synced = true;

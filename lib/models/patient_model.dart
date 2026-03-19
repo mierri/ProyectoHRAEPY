@@ -23,18 +23,52 @@ class PatientModel extends HiveObject {
     this.synced = false,
   });
 
+  static String _genderForDb(String value) {
+    switch (value) {
+      case 'M':
+      case 'Masculino':
+        return 'Masculino';
+      case 'F':
+      case 'Femenino':
+        return 'Femenino';
+      case 'O':
+      case 'Otro':
+        return 'Otro';
+      case 'N':
+      case 'Prefiero no decir':
+        return 'Prefiero no decir';
+      default:
+        return value;
+    }
+  }
+
+  static String _genderFromDb(String value) {
+    switch (value) {
+      case 'Masculino':
+        return 'M';
+      case 'Femenino':
+        return 'F';
+      case 'Otro':
+        return 'O';
+      case 'Prefiero no decir':
+        return 'N';
+      default:
+        return value;
+    }
+  }
+
   // Métodos para sincronización con backend
   Map<String, dynamic> toJson() => {
     'patient_id': patientId,
     'name': name,
-    'gender': gender,
+    'gender': _genderForDb(gender),
     'birth_date': birthDate.toIso8601String(),
   };
 
   factory PatientModel.fromJson(Map<String, dynamic> json) => PatientModel(
     patientId: json['patient_id'],
     name: json['name'],
-    gender: json['gender'],
+    gender: _genderFromDb(json['gender']),
     birthDate: DateTime.parse(json['birth_date']),
     synced: json['synced'] ?? true, // true porque viene del backend
   );

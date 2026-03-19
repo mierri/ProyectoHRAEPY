@@ -19,6 +19,7 @@ import 'package:ssapp/screens/surveys_list_screen.dart';
 import 'package:ssapp/screens/survey_type_selection_screen.dart';
 import 'package:ssapp/screens/whoqol_screen.dart';
 import 'package:ssapp/screens/sf36_screen.dart';
+import 'package:ssapp/screens/assist_screen.dart';
 import 'package:ssapp/Services/patient_service.dart';
 import 'package:ssapp/Services/survey_service.dart';
 
@@ -109,6 +110,11 @@ final GoRouter _router = GoRouter(
         // Route to SF-36 screen
         if (surveyType == 'sf36') {
           return SF36Screen(patientId: patientId);
+        }
+
+        // Route to ASSIST screen
+        if (surveyType == 'assist') {
+          return AssistScreen(patientId: patientId);
         }
 
         // Otherwise, use the standard survey screen for BDI/BAI

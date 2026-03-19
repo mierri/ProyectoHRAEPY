@@ -9,6 +9,7 @@ enum SurveyType {
   whoqol,
   moca,
   sf36,
+  assist,
 }
 
 extension SurveyTypeExtension on SurveyType {
@@ -24,6 +25,8 @@ extension SurveyTypeExtension on SurveyType {
         return 'WHOQOL-BREF';
       case SurveyType.sf36:
         return 'SF-36';
+      case SurveyType.assist:
+        return 'ASSIST V3.0';
     }
   }
 
@@ -39,6 +42,8 @@ extension SurveyTypeExtension on SurveyType {
         return 'World Health Organization Quality of Life';
       case SurveyType.sf36:
         return 'Short Form 36 Health Survey';
+      case SurveyType.assist:
+        return 'Alcohol, Smoking and Substance Involvement Screening Test';
     }
   }
 
@@ -54,6 +59,8 @@ extension SurveyTypeExtension on SurveyType {
         return 'Cuestionario de Calidad de Vida';
       case SurveyType.sf36:
         return 'Encuesta de Salud de 36 Items';
+      case SurveyType.assist:
+        return 'Cribado de Consumo de Sustancias OMS';
     }
   }
 
@@ -69,6 +76,8 @@ extension SurveyTypeExtension on SurveyType {
         return material.Icons.self_improvement_outlined;
       case SurveyType.sf36:
         return material.Icons.health_and_safety_outlined;
+      case SurveyType.assist:
+        return material.Icons.medication_outlined;
     }
   }
 
@@ -84,6 +93,8 @@ extension SurveyTypeExtension on SurveyType {
         return const Color(0xFF7C3AED);
       case SurveyType.sf36:
         return const Color(0xFF06B6D4);
+      case SurveyType.assist:
+        return LightModeColors.lightSecondary;
     }
   }
 }

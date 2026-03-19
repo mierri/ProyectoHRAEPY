@@ -95,6 +95,8 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
         return const Color(0xFF7C3AED);
       case 'sf36':
         return const Color(0xFF06B6D4);
+      case 'assist':
+        return LightModeColors.lightSecondary;
       case 'bdi':
       default:
         return LightModeColors.lightPrimary;
@@ -172,6 +174,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
     final isMoca = surveyType == 'moca';
     final isWhoqol = surveyType == 'whoqol';
     final isSf36 = surveyType == 'sf36';
+    final isAssist = surveyType == 'assist';
 
     String surveyTitle;
     String surveyInstructions;
@@ -187,6 +190,9 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
     } else if (isSf36) {
       surveyTitle = 'Encuesta de Salud de 36 Items (SF-36)';
       surveyInstructions = 'Este cuestionario evalúa diferentes aspectos de su salud y bienestar. Por favor, responda cada pregunta según cómo se ha sentido o qué ha podido hacer durante las últimas cuatro semanas. No hay respuestas correctas o incorrectas, simplemente elija la opción que mejor describa su situación.';
+    } else if (isAssist) {
+      surveyTitle = 'OMS-ASSIST V3.0';
+      surveyInstructions = 'Este cuestionario detecta riesgo asociado al consumo de tabaco, alcohol y otras sustancias. Primero se registra consumo alguna vez en la vida y luego frecuencia/problemas en los últimos 3 meses para cada sustancia seleccionada. Responda con la mayor precisión posible.';
     } else {
       surveyTitle = 'Inventario de Depresión de Beck (BDI-II)';
       surveyInstructions = 'Este cuestionario consta de 21 grupos de afirmaciones. Por favor, lea con cuidado cada grupo y elija la que mejor describe cómo se ha sentido durante las últimas dos semanas, incluyendo hoy.';
@@ -326,6 +332,27 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                         icon: Symbols.sentiment_very_dissatisfied,
                         label: '5 — Extremadamente / Muy satisfecho/a / Siempre',
                         description: 'La situación aplica en el máximo grado posible.',
+                        color: const Color(0xFFDC2626),
+                      ),
+                    ] else if (isAssist) ...[
+                      _ScaleItem(
+                        icon: Symbols.check_circle,
+                        label: 'Frecuencia en 3 meses',
+                        description: 'Nunca / 1-2 veces / Cada mes / Cada semana / A diario.',
+                        color: const Color(0xFF0EA5E9),
+                      ),
+                      const Gap(8),
+                      _ScaleItem(
+                        icon: Symbols.rule,
+                        label: 'Puntaje por sustancia',
+                        description: 'Se suma P2+P3+P4+P5+P6+P7 (tabaco no incluye P5).',
+                        color: const Color(0xFF0284C7),
+                      ),
+                      const Gap(8),
+                      _ScaleItem(
+                        icon: Symbols.warning,
+                        label: 'Vía inyectada',
+                        description: 'Se registra aparte como advertencia clínica, no suma al puntaje por sustancia.',
                         color: const Color(0xFFDC2626),
                       ),
                     ] else ...[
@@ -714,6 +741,8 @@ class ConsentInfoCard extends StatelessWidget {
         return 'Este cuestionario evalúa la calidad de vida en cuatro dominios: salud física, salud psicológica, relaciones sociales y ambiente, mediante el instrumento WHOQOL-BREF de la Organización Mundial de la Salud. Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
       case 'sf36':
         return 'Este cuestionario evalúa diferentes aspectos de la salud y el bienestar mediante la Encuesta de Salud de 36 Items (SF-36). Evalúa funcionamiento físico, rol físico, dolor corporal, salud general, vitalidad, funcionamiento social, rol emocional y salud mental. Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
+      case 'assist':
+        return 'Este cuestionario evalúa riesgo asociado al consumo de tabaco, alcohol y otras sustancias mediante el instrumento OMS-ASSIST V3.0. Los resultados orientan el nivel de intervención (sin intervención, intervención breve o tratamiento intensivo). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
       case 'bdi':
       default:
         return 'Este cuestionario evalúa síntomas de depresión mediante el Inventario de Depresión de Beck (BDI-II). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
@@ -730,6 +759,8 @@ class ConsentInfoCard extends StatelessWidget {
         return const Color(0xFF7C3AED);
       case 'sf36':
         return const Color(0xFF06B6D4);
+      case 'assist':
+        return LightModeColors.lightSecondary;
       case 'bdi':
       default:
         return LightModeColors.lightPrimary;

@@ -1,10 +1,42 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:ssapp/config/supabase_config.dart';
+import 'package:ssapp/models/patient_model.dart';
 import 'package:ssapp/models/survey_model.dart';
 
 class SurveyService extends ChangeNotifier {
   List<Map<String, dynamic>> _surveys = [];
+
+  bool _isForeignKeyPatientError(Object error) {
+    final message = error.toString();
+    return message.contains('surveys_patient_id_fkey') ||
+        message.contains('code: 23503') ||
+        message.contains('foreign key constraint');
+  }
+
+  Future<bool> _syncPatientFromLocalIfNeeded(int? patientId) async {
+    if (patientId == null || patientId == 0) return false;
+
+    try {
+      final box = await Hive.openBox<PatientModel>('patients');
+      final patient = box.values.where((p) => p.patientId == patientId).firstOrNull;
+      if (patient == null) return false;
+
+      final supabase = SupabaseConfig.client;
+      await supabase
+          .from('patients')
+          .upsert(patient.toJson())
+          .select()
+          .single();
+
+      patient.synced = true;
+      await patient.save();
+      return true;
+    } catch (e) {
+      print('No se pudo sincronizar paciente relacionado ($patientId): $e');
+      return false;
+    }
+  }
   
   List<Map<String, dynamic>> get surveys => List.unmodifiable(_surveys);
 
@@ -61,7 +93,7 @@ class SurveyService extends ChangeNotifier {
     };
   }
   
-  /// Obtiene encuestas por tipo (BDI=1, BAI=2, WHOQOL=3, MoCA=4)
+  /// Obtiene encuestas por tipo (BDI=1, BAI=2, WHOQOL=3, MoCA=4, SF-36=5, ASSIST=6)
   List<Map<String, dynamic>> getSurveysByType(int surveyType) {
     return _surveys.where((survey) => survey['survey_type'] == surveyType).toList();
   }
@@ -77,6 +109,10 @@ class SurveyService extends ChangeNotifier {
         return 'WHOQOL-BREF';
       case 4:
         return 'MoCA';
+      case 5:
+        return 'SF-36';
+      case 6:
+        return 'ASSIST V3.0';
       default:
         return 'Encuesta #$surveyId';
     }
@@ -93,6 +129,10 @@ class SurveyService extends ChangeNotifier {
         return 'secondary'; // WHOQOL - Violeta
       case 4:
         return 'secondary'; // MoCA
+      case 5:
+        return 'secondary'; // SF-36
+      case 6:
+        return 'secondary'; // ASSIST
       default:
         return 'secondary';
     }
@@ -162,7 +202,7 @@ class SurveyService extends ChangeNotifier {
         return {
           'survey_id': survey.surveyId,
           'patient_id': survey.patientId,
-          'survey_type': survey.surveyType, // 1=BDI, 2=BAI
+          'survey_type': survey.surveyType,
           'synced': survey.synced,
           'created_at': DateTime.fromMillisecondsSinceEpoch(survey.surveyId).toIso8601String(),
           'responses': survey.responses.map((r) => {
@@ -203,9 +243,25 @@ class SurveyService extends ChangeNotifier {
         'synced': true,
       };
 
-      await supabase
-          .from('surveys')
-          .insert(surveyData);
+      try {
+        await supabase
+            .from('surveys')
+            .insert(surveyData);
+      } catch (e) {
+        // Si falla FK por paciente faltante, intentar sincronizar paciente local y reintentar
+        if (_isForeignKeyPatientError(e)) {
+          final patientSynced = await _syncPatientFromLocalIfNeeded(survey.patientId);
+          if (patientSynced) {
+            await supabase
+                .from('surveys')
+                .insert(surveyData);
+          } else {
+            rethrow;
+          }
+        } else {
+          rethrow;
+        }
+      }
 
       // Insertar respuestas en la tabla 'responses'
       final responsesData = survey.responses.map((r) => {

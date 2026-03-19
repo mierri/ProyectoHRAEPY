@@ -18,7 +18,7 @@ class SurveysListScreen extends StatefulWidget {
 
 class _SurveysListScreenState extends State<SurveysListScreen> {
   bool _isLoading = true;
-  String _filterType = 'all';   // 'all' | 'bdi' | 'bai' | 'moca' | 'whoqol'
+  String _filterType = 'all';   // 'all' | 'bdi' | 'bai' | 'moca' | 'whoqol' | 'sf36' | 'assist'
   String _filterStatus = 'all'; // 'all' | 'synced' | 'pending'
 
   @override
@@ -40,7 +40,7 @@ class _SurveysListScreenState extends State<SurveysListScreen> {
 
   List<Map<String, dynamic>> _filteredSurveys(List<Map<String, dynamic>> all) {
     var result = all;
-    const _typeIdMap = {'bdi': 1, 'bai': 2, 'whoqol': 3, 'moca': 4, 'sf36': 5};
+    const _typeIdMap = {'bdi': 1, 'bai': 2, 'whoqol': 3, 'moca': 4, 'sf36': 5, 'assist': 6};
     if (_typeIdMap.containsKey(_filterType)) {
       final typeId = _typeIdMap[_filterType]!;
       result = result.where((s) => (s['survey_type'] ?? 1) == typeId).toList();
@@ -195,6 +195,8 @@ class _FiltersSection extends StatelessWidget {
         _FilterOption(value: 'bai', label: 'BAI'),
         _FilterOption(value: 'moca', label: 'MoCA'),
         _FilterOption(value: 'whoqol', label: 'WHOQOL-BREF'),
+        _FilterOption(value: 'sf36', label: 'SF-36'),
+        _FilterOption(value: 'assist', label: 'ASSIST V3.0'),
       ],
       selected: filterType == 'all' ? null : filterType,
       hint: 'Todas',
@@ -392,6 +394,7 @@ class _SurveyCard extends StatelessWidget {
       case 3: return 'WHOQOL-BREF';
       case 4: return 'MoCA';
       case 5: return 'SF-36';
+      case 6: return 'ASSIST';
       default: return 'Encuesta';
     }
   }
