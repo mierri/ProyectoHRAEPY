@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' as material show Icons, Material, Navigator;
+import 'package:flutter/material.dart' as material show Icons, Material, Navigator, Switch;
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
@@ -621,68 +621,114 @@ class _AssistScreenState extends State<AssistScreen> {
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  OutlinedContainer(
-                    backgroundColor: _assistColor.withValues(alpha: 0.06),
-                    borderRadius: BorderRadius.circular(14),
-                    padding: const EdgeInsets.all(18),
-                    borderColor: _assistColor.withValues(alpha: 0.3),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _questionTitle(questionNumber),
-                          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, height: 1.35),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 900),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      OutlinedContainer(
+                        backgroundColor: _assistColor.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(12),
+                        padding: const EdgeInsets.all(20),
+                        borderColor: _assistColor.withValues(alpha: 0.3),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: _assistColor,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '${_controller.currentIndex + 1}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const Gap(16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _questionTitle(questionNumber),
+                                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, height: 1.35),
+                                  ),
+                                  const Gap(6),
+                                  Text(
+                                    _questionSubtitle(questionNumber),
+                                    style: const TextStyle(fontSize: 13, color: Color(0xFF4B5563)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
+                      ),
+                      const Gap(24),
+                      _buildQuestionBody(questionNumber),
+                      const Gap(24),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                if (_controller.canGoPrevious)
+                  Expanded(
+                    child: OutlineButton(
+                      onPressed: _previousQuestion,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(material.Icons.arrow_back, color: _assistColor, size: 20),
+                          const Gap(8),
+                          Text('Anterior', style: TextStyle(color: _assistColor)),
+                        ],
+                      ),
+                    ),
+                  ),
+                if (_controller.canGoPrevious) const Gap(12),
+                Expanded(
+                  child: PrimaryButton(
+                    onPressed: _controller.canGoNext ? _nextQuestion : null,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(_controller.isLastQuestion ? 'Finalizar' : 'Siguiente'),
                         const Gap(8),
-                        Text(
-                          _questionSubtitle(questionNumber),
-                          style: const TextStyle(fontSize: 13, color: Color(0xFF4B5563)),
+                        Icon(
+                          _controller.isLastQuestion
+                              ? material.Icons.check
+                              : material.Icons.arrow_forward,
+                          size: 20,
                         ),
                       ],
                     ),
                   ),
-                  const Gap(16),
-                  _buildQuestionBody(questionNumber),
-                  const Gap(24),
-                  Row(
-                    children: [
-                      if (_controller.canGoPrevious)
-                        Expanded(
-                          child: OutlineButton(
-                            onPressed: _previousQuestion,
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(material.Icons.arrow_back, size: 18),
-                                Gap(8),
-                                Text('Anterior'),
-                              ],
-                            ),
-                          ),
-                        ),
-                      if (_controller.canGoPrevious) const Gap(12),
-                      Expanded(
-                        child: PrimaryButton(
-                          onPressed: _controller.canGoNext ? _nextQuestion : null,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(_controller.isLastQuestion ? 'Finalizar' : 'Siguiente'),
-                              if (!_controller.isLastQuestion) ...[
-                                const Gap(8),
-                                const Icon(material.Icons.arrow_forward, size: 18),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
@@ -697,7 +743,7 @@ class _AssistScreenState extends State<AssistScreen> {
           final selected = _controller.isSubstanceSelected(substance.id);
           return Container(
             margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
@@ -708,30 +754,37 @@ class _AssistScreenState extends State<AssistScreen> {
             ),
             child: Row(
               children: [
-                Expanded(child: Text(substance.label, style: const TextStyle(fontWeight: FontWeight.w500))),
-                OutlineButton(
-                  size: ButtonSize.small,
-                  onPressed: () {
-                    _controller.setSubstanceSelection(substance.id, false);
-                  },
-                  child: const Text('No'),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(substance.label, style: const TextStyle(fontWeight: FontWeight.w600)),
+                      const Gap(2),
+                      Text(
+                        selected ? 'Sí, consumida alguna vez' : 'No consumida',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: selected
+                              ? _assistColor.withValues(alpha: 0.9)
+                              : LightModeColors.lightOnSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const Gap(8),
-                PrimaryButton(
-                  size: ButtonSize.small,
-                  onPressed: selected
-                      ? null
-                      : () {
-                          _controller.setSubstanceSelection(substance.id, true);
-                          showCenteredToast(
-                            context,
-                            title: 'Respuesta guardada',
-                            icon: material.Icons.check_circle,
-                            iconColor: _assistColor,
-                            location: ToastLocation.topCenter,
-                          );
-                        },
-                  child: const Text('Sí'),
+                material.Switch(
+                  value: selected,
+                  activeColor: _assistColor,
+                  onChanged: (value) {
+                    _controller.setSubstanceSelection(substance.id, value);
+                    showCenteredToast(
+                      context,
+                      title: 'Respuesta guardada',
+                      icon: material.Icons.check_circle,
+                      iconColor: _assistColor,
+                      location: ToastLocation.topCenter,
+                    );
+                  },
                 ),
               ],
             ),
@@ -797,7 +850,7 @@ class _AssistScreenState extends State<AssistScreen> {
         final selectedScore = _controller.getAnswerFor(questionNumber, substance.id);
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: LightModeColors.lightOutline.withValues(alpha: 0.35)),
@@ -808,32 +861,24 @@ class _AssistScreenState extends State<AssistScreen> {
             children: [
               Text(substance.label, style: const TextStyle(fontWeight: FontWeight.w600)),
               const Gap(10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
+              Column(
                 children: List.generate(options.length, (index) {
                   final score = scores[index];
                   final selected = selectedScore == score;
-                  return selected
-                      ? PrimaryButton(
-                          size: ButtonSize.small,
-                          onPressed: () {},
-                          child: Text(options[index]),
-                        )
-                      : OutlineButton(
-                          size: ButtonSize.small,
-                          onPressed: () {
-                            _controller.setAnswerFor(questionNumber, substance.id, score);
-                            showCenteredToast(
-                              context,
-                              title: 'Respuesta guardada',
-                              icon: material.Icons.check_circle,
-                              iconColor: _assistColor,
-                              location: ToastLocation.topCenter,
-                            );
-                          },
-                          child: Text(options[index]),
-                        );
+                  return _AssistAnswerCard(
+                    label: options[index],
+                    selected: selected,
+                    onTap: () {
+                      _controller.setAnswerFor(questionNumber, substance.id, score);
+                      showCenteredToast(
+                        context,
+                        title: 'Respuesta guardada',
+                        icon: material.Icons.check_circle,
+                        iconColor: _assistColor,
+                        location: ToastLocation.topCenter,
+                      );
+                    },
+                  );
                 }),
               ),
             ],
