@@ -18,7 +18,7 @@ class SurveysListScreen extends StatefulWidget {
 
 class _SurveysListScreenState extends State<SurveysListScreen> {
   bool _isLoading = true;
-  String _filterType = 'all';   // 'all' | 'bdi' | 'bai' | 'moca' | 'whoqol' | 'sf36' | 'assist'
+  String _filterType = 'all';   // 'all' | 'bdi' | 'bai' | 'gds' | 'moca' | 'whoqol' | 'sf36' | 'assist'
   String _filterStatus = 'all'; // 'all' | 'synced' | 'pending'
 
   @override
@@ -40,7 +40,7 @@ class _SurveysListScreenState extends State<SurveysListScreen> {
 
   List<Map<String, dynamic>> _filteredSurveys(List<Map<String, dynamic>> all) {
     var result = all;
-    const _typeIdMap = {'bdi': 1, 'bai': 2, 'whoqol': 3, 'moca': 4, 'sf36': 5, 'assist': 6};
+    const _typeIdMap = {'bdi': 1, 'bai': 2, 'whoqol': 3, 'moca': 4, 'sf36': 5, 'assist': 6, 'gds': 7};
     if (_typeIdMap.containsKey(_filterType)) {
       final typeId = _typeIdMap[_filterType]!;
       result = result.where((s) => (s['survey_type'] ?? 1) == typeId).toList();
@@ -193,6 +193,7 @@ class _FiltersSection extends StatelessWidget {
         _FilterOption(value: 'all', label: 'Todas'),
         _FilterOption(value: 'bdi', label: 'BDI-II'),
         _FilterOption(value: 'bai', label: 'BAI'),
+        _FilterOption(value: 'gds', label: 'GDS-15'),
         _FilterOption(value: 'moca', label: 'MoCA'),
         _FilterOption(value: 'whoqol', label: 'WHOQOL-BREF'),
         _FilterOption(value: 'sf36', label: 'SF-36'),
@@ -383,6 +384,8 @@ class _SurveyCard extends StatelessWidget {
       case 3: return const Color(0xFF7C3AED); // WHOQOL - violeta
       case 4: return const Color(0xFF0EA5E9); // MoCA - celeste
       case 5: return const Color(0xFF06B6D4); // SF-36 - cyan
+      case 6: return LightModeColors.lightSecondary; // ASSIST
+      case 7: return const Color(0xFF0EA5E9); // GDS-15 - celeste
       default: return LightModeColors.lightPrimary;
     }
   }
@@ -395,6 +398,7 @@ class _SurveyCard extends StatelessWidget {
       case 4: return 'MoCA';
       case 5: return 'SF-36';
       case 6: return 'ASSIST';
+      case 7: return 'GDS-15';
       default: return 'Encuesta';
     }
   }
@@ -404,6 +408,7 @@ class _SurveyCard extends StatelessWidget {
       case 3: return 26; // WHOQOL
       case 4: return 0;  // MoCA no usa responses table del mismo modo
       case 5: return 36; // SF-36
+      case 7: return 15; // GDS-15
       default: return 21; // BDI / BAI
     }
   }
@@ -430,6 +435,7 @@ class _SurveyCard extends StatelessWidget {
     if (type == 3) return 'WHOQOL'; // WHOQOL - no single score
     if (type == 4) return 'MoCA';   // MoCA
     if (type == 5) return 'SF-36';  // SF-36
+    if (type == 7) return score <= 4 ? 'Normal' : 'Síntomas depresivos';
     return '';
   }
 
@@ -449,6 +455,7 @@ class _SurveyCard extends StatelessWidget {
     if (type == 3) return const Color(0xFF7C3AED);
     if (type == 4) return const Color(0xFF0EA5E9);
     if (type == 5) return const Color(0xFF06B6D4); // SF-36 cyan
+    if (type == 7) return score <= 4 ? LightModeColors.lightTertiary : LightModeColors.lightError;
     return LightModeColors.lightPrimary;
   }
 

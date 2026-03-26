@@ -13,7 +13,7 @@ class SurveyModel extends HiveObject{
   @HiveField(3)
   int? patientId;
   @HiveField(4)
-  int surveyType; // 1=BDI, 2=BAI (tipo de encuesta)
+  int surveyType; 
 
   SurveyModel({
     required this.surveyId,

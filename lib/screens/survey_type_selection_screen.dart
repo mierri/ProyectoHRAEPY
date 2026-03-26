@@ -6,6 +6,7 @@ import 'package:ssapp/utils/theme.dart';
 enum SurveyType {
   bai,
   bdi,
+  gds,
   whoqol,
   moca,
   sf36,
@@ -19,6 +20,8 @@ extension SurveyTypeExtension on SurveyType {
         return 'BAI';
       case SurveyType.bdi:
         return 'BDI-II';
+      case SurveyType.gds:
+        return 'GDS-15';
       case SurveyType.moca:
         return 'MoCA';
       case SurveyType.whoqol:
@@ -36,6 +39,8 @@ extension SurveyTypeExtension on SurveyType {
         return 'Beck Anxiety Inventory';
       case SurveyType.bdi:
         return 'Beck Depression Inventory — Segunda Edición';
+      case SurveyType.gds:
+        return 'Geriatric Depression Scale — 15 Items';
       case SurveyType.moca:
         return 'Montreal Cognitive Assessment';
       case SurveyType.whoqol:
@@ -53,6 +58,8 @@ extension SurveyTypeExtension on SurveyType {
         return 'Inventario de Ansiedad de Beck';
       case SurveyType.bdi:
         return 'Inventario de Depresión de Beck';
+      case SurveyType.gds:
+        return 'Escala de Depresión Geriátrica';
       case SurveyType.moca:
         return 'Evaluación Cognitiva Montreal';
       case SurveyType.whoqol:
@@ -70,6 +77,8 @@ extension SurveyTypeExtension on SurveyType {
         return material.Icons.psychology_outlined;
       case SurveyType.bdi:
         return material.Icons.favorite_outline;
+      case SurveyType.gds:
+        return material.Icons.elderly_outlined;
       case SurveyType.moca:
         return material.Icons.spa_outlined;
       case SurveyType.whoqol:
@@ -87,6 +96,8 @@ extension SurveyTypeExtension on SurveyType {
         return LightModeColors.lightTertiary;
       case SurveyType.bdi:
         return LightModeColors.lightPrimary;
+      case SurveyType.gds:
+        return const Color(0xFF0EA5E9);
       case SurveyType.moca:
         return LightModeColors.lightSecondary;
       case SurveyType.whoqol:

@@ -50,9 +50,13 @@ class _SurveyScreenState extends State<SurveyScreen> {
   }
 
   Color get _surveyColor {
-    return widget.surveyType == 'bai'
-        ? LightModeColors.lightTertiary
-        : LightModeColors.lightPrimary;
+    if (widget.surveyType == 'bai') {
+      return LightModeColors.lightTertiary;
+    }
+    if (widget.surveyType == 'gds') {
+      return const Color(0xFF0EA5E9);
+    }
+    return LightModeColors.lightPrimary;
   }
 
   Future<void> _saveSurvey() async {
@@ -290,6 +294,12 @@ class _SurveyScreenState extends State<SurveyScreen> {
         levelColor = const Color(0xFFFFA726);
       } else if (totalScore <= 25) {
         levelColor = const Color(0xFFFF7043);
+      } else {
+        levelColor = LightModeColors.lightError;
+      }
+    } else if (widget.surveyType == 'gds') {
+      if (totalScore <= 4) {
+        levelColor = LightModeColors.lightTertiary;
       } else {
         levelColor = LightModeColors.lightError;
       }
@@ -577,7 +587,9 @@ class _SurveyScreenState extends State<SurveyScreen> {
                               Text(
                                 widget.surveyType == 'bai'
                                     ? 'Durante la última semana'
-                                    : 'Últimas dos semanas incluyendo hoy',
+                                    : widget.surveyType == 'gds'
+                                        ? 'Responda según su situación actual'
+                                        : 'Últimas dos semanas incluyendo hoy',
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: _surveyColor.withValues(alpha: 0.7),

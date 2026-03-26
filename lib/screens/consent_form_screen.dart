@@ -91,6 +91,8 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
         return LightModeColors.lightTertiary;
       case 'moca':
         return LightModeColors.lightSecondary;
+      case 'gds':
+        return const Color(0xFF0EA5E9);
       case 'whoqol':
         return const Color(0xFF7C3AED);
       case 'sf36':
@@ -172,6 +174,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
   }) async {
     final isBai = surveyType == 'bai';
     final isMoca = surveyType == 'moca';
+    final isGds = surveyType == 'gds';
     final isWhoqol = surveyType == 'whoqol';
     final isSf36 = surveyType == 'sf36';
     final isAssist = surveyType == 'assist';
@@ -184,6 +187,9 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
     } else if (isMoca) {
       surveyTitle = 'Evaluación Cognitiva Montreal (MoCA)';
       surveyInstructions = 'A continuación se le presentarán una serie de tareas y preguntas que evalúan diferentes áreas de su funcionamiento cognitivo. Siga las instrucciones de cada actividad con atención. No hay respuestas buenas o malas, simplemente haga su mejor esfuerzo.';
+    } else if (isGds) {
+      surveyTitle = 'Escala de Depresión Geriátrica (GDS-15)';
+      surveyInstructions = 'Este cuestionario consta de 15 preguntas con respuesta Sí o No. Responda según cómo se ha sentido recientemente. No hay respuestas correctas o incorrectas.';
     } else if (isWhoqol) {
       surveyTitle = 'Cuestionario de Calidad de Vida (WHOQOL-BREF)';
       surveyInstructions = 'Este cuestionario le pregunta cómo se ha sentido acerca de su calidad de vida, su salud y otros aspectos de su vida durante las dos últimas semanas. Por favor, responda todas las preguntas. Si no está seguro/a de qué respuesta dar a una pregunta, escoja la que le parezca más apropiada.';
@@ -298,6 +304,27 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                         label: 'Severamente',
                         description: 'Apenas podía soportarlo.',
                         color: const Color(0xFFDC2626),
+                      ),
+                    ] else if (isGds) ...[
+                      _ScaleItem(
+                        icon: Symbols.check_circle,
+                        label: 'Sí / No',
+                        description: 'Seleccione la opción que mejor refleje su situación actual.',
+                        color: const Color(0xFF0EA5E9),
+                      ),
+                      const Gap(8),
+                      _ScaleItem(
+                        icon: Symbols.calculate,
+                        label: 'Puntaje total (0–15)',
+                        description: 'Cada pregunta suma 0 o 1 según la clave de corrección de GDS-15.',
+                        color: const Color(0xFF0284C7),
+                      ),
+                      const Gap(8),
+                      _ScaleItem(
+                        icon: Symbols.rule,
+                        label: 'Interpretación',
+                        description: '0–4: Normal | 5–15: Síntomas depresivos.',
+                        color: const Color(0xFF0369A1),
                       ),
                     ] else if (isWhoqol) ...[
                       _ScaleItem(

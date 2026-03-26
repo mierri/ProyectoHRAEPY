@@ -4,6 +4,7 @@ import 'package:flutter/material.dart' as material;
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/Services/survey_service.dart';
 import 'package:ssapp/controllers/reports_controller.dart';
+import 'package:ssapp/models/assist_questions.dart';
 import 'package:ssapp/models/whoqol_questions.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
@@ -264,18 +265,44 @@ class _ReportsScreenState extends State<ReportsScreen> {
       value: _selectedSurveyType,
       onChanged: (v) { if (v != null) setState(() => _selectedSurveyType = v); },
       itemBuilder: (context, item) {
-        const names = {1: 'BDI-II', 2: 'BAI', 3: 'WHOQOL-BREF', 5: 'SF-36'};
+        const names = {1: 'BDI-II', 2: 'BAI', 3: 'WHOQOL-BREF', 5: 'SF-36', 6: 'ASSIST V3.0', 7: 'GDS-15'};
         return Text(names[item] ?? '$item');
       },
       popup: SelectPopup(
         items: SelectItemList(children: [
           SelectItemButton(value: 1, child: const Text('BDI-II — Inventario de Depresión de Beck')),
           SelectItemButton(value: 2, child: const Text('BAI — Inventario de Ansiedad de Beck')),
+          SelectItemButton(value: 6, child: const Text('ASSIST V3.0 — Riesgo por consumo de sustancias')),
+          SelectItemButton(value: 7, child: const Text('GDS-15 — Escala de Depresión Geriátrica')),
           SelectItemButton(value: 3, child: const Text('WHOQOL-BREF — Calidad de Vida')),
           SelectItemButton(value: 5, child: const Text('SF-36 — Estado de Salud')),
         ]),
       ).call,
     );
+  }
+
+  String _assistLevelFromSurvey(Map<String, dynamic> survey) {
+    final responses = List.from(survey['responses'] as List? ?? const []);
+    final computed = AssistQuestions.computeFromPersistedResponses(responses);
+
+    var hasModerate = false;
+    for (final result in computed.resultsBySubstance.values) {
+      final risk = result.riskLevel.toLowerCase();
+      if (risk == 'alto') return 'Alto';
+      if (risk == 'moderado') hasModerate = true;
+    }
+
+    if (hasModerate) return 'Moderado';
+    return 'Bajo';
+  }
+
+  String _getLevelTextForSurvey(Map<String, dynamic> survey, int surveyType) {
+    final score = ReportsController.calculateSurveyScore(survey);
+    if (surveyType == 6) return _assistLevelFromSurvey(survey);
+    if (surveyType == 1) return ReportsController.bdiLevel(score);
+    if (surveyType == 2) return ReportsController.baiLevel(score);
+    if (surveyType == 7) return ReportsController.gdsLevel(score);
+    return '';
   }
 
   Map<String, double> _calculateStatistics(
@@ -292,8 +319,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   Future<void> _exportToSPSS(BuildContext context, List<Map<String, dynamic>> surveys, SurveyService surveyService) async {
     try {
-      final surveyTypeName = _selectedSurveyType == 1 ? 'BDI-II' : 'BAI';
-      final questionCount = _selectedSurveyType == 1 ? 21 : 21; // BDI-II y BAI tienen 21 items
+      final surveyTypeName = _selectedSurveyType == 1
+          ? 'BDI-II'
+          : _selectedSurveyType == 2
+              ? 'BAI'
+              : _selectedSurveyType == 7
+                  ? 'GDS-15'
+                  : 'Encuesta';
+      final questionCount = _selectedSurveyType == 7 ? 15 : 21;
 
       // Header
       List<List<dynamic>> rows = [
@@ -308,7 +341,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         final patientId = survey['patient_id'] ?? 'N/A';
         final date = DateTime.parse(survey['created_at']).toString().split(' ')[0];
         final score = ReportsController.calculateSurveyScore(survey);
-        final level = _getLevelText(score, _selectedSurveyType);
+        final level = _getLevelTextForSurvey(survey, _selectedSurveyType);
 
         // Extraer respuestas individuales
         final responses = survey['responses'] as List? ?? [];
@@ -388,7 +421,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   String _getLevelText(int score, int surveyType) {
     if (surveyType == 1) return ReportsController.bdiLevel(score);
-    return ReportsController.baiLevel(score);
+    if (surveyType == 2) return ReportsController.baiLevel(score);
+    if (surveyType == 6) return ReportsController.assistLevel(score);
+    if (surveyType == 7) return ReportsController.gdsLevel(score);
+    return '';
   }
 
   // csv del whoqol
@@ -982,12 +1018,18 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
       for (var survey in allSurveys) {
         final surveyType = survey['survey_type'] as int? ?? 1;
-        final surveyTypeName = surveyType == 1 ? 'BDI-II' : 'BAI';
+        final surveyTypeName = surveyType == 1
+          ? 'BDI-II'
+          : surveyType == 2
+            ? 'BAI'
+            : surveyType == 7
+              ? 'GDS-15'
+              : 'Otro';
         final surveyId = survey['survey_id'];
         final patientId = survey['patient_id'] ?? 'N/A';
         final date = DateTime.parse(survey['created_at']).toString().split(' ')[0];
         final score = ReportsController.calculateSurveyScore(survey);
-        final level = _getLevelText(score, surveyType);
+        final level = _getLevelTextForSurvey(survey, surveyType);
         rows.add([surveyId, patientId, date, surveyTypeName, score, level]);
       }
 
@@ -1798,10 +1840,20 @@ class _ReportsScreenState extends State<ReportsScreen> {
       ) async {
     try {
       final pdf = pw.Document();
-      final surveyTypeName = surveyType == 1 ? 'BDI-II' : 'BAI';
-      final surveyFullName = surveyType == 1
+        final surveyTypeName = surveyType == 1
+          ? 'BDI-II'
+          : surveyType == 2
+            ? 'BAI'
+            : surveyType == 7
+              ? 'GDS-15'
+              : 'Encuesta';
+        final surveyFullName = surveyType == 1
           ? 'Inventario de Depresión de Beck II'
-          : 'Inventario de Ansiedad de Beck';
+          : surveyType == 2
+            ? 'Inventario de Ansiedad de Beck'
+            : surveyType == 7
+              ? 'Escala de Depresión Geriátrica de 15 ítems'
+              : 'Encuesta';
 
       final fontRegular = await PdfGoogleFonts.notoSansRegular();
       final fontBold = await PdfGoogleFonts.notoSansBold();
@@ -1824,9 +1876,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
         }
       }
 
-      final scoreRanges = surveyType == 1
+        final scoreRanges = surveyType == 1
           ? {'Mínima': '0-13', 'Leve': '14-19', 'Moderada': '20-28', 'Severa': '29-63'}
-          : {'Mínima': '0-7', 'Leve': '8-15', 'Moderada': '16-25', 'Severa': '26-63'};
+          : surveyType == 2
+            ? {'Mínima': '0-7', 'Leve': '8-15', 'Moderada': '16-25', 'Severa': '26-63'}
+            : {'Mínima': '0-4 (Normal)', 'Leve': '-', 'Moderada': '-', 'Severa': '5-15 (Síntomas depresivos)'};
 
       final pieColors = [PdfColors.green400, PdfColors.yellow600, PdfColors.orange400, PdfColors.red400];
 
@@ -1933,9 +1987,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 ),
                 datasets: [
                   pw.BarDataSet(
-                    color: surveyType == 1 ? PdfColors.blue400 : PdfColors.teal400,
+                    color: surveyType == 1 ? PdfColors.blue400 : surveyType == 2 ? PdfColors.teal400 : PdfColors.cyan400,
                     width: 30, offset: 0,
-                    borderColor: surveyType == 1 ? PdfColors.blue700 : PdfColors.teal700,
+                    borderColor: surveyType == 1 ? PdfColors.blue700 : surveyType == 2 ? PdfColors.teal700 : PdfColors.cyan700,
                     data: [
                       pw.PointChartValue(0, (distribution['Mínima'] ?? 0).toDouble()),
                       pw.PointChartValue(1, (distribution['Leve'] ?? 0).toDouble()),
@@ -2042,9 +2096,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
                   datasets: [
                     pw.LineDataSet(
-                      color: surveyType == 1 ? PdfColors.blue600 : PdfColors.teal600,
+                      color: surveyType == 1 ? PdfColors.blue600 : surveyType == 2 ? PdfColors.teal600 : PdfColors.cyan600,
                       lineWidth: 2, drawPoints: true,
-                      pointColor: surveyType == 1 ? PdfColors.blue900 : PdfColors.teal900,
+                      pointColor: surveyType == 1 ? PdfColors.blue900 : surveyType == 2 ? PdfColors.teal900 : PdfColors.cyan900,
                       data: timelineScores.asMap().entries
                           .map((e) => pw.PointChartValue(e.key.toDouble(), e.value.toDouble())).toList(),
                     ),
@@ -2195,12 +2249,18 @@ class _ReportsScreenState extends State<ReportsScreen> {
   String _getLevelText(int score, int surveyType) {
     final intScore = score.toInt();
     if (surveyType == 1) return ReportsController.bdiLevel(intScore);
-    return ReportsController.baiLevel(intScore);
+    if (surveyType == 2) return ReportsController.baiLevel(intScore);
+    if (surveyType == 6) return ReportsController.assistLevel(intScore);
+    if (surveyType == 7) return ReportsController.gdsLevel(intScore);
+    return '';
   }
 
   String _getInterpretation(double mean, int surveyType) {
     if (surveyType == 1) return ReportsController.bdiInterpretation(mean);
-    return ReportsController.baiInterpretation(mean);
+    if (surveyType == 2) return ReportsController.baiInterpretation(mean);
+    if (surveyType == 6) return ReportsController.assistInterpretation(mean);
+    if (surveyType == 7) return ReportsController.gdsInterpretation(mean);
+    return '';
   }
 
 class _StatCard extends StatelessWidget {
@@ -2321,36 +2381,79 @@ class _LevelDistributionChart extends StatelessWidget {
     required this.surveyType,
   });
 
-  String _getLevel(int score, int surveyType) {
+  List<String> _levels() {
+    if (surveyType == 6) return ['low', 'moderate', 'high'];
+    if (surveyType == 7) return ['normal', 'depressive'];
+    return ['minimal', 'mild', 'moderate', 'severe'];
+  }
+
+  String _labelFor(String key) {
+    switch (key) {
+      case 'minimal':
+        return 'Mínima';
+      case 'mild':
+        return 'Leve';
+      case 'moderate':
+        return 'Moderada';
+      case 'severe':
+        return 'Severa';
+      case 'low':
+        return 'Bajo';
+      case 'high':
+        return 'Alto';
+      case 'normal':
+        return 'Normal';
+      case 'depressive':
+        return 'Síntomas';
+      default:
+        return key;
+    }
+  }
+
+  String _levelFromScore(int score) {
     if (surveyType == 1) {
       if (score <= 13) return 'minimal';
       if (score <= 19) return 'mild';
       if (score <= 28) return 'moderate';
       return 'severe';
-    } else {
+    }
+    if (surveyType == 2) {
       if (score <= 7) return 'minimal';
       if (score <= 15) return 'mild';
       if (score <= 25) return 'moderate';
       return 'severe';
     }
+    if (surveyType == 7) {
+      if (score <= 4) return 'normal';
+      return 'depressive';
+    }
+    return 'low';
+  }
+
+  String _assistLevel(Map<String, dynamic> survey) {
+    final responses = List.from(survey['responses'] as List? ?? const []);
+    final computed = AssistQuestions.computeFromPersistedResponses(responses);
+    var hasModerate = false;
+    for (final result in computed.resultsBySubstance.values) {
+      final risk = result.riskLevel.toLowerCase();
+      if (risk == 'alto') return 'high';
+      if (risk == 'moderado') hasModerate = true;
+    }
+    if (hasModerate) return 'moderate';
+    return 'low';
   }
 
   @override
   Widget build(BuildContext context) {
-    final distribution = <String, int>{
-      'minimal': 0,
-      'mild': 0,
-      'moderate': 0,
-      'severe': 0,
-    };
+    final levels = _levels();
+    final distribution = <String, int>{for (final level in levels) level: 0};
 
     for (var survey in surveys) {
-      final score = ReportsController.calculateSurveyScore(survey);
-      final level = _getLevel(score, surveyType);
+      final level = surveyType == 6
+          ? _assistLevel(survey)
+          : _levelFromScore(ReportsController.calculateSurveyScore(survey));
       distribution[level] = distribution[level]! + 1;
     }
-
-    final levels = ['minimal', 'mild', 'moderate', 'severe'];
 
     final barGroups = levels.asMap().entries.map((entry) {
       final index = entry.key;
@@ -2414,11 +2517,13 @@ class _LevelDistributionChart extends StatelessWidget {
                   sideTitles: SideTitles(
                     showTitles: true,
                     getTitlesWidget: (value, meta) {
-                      final labels = ['Mínima', 'Leve', 'Moderada', 'Severa'];
+                      if (value.toInt() < 0 || value.toInt() >= levels.length) {
+                        return const SizedBox();
+                      }
                       return Padding(
                         padding: const EdgeInsets.only(top: 8),
                         child: Text(
-                          labels[value.toInt()],
+                          _labelFor(levels[value.toInt()]),
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.mutedForeground,
                             fontSize: 12,
@@ -2446,12 +2551,11 @@ class _LevelDistributionChart extends StatelessWidget {
               barTouchData: BarTouchData(
                 touchTooltipData: BarTouchTooltipData(
                   getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                    final labels = ['Mínima', 'Leve', 'Moderada', 'Severa'];
                     final count = rod.toY.toInt();
                     final total = distribution.values.reduce((a, b) => a + b);
                     final pct = total == 0 ? '0.0' : (count / total * 100).toStringAsFixed(1);
                     return BarTooltipItem(
-                      '${labels[group.x]}\n$count encuestados\n$pct%',
+                      '${_labelFor(levels[group.x])}\n$count encuestados\n$pct%',
                       const TextStyle(color: Colors.white, fontSize: 12),
                     );
                   },
@@ -2466,12 +2570,12 @@ class _LevelDistributionChart extends StatelessWidget {
           spacing: 16,
           runSpacing: 8,
           alignment: WrapAlignment.center,
-          children: [
-            _LegendItem(color: const Color(0xFF10B981), label: 'Mínima'),
-            _LegendItem(color: const Color(0xFFFBBF24), label: 'Leve'),
-            _LegendItem(color: const Color(0xFFF97316), label: 'Moderada'),
-            _LegendItem(color: const Color(0xFFEF4444), label: 'Severa'),
-          ],
+          children: levels
+              .map((level) => _LegendItem(
+                    color: _getLevelColor(level),
+                    label: _labelFor(level),
+                  ))
+              .toList(),
         ),
       ],
     );
@@ -2486,6 +2590,14 @@ class _LevelDistributionChart extends StatelessWidget {
       case 'moderate':
         return const Color(0xFFF97316);
       case 'severe':
+        return const Color(0xFFEF4444);
+      case 'low':
+        return const Color(0xFF10B981);
+      case 'high':
+        return const Color(0xFFEF4444);
+      case 'normal':
+        return const Color(0xFF10B981);
+      case 'depressive':
         return const Color(0xFFEF4444);
       default:
         return const Color(0xFF6B7280);
@@ -2646,30 +2758,48 @@ class _SeverityPieChart extends StatelessWidget {
     required this.surveyType,
   });
 
+  String _assistLevel(Map<String, dynamic> survey) {
+    final responses = List.from(survey['responses'] as List? ?? const []);
+    final computed = AssistQuestions.computeFromPersistedResponses(responses);
+    var hasModerate = false;
+    for (final result in computed.resultsBySubstance.values) {
+      final risk = result.riskLevel.toLowerCase();
+      if (risk == 'alto') return 'Alto';
+      if (risk == 'moderado') hasModerate = true;
+    }
+    if (hasModerate) return 'Moderado';
+    return 'Bajo';
+  }
+
   @override
   Widget build(BuildContext context) {
     if (surveys.isEmpty) {
       return const Center(child: Text('No hay datos para mostrar'));
     }
 
-    final distribution = <String, int>{
-      'Mínima': 0,
-      'Leve': 0,
-      'Moderada': 0,
-      'Severa': 0,
-    };
+    final distribution = surveyType == 6
+        ? <String, int>{'Bajo': 0, 'Moderado': 0, 'Alto': 0}
+        : surveyType == 7
+            ? <String, int>{'Normal': 0, 'Síntomas depresivos': 0}
+            : <String, int>{'Mínima': 0, 'Leve': 0, 'Moderada': 0, 'Severa': 0};
     final scoreRanges = <String, String>{};
 
     for (var survey in surveys) {
-      final score = ReportsController.calculateSurveyScore(survey);
-      final level = _getLevel(score, surveyType);
-      final labelMap = {
-        'minimal': 'Mínima',
-        'mild': 'Leve',
-        'moderate': 'Moderada',
-        'severe': 'Severa',
-      };
-      final label = labelMap[level]!;
+      final label = surveyType == 6
+          ? _assistLevel(survey)
+          : () {
+              final score = ReportsController.calculateSurveyScore(survey);
+              final level = _getLevel(score, surveyType);
+              final labelMap = {
+                'minimal': 'Mínima',
+                'mild': 'Leve',
+                'moderate': 'Moderada',
+                'severe': 'Severa',
+                'normal': 'Normal',
+                'depressive': 'Síntomas depresivos',
+              };
+              return labelMap[level]!;
+            }();
       distribution[label] = distribution[label]! + 1;
     }
 
@@ -2678,11 +2808,23 @@ class _SeverityPieChart extends StatelessWidget {
       scoreRanges['Leve'] = '14–19';
       scoreRanges['Moderada'] = '20–28';
       scoreRanges['Severa'] = '29–63';
-    } else {
+    } else if (surveyType == 2) {
       scoreRanges['Mínima'] = '0–7';
       scoreRanges['Leve'] = '8–15';
       scoreRanges['Moderada'] = '16–25';
       scoreRanges['Severa'] = '26–63';
+    } else if (surveyType == 6) {
+      scoreRanges['Bajo'] = 'Riesgo bajo';
+      scoreRanges['Moderado'] = 'Riesgo moderado';
+      scoreRanges['Alto'] = 'Riesgo alto';
+    } else if (surveyType == 7) {
+      scoreRanges['Normal'] = '0–4';
+      scoreRanges['Síntomas depresivos'] = '5–15';
+    } else {
+      scoreRanges['Mínima'] = '0–4 (Normal)';
+      scoreRanges['Leve'] = '-';
+      scoreRanges['Moderada'] = '-';
+      scoreRanges['Severa'] = '5–15 (Síntomas depresivos)';
     }
 
     final total = distribution.values.fold(0, (a, b) => a + b);
@@ -2691,6 +2833,10 @@ class _SeverityPieChart extends StatelessWidget {
       'Leve': const Color(0xFFFBBF24),
       'Moderada': const Color(0xFFF97316),
       'Severa': const Color(0xFFEF4444),
+      'Normal': const Color(0xFF10B981),
+      'Síntomas depresivos': const Color(0xFFEF4444),
+      'Bajo': const Color(0xFF10B981),
+      'Alto': const Color(0xFFEF4444),
     };
 
     int touchedIndex = -1;
@@ -2847,12 +2993,16 @@ class _SeverityPieChart extends StatelessWidget {
       if (score <= 19) return 'mild';
       if (score <= 28) return 'moderate';
       return 'severe';
-    } else {
+    } else if (surveyType == 2) {
       if (score <= 7) return 'minimal';
       if (score <= 15) return 'mild';
       if (score <= 25) return 'moderate';
       return 'severe';
+    } else if (surveyType == 7) {
+      if (score <= 4) return 'normal';
+      return 'depressive';
     }
+    return 'normal';
   }
 }
 

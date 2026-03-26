@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:ssapp/models/bdi_questions.dart';
+import 'package:ssapp/models/gds_questions.dart';
 import 'package:ssapp/models/response_model.dart';
 import 'package:ssapp/models/survey_model.dart';
 import 'package:ssapp/Services/survey_service.dart';
@@ -9,7 +10,7 @@ import 'package:ssapp/Services/survey_service.dart';
 /// Handles responses, navigation, saving, and score calculations
 class SurveyController extends ChangeNotifier {
   final int patientId;
-  final String surveyType; // 'bdi' or 'bai'
+  final String surveyType; // 'bdi', 'bai' or 'gds'
   final SurveyService surveyService;
 
   int _currentQuestionIndex = 0;
@@ -29,12 +30,26 @@ class SurveyController extends ChangeNotifier {
   int? get selectedOptionIndex => _selectedOptionIndex;
   bool get isSaving => _isSaving;
   
-  int get surveyTypeId => surveyType == 'bai' ? 2 : 1; // 1=BDI, 2=BAI
+  int get surveyTypeId {
+    switch (surveyType) {
+      case 'bai':
+        return 2;
+      case 'gds':
+        return 7;
+      case 'bdi':
+      default:
+        return 1;
+    }
+  } // 1=BDI, 2=BAI, 7=GDS-15
   
   List<SurveyQuestion> get questions {
-    return surveyType == 'bai'
-        ? BAIQuestions.questions
-        : BDIQuestions.questions;
+    if (surveyType == 'bai') {
+      return BAIQuestions.questions;
+    }
+    if (surveyType == 'gds') {
+      return GDSQuestions.questions;
+    }
+    return BDIQuestions.questions;
   }
   
   SurveyQuestion get currentQuestion => questions[_currentQuestionIndex];
@@ -111,6 +126,9 @@ class SurveyController extends ChangeNotifier {
       if (score <= 15) return 'Presenta síntomas leves de ansiedad.';
       if (score <= 25) return 'Presenta síntomas moderados de ansiedad.';
       return 'Presenta síntomas severos de ansiedad.';
+    } else if (surveyType == 'gds') {
+      if (score <= 4) return 'Resultado dentro de la normalidad.';
+      return 'Presenta síntomas depresivos.';
     } else {
       // BDI interpretation
       if (score <= 13) return 'Los síntomas depresivos son mínimos o inexistentes.';
@@ -129,6 +147,9 @@ class SurveyController extends ChangeNotifier {
       if (score <= 15) return 'Ansiedad Leve';
       if (score <= 25) return 'Ansiedad Moderada';
       return 'Ansiedad Severa';
+    } else if (surveyType == 'gds') {
+      if (score <= 4) return 'Normal';
+      return 'Síntomas depresivos';
     } else {
       // BDI levels
       if (score <= 13) return 'Depresión Mínima';
@@ -166,7 +187,7 @@ class SurveyController extends ChangeNotifier {
       }).toList();
 
       // Validate all questions answered
-      if (responseModels.length != 21) {
+      if (responseModels.length != questions.length) {
         throw Exception('Faltan respuestas. Por favor, responda todas las preguntas.');
       }
 

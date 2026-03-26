@@ -71,6 +71,11 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         return const Color(0xFFFF7043);
       case 'bajo':
         return LightModeColors.lightError;
+      case 'normal':
+        return LightModeColors.lightTertiary;
+      case 'síntomas depresivos':
+      case 'sintomas depresivos':
+        return LightModeColors.lightError;
       case 'moderado':
         return const Color(0xFFF59E0B);
       case 'alto':
@@ -101,6 +106,11 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         return material.Icons.sentiment_dissatisfied;
       case 'bajo':
         return material.Icons.sentiment_very_dissatisfied;
+      case 'normal':
+        return material.Icons.sentiment_very_satisfied;
+      case 'síntomas depresivos':
+      case 'sintomas depresivos':
+        return material.Icons.sentiment_dissatisfied;
       default:
         return material.Icons.help_outline;
     }
@@ -134,6 +144,9 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         return 'Bajo';
       case 6: // ASSIST
         return 'ASSIST';
+      case 7: // GDS-15
+        if (score <= 4) return 'Normal';
+        return 'Síntomas depresivos';
       default:
         return 'Resultado';
     }
@@ -211,6 +224,11 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         }
       case 6: // ASSIST
         return 'La intervención se define por sustancia según nivel de riesgo: Bajo (sin intervención), Moderado (intervención breve), Alto (tratamiento intensivo).';
+      case 7: // GDS-15
+        if (level.toLowerCase() == 'normal') {
+          return 'El puntaje se encuentra dentro del rango normal para la escala GDS-15.';
+        }
+        return 'El puntaje sugiere síntomas depresivos. Se recomienda valoración clínica por un profesional de salud mental.';
       default:
         return 'Se recomienda consultar con un profesional de salud para una evaluación completa.';
     }
@@ -288,6 +306,7 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         case 4: return 'MoCA';
         case 5: return 'SF-36';
         case 6: return 'ASSIST V3.0';
+        case 7: return 'GDS-15';
         default: return 'Encuesta';
       }
     }
@@ -300,6 +319,7 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         case 4: return 'Evaluación Cognitiva Montreal';
         case 5: return 'Encuesta de Salud de 36 Items';
         case 6: return 'OMS-ASSIST V3.0';
+        case 7: return 'Escala de Depresión Geriátrica de 15 ítems';
         default: return 'Encuesta';
       }
     }
@@ -665,6 +685,12 @@ class _ScoreInterpretationCard extends StatelessWidget {
           {'range': '3.0-3.4', 'label': 'Salud buena', 'color': const Color(0xFFF97316)},
           {'range': '2.5-2.9', 'label': 'Salud regular', 'color': const Color(0xFFFF7043)},
           {'range': '1.0-2.4', 'label': 'Salud baja', 'color': LightModeColors.lightError},
+        ];
+        break;
+      case 7: // GDS-15
+        ranges = [
+          {'range': '0-4', 'label': 'Normal', 'color': LightModeColors.lightTertiary},
+          {'range': '5-15', 'label': 'Síntomas depresivos', 'color': LightModeColors.lightError},
         ];
         break;
       default:

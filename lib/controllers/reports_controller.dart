@@ -234,6 +234,8 @@ class ReportsController {
 
   static String bdiLevel(int score) => _bdiLevel(score);
   static String baiLevel(int score) => _baiLevel(score);
+  static String gdsLevel(int score) => _gdsLevel(score);
+  static String assistLevel(int score) => _assistLevel(score);
 
   static String _bdiLevel(int score) {
     if (score <= 13) return 'Mínima';
@@ -247,6 +249,17 @@ class ReportsController {
     if (score <= 15) return 'Leve';
     if (score <= 25) return 'Moderada';
     return 'Severa';
+  }
+
+  static String _gdsLevel(int score) {
+    if (score <= 4) return 'Normal';
+    return 'Síntomas depresivos';
+  }
+
+  static String _assistLevel(int score) {
+    if (score <= 3) return 'Bajo';
+    if (score <= 26) return 'Moderado';
+    return 'Alto';
   }
 
   // Whoqol
@@ -377,6 +390,27 @@ class ReportsController {
       return 'La media indica un nivel SEVERO de ansiedad. '
           'Se recomienda evaluación clínica urgente y tratamiento especializado.';
     }
+  }
+
+  static String gdsInterpretation(double mean) {
+    if (mean <= 4) {
+      return 'La media indica un resultado NORMAL en GDS-15. '
+          'No se observan síntomas depresivos clínicamente relevantes en la muestra.';
+    }
+    return 'La media indica presencia de SÍNTOMAS DEPRESIVOS en GDS-15. '
+        'Se recomienda valoración clínica y seguimiento por salud mental.';
+  }
+
+  static String assistInterpretation(double mean) {
+    if (mean <= 3) {
+      return 'La media indica RIESGO BAJO en ASSIST. '
+          'Generalmente no se requiere intervención especializada.';
+    } else if (mean <= 26) {
+      return 'La media indica RIESGO MODERADO en ASSIST. '
+          'Se recomienda intervención breve y seguimiento clínico.';
+    }
+    return 'La media indica RIESGO ALTO en ASSIST. '
+        'Se sugiere evaluación y tratamiento especializado.';
   }
 
   static String whoqolDomainInterpretation(WhoqolDomainStats dom) {
