@@ -265,7 +265,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       value: _selectedSurveyType,
       onChanged: (v) { if (v != null) setState(() => _selectedSurveyType = v); },
       itemBuilder: (context, item) {
-        const names = {1: 'BDI-II', 2: 'BAI', 3: 'WHOQOL-BREF', 5: 'SF-36', 6: 'ASSIST V3.0', 7: 'GDS-15'};
+        const names = {1: 'BDI-II', 2: 'BAI', 3: 'WHOQOL-BREF', 5: 'SF-36', 6: 'ASSIST V3.0', 7: 'GDS-15', 8: 'Lawton AIVD'};
         return Text(names[item] ?? '$item');
       },
       popup: SelectPopup(
@@ -274,6 +274,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           SelectItemButton(value: 2, child: const Text('BAI — Inventario de Ansiedad de Beck')),
           SelectItemButton(value: 6, child: const Text('ASSIST V3.0 — Riesgo por consumo de sustancias')),
           SelectItemButton(value: 7, child: const Text('GDS-15 — Escala de Depresión Geriátrica')),
+          SelectItemButton(value: 8, child: const Text('Lawton AIVD — Actividades instrumentales de la vida diaria')),
           SelectItemButton(value: 3, child: const Text('WHOQOL-BREF — Calidad de Vida')),
           SelectItemButton(value: 5, child: const Text('SF-36 — Estado de Salud')),
         ]),
@@ -302,6 +303,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     if (surveyType == 1) return ReportsController.bdiLevel(score);
     if (surveyType == 2) return ReportsController.baiLevel(score);
     if (surveyType == 7) return ReportsController.gdsLevel(score);
+    if (surveyType == 8) return ReportsController.lawtonLevel(score);
     return '';
   }
 
@@ -325,8 +327,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
               ? 'BAI'
               : _selectedSurveyType == 7
                   ? 'GDS-15'
+              : _selectedSurveyType == 8
+                ? 'Lawton AIVD'
                   : 'Encuesta';
-      final questionCount = _selectedSurveyType == 7 ? 15 : 21;
+        final questionCount = _selectedSurveyType == 7
+          ? 15
+          : _selectedSurveyType == 8
+            ? 8
+            : 21;
 
       // Header
       List<List<dynamic>> rows = [
@@ -424,6 +432,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     if (surveyType == 2) return ReportsController.baiLevel(score);
     if (surveyType == 6) return ReportsController.assistLevel(score);
     if (surveyType == 7) return ReportsController.gdsLevel(score);
+    if (surveyType == 8) return ReportsController.lawtonLevel(score);
     return '';
   }
 
@@ -1024,6 +1033,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ? 'BAI'
             : surveyType == 7
               ? 'GDS-15'
+              : surveyType == 8
+                ? 'Lawton AIVD'
               : 'Otro';
         final surveyId = survey['survey_id'];
         final patientId = survey['patient_id'] ?? 'N/A';
@@ -1846,6 +1857,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ? 'BAI'
             : surveyType == 7
               ? 'GDS-15'
+              : surveyType == 8
+                ? 'Lawton AIVD'
               : 'Encuesta';
         final surveyFullName = surveyType == 1
           ? 'Inventario de Depresión de Beck II'
@@ -1853,6 +1866,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ? 'Inventario de Ansiedad de Beck'
             : surveyType == 7
               ? 'Escala de Depresión Geriátrica de 15 ítems'
+              : surveyType == 8
+                ? 'Escala de Lawton para Actividades Instrumentales de la Vida Diaria'
               : 'Encuesta';
 
       final fontRegular = await PdfGoogleFonts.notoSansRegular();
@@ -1861,12 +1876,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
       pw.TextStyle pdfStyle({double fontSize = 10, bool bold = false, PdfColor? color}) =>
           pw.TextStyle(font: bold ? fontBold : fontRegular, fontSize: fontSize, color: color);
 
-      final distribution = <String, int>{
-        'Mínima': 0,
-        'Leve': 0,
-        'Moderada': 0,
-        'Severa': 0,
-      };
+      final distribution = surveyType == 8
+          ? <String, int>{'Independencia total': 0, 'Deterioro funcional': 0}
+          : <String, int>{
+              'Mínima': 0,
+              'Leve': 0,
+              'Moderada': 0,
+              'Severa': 0,
+            };
 
       for (var survey in surveys) {
         final score = ReportsController.calculateSurveyScore(survey);
@@ -1876,10 +1893,23 @@ class _ReportsScreenState extends State<ReportsScreen> {
         }
       }
 
+      final orderedLevels = distribution.keys.toList();
+      String shortLabel(String level) {
+        if (level == 'Independencia total') return 'Indep';
+        if (level == 'Deterioro funcional') return 'Deter';
+        if (level == 'Mínima') return 'Min';
+        if (level == 'Leve') return 'Lev';
+        if (level == 'Moderada') return 'Mod';
+        if (level == 'Severa') return 'Sev';
+        return level;
+      }
+
         final scoreRanges = surveyType == 1
           ? {'Mínima': '0-13', 'Leve': '14-19', 'Moderada': '20-28', 'Severa': '29-63'}
           : surveyType == 2
             ? {'Mínima': '0-7', 'Leve': '8-15', 'Moderada': '16-25', 'Severa': '26-63'}
+            : surveyType == 8
+              ? {'Independencia total': '8', 'Deterioro funcional': '0-7'}
             : {'Mínima': '0-4 (Normal)', 'Leve': '-', 'Moderada': '-', 'Severa': '5-15 (Síntomas depresivos)'};
 
       final pieColors = [PdfColors.green400, PdfColors.yellow600, PdfColors.orange400, PdfColors.red400];
@@ -1976,13 +2006,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
             pw.SizedBox(height: 20),
             pw.Text('Gráfica 1: Distribución por Nivel de Severidad', style: pdfStyle(fontSize: 16, bold: true)),
             pw.SizedBox(height: 4),
-            pw.Text('Mín=Mínima, Lev=Leve, Mod=Moderada, Sev=Severa  |  Eje Y: Número de encuestados', style: pdfStyle(fontSize: 9, color: PdfColors.grey600)),
+            pw.Text('Eje X: niveles de severidad | Eje Y: número de encuestados', style: pdfStyle(fontSize: 9, color: PdfColors.grey600)),
             pw.SizedBox(height: 8),
             pw.SizedBox(
               height: 200,
               child: pw.Chart(
                 grid: pw.CartesianGrid(
-                  xAxis: pw.FixedAxis.fromStrings(['Mín', 'Lev', 'Mod', 'Sev'], marginStart: 10, marginEnd: 10, ticks: true),
+                  xAxis: pw.FixedAxis.fromStrings(orderedLevels.map(shortLabel).toList(), marginStart: 10, marginEnd: 10, ticks: true),
                   yAxis: pw.FixedAxis([0, (maxDist + 1).toDouble()], divisions: true),
                 ),
                 datasets: [
@@ -1990,12 +2020,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     color: surveyType == 1 ? PdfColors.blue400 : surveyType == 2 ? PdfColors.teal400 : PdfColors.cyan400,
                     width: 30, offset: 0,
                     borderColor: surveyType == 1 ? PdfColors.blue700 : surveyType == 2 ? PdfColors.teal700 : PdfColors.cyan700,
-                    data: [
-                      pw.PointChartValue(0, (distribution['Mínima'] ?? 0).toDouble()),
-                      pw.PointChartValue(1, (distribution['Leve'] ?? 0).toDouble()),
-                      pw.PointChartValue(2, (distribution['Moderada'] ?? 0).toDouble()),
-                      pw.PointChartValue(3, (distribution['Severa'] ?? 0).toDouble()),
-                    ],
+                    data: orderedLevels
+                        .asMap()
+                        .entries
+                        .map((e) => pw.PointChartValue(e.key.toDouble(), (distribution[e.value] ?? 0).toDouble()))
+                        .toList(),
                   ),
                 ],
               ),
@@ -2013,12 +2042,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     final cx = size.x / 2;
                     final cy = size.y / 2;
                     final r = size.x / 2 - 4;
-                    final vals = [
-                      (distribution['Mínima'] ?? 0).toDouble(),
-                      (distribution['Leve'] ?? 0).toDouble(),
-                      (distribution['Moderada'] ?? 0).toDouble(),
-                      (distribution['Severa'] ?? 0).toDouble(),
-                    ];
+                    final vals = orderedLevels
+                        .map((level) => (distribution[level] ?? 0).toDouble())
+                        .toList();
                     final tv = vals.fold<double>(0.0, (a, b) => a + b);
                     if (tv == 0) return;
                     double startAng = -math.pi / 2;
@@ -2042,29 +2068,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   children: [
                     pw.Text('Total: $total', style: pdfStyle(fontSize: 10, bold: true)),
                     pw.SizedBox(height: 8),
-                    pw.Row(children: [
-                      pw.Container(width: 10, height: 10, decoration: pw.BoxDecoration(color: pieColors[0], borderRadius: pw.BorderRadius.circular(2))),
-                      pw.SizedBox(width: 6),
-                      pw.Expanded(child: pw.Text('Mín: ${distribution['Mínima']} (${((distribution['Mínima'] ?? 0) / total * 100).toStringAsFixed(1)}%)', style: pdfStyle(fontSize: 9))),
-                    ]),
-                    pw.SizedBox(height: 4),
-                    pw.Row(children: [
-                      pw.Container(width: 10, height: 10, decoration: pw.BoxDecoration(color: pieColors[1], borderRadius: pw.BorderRadius.circular(2))),
-                      pw.SizedBox(width: 6),
-                      pw.Expanded(child: pw.Text('Lev: ${distribution['Leve']} (${((distribution['Leve'] ?? 0) / total * 100).toStringAsFixed(1)}%)', style: pdfStyle(fontSize: 9))),
-                    ]),
-                    pw.SizedBox(height: 4),
-                    pw.Row(children: [
-                      pw.Container(width: 10, height: 10, decoration: pw.BoxDecoration(color: pieColors[2], borderRadius: pw.BorderRadius.circular(2))),
-                      pw.SizedBox(width: 6),
-                      pw.Expanded(child: pw.Text('Mod: ${distribution['Moderada']} (${((distribution['Moderada'] ?? 0) / total * 100).toStringAsFixed(1)}%)', style: pdfStyle(fontSize: 9))),
-                    ]),
-                    pw.SizedBox(height: 4),
-                    pw.Row(children: [
-                      pw.Container(width: 10, height: 10, decoration: pw.BoxDecoration(color: pieColors[3], borderRadius: pw.BorderRadius.circular(2))),
-                      pw.SizedBox(width: 6),
-                      pw.Expanded(child: pw.Text('Sev: ${distribution['Severa']} (${((distribution['Severa'] ?? 0) / total * 100).toStringAsFixed(1)}%)', style: pdfStyle(fontSize: 9))),
-                    ]),
+                    ...orderedLevels.asMap().entries.map((entry) {
+                      final level = entry.value;
+                      final count = distribution[level] ?? 0;
+                      final pct = total == 0 ? 0.0 : (count / total * 100);
+                      return pw.Padding(
+                        padding: const pw.EdgeInsets.only(bottom: 4),
+                        child: pw.Row(children: [
+                          pw.Container(width: 10, height: 10, decoration: pw.BoxDecoration(color: pieColors[entry.key], borderRadius: pw.BorderRadius.circular(2))),
+                          pw.SizedBox(width: 6),
+                          pw.Expanded(child: pw.Text('${shortLabel(level)}: $count (${pct.toStringAsFixed(1)}%)', style: pdfStyle(fontSize: 9))),
+                        ]),
+                      );
+                    }),
                   ],
                 ),
               ),
@@ -2252,6 +2268,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     if (surveyType == 2) return ReportsController.baiLevel(intScore);
     if (surveyType == 6) return ReportsController.assistLevel(intScore);
     if (surveyType == 7) return ReportsController.gdsLevel(intScore);
+    if (surveyType == 8) return ReportsController.lawtonLevel(intScore);
     return '';
   }
 
@@ -2260,6 +2277,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     if (surveyType == 2) return ReportsController.baiInterpretation(mean);
     if (surveyType == 6) return ReportsController.assistInterpretation(mean);
     if (surveyType == 7) return ReportsController.gdsInterpretation(mean);
+    if (surveyType == 8) return ReportsController.lawtonInterpretation(mean);
     return '';
   }
 
@@ -2384,6 +2402,7 @@ class _LevelDistributionChart extends StatelessWidget {
   List<String> _levels() {
     if (surveyType == 6) return ['low', 'moderate', 'high'];
     if (surveyType == 7) return ['normal', 'depressive'];
+    if (surveyType == 8) return ['independent', 'impaired'];
     return ['minimal', 'mild', 'moderate', 'severe'];
   }
 
@@ -2405,6 +2424,10 @@ class _LevelDistributionChart extends StatelessWidget {
         return 'Normal';
       case 'depressive':
         return 'Síntomas';
+      case 'independent':
+        return 'Independencia';
+      case 'impaired':
+        return 'Deterioro';
       default:
         return key;
     }
@@ -2426,6 +2449,10 @@ class _LevelDistributionChart extends StatelessWidget {
     if (surveyType == 7) {
       if (score <= 4) return 'normal';
       return 'depressive';
+    }
+    if (surveyType == 8) {
+      if (score == 8) return 'independent';
+      return 'impaired';
     }
     return 'low';
   }
@@ -2599,6 +2626,10 @@ class _LevelDistributionChart extends StatelessWidget {
         return const Color(0xFF10B981);
       case 'depressive':
         return const Color(0xFFEF4444);
+      case 'independent':
+        return const Color(0xFF10B981);
+      case 'impaired':
+        return const Color(0xFFF59E0B);
       default:
         return const Color(0xFF6B7280);
     }
@@ -2781,6 +2812,8 @@ class _SeverityPieChart extends StatelessWidget {
         ? <String, int>{'Bajo': 0, 'Moderado': 0, 'Alto': 0}
         : surveyType == 7
             ? <String, int>{'Normal': 0, 'Síntomas depresivos': 0}
+        : surveyType == 8
+          ? <String, int>{'Independencia total': 0, 'Deterioro funcional': 0}
             : <String, int>{'Mínima': 0, 'Leve': 0, 'Moderada': 0, 'Severa': 0};
     final scoreRanges = <String, String>{};
 
@@ -2797,6 +2830,8 @@ class _SeverityPieChart extends StatelessWidget {
                 'severe': 'Severa',
                 'normal': 'Normal',
                 'depressive': 'Síntomas depresivos',
+                'independent': 'Independencia total',
+                'impaired': 'Deterioro funcional',
               };
               return labelMap[level]!;
             }();
@@ -2820,6 +2855,9 @@ class _SeverityPieChart extends StatelessWidget {
     } else if (surveyType == 7) {
       scoreRanges['Normal'] = '0–4';
       scoreRanges['Síntomas depresivos'] = '5–15';
+    } else if (surveyType == 8) {
+      scoreRanges['Independencia total'] = '8';
+      scoreRanges['Deterioro funcional'] = '0–7';
     } else {
       scoreRanges['Mínima'] = '0–4 (Normal)';
       scoreRanges['Leve'] = '-';
@@ -2835,6 +2873,8 @@ class _SeverityPieChart extends StatelessWidget {
       'Severa': const Color(0xFFEF4444),
       'Normal': const Color(0xFF10B981),
       'Síntomas depresivos': const Color(0xFFEF4444),
+      'Independencia total': const Color(0xFF10B981),
+      'Deterioro funcional': const Color(0xFFF59E0B),
       'Bajo': const Color(0xFF10B981),
       'Alto': const Color(0xFFEF4444),
     };
@@ -3001,6 +3041,9 @@ class _SeverityPieChart extends StatelessWidget {
     } else if (surveyType == 7) {
       if (score <= 4) return 'normal';
       return 'depressive';
+    } else if (surveyType == 8) {
+      if (score == 8) return 'independent';
+      return 'impaired';
     }
     return 'normal';
   }

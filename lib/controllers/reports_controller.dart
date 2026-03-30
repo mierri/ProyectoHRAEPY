@@ -235,6 +235,7 @@ class ReportsController {
   static String bdiLevel(int score) => _bdiLevel(score);
   static String baiLevel(int score) => _baiLevel(score);
   static String gdsLevel(int score) => _gdsLevel(score);
+  static String lawtonLevel(int score) => _lawtonLevel(score);
   static String assistLevel(int score) => _assistLevel(score);
 
   static String _bdiLevel(int score) {
@@ -260,6 +261,11 @@ class ReportsController {
     if (score <= 3) return 'Bajo';
     if (score <= 26) return 'Moderado';
     return 'Alto';
+  }
+
+  static String _lawtonLevel(int score) {
+    if (score == 8) return 'Independencia total';
+    return 'Deterioro funcional';
   }
 
   // Whoqol
@@ -411,6 +417,14 @@ class ReportsController {
     }
     return 'La media indica RIESGO ALTO en ASSIST. '
         'Se sugiere evaluación y tratamiento especializado.';
+  }
+
+  static String lawtonInterpretation(double mean) {
+    if (mean >= 8) {
+      return 'La media indica INDEPENDENCIA TOTAL en actividades instrumentales de la vida diaria.';
+    }
+    return 'La media sugiere DETERIORO FUNCIONAL en una o más actividades instrumentales. '
+        'Se recomienda valoración funcional y seguimiento.';
   }
 
   static String whoqolDomainInterpretation(WhoqolDomainStats dom) {

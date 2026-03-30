@@ -76,6 +76,10 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
       case 'síntomas depresivos':
       case 'sintomas depresivos':
         return LightModeColors.lightError;
+      case 'independencia total':
+        return LightModeColors.lightTertiary;
+      case 'deterioro funcional':
+        return const Color(0xFFF59E0B);
       case 'moderado':
         return const Color(0xFFF59E0B);
       case 'alto':
@@ -111,6 +115,10 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
       case 'síntomas depresivos':
       case 'sintomas depresivos':
         return material.Icons.sentiment_dissatisfied;
+      case 'independencia total':
+        return material.Icons.check_circle_outline;
+      case 'deterioro funcional':
+        return material.Icons.warning_amber_outlined;
       default:
         return material.Icons.help_outline;
     }
@@ -147,6 +155,9 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
       case 7: // GDS-15
         if (score <= 4) return 'Normal';
         return 'Síntomas depresivos';
+      case 8: // Lawton
+        if (score == 8) return 'Independencia total';
+        return 'Deterioro funcional';
       default:
         return 'Resultado';
     }
@@ -229,6 +240,11 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
           return 'El puntaje se encuentra dentro del rango normal para la escala GDS-15.';
         }
         return 'El puntaje sugiere síntomas depresivos. Se recomienda valoración clínica por un profesional de salud mental.';
+      case 8: // Lawton
+        if (level.toLowerCase() == 'independencia total') {
+          return 'El resultado sugiere independencia para las actividades instrumentales evaluadas.';
+        }
+        return 'El resultado sugiere deterioro funcional en al menos una actividad instrumental. Se recomienda valoración geriátrica y plan de apoyo funcional.';
       default:
         return 'Se recomienda consultar con un profesional de salud para una evaluación completa.';
     }
@@ -307,6 +323,7 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         case 5: return 'SF-36';
         case 6: return 'ASSIST V3.0';
         case 7: return 'GDS-15';
+        case 8: return 'Lawton AIVD';
         default: return 'Encuesta';
       }
     }
@@ -320,6 +337,7 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         case 5: return 'Encuesta de Salud de 36 Items';
         case 6: return 'OMS-ASSIST V3.0';
         case 7: return 'Escala de Depresión Geriátrica de 15 ítems';
+        case 8: return 'Escala de Lawton para Actividades Instrumentales de la Vida Diaria';
         default: return 'Encuesta';
       }
     }
@@ -691,6 +709,12 @@ class _ScoreInterpretationCard extends StatelessWidget {
         ranges = [
           {'range': '0-4', 'label': 'Normal', 'color': LightModeColors.lightTertiary},
           {'range': '5-15', 'label': 'Síntomas depresivos', 'color': LightModeColors.lightError},
+        ];
+        break;
+      case 8: // Lawton
+        ranges = [
+          {'range': '8', 'label': 'Independencia total', 'color': LightModeColors.lightTertiary},
+          {'range': '0-7', 'label': 'Deterioro funcional', 'color': const Color(0xFFF59E0B)},
         ];
         break;
       default:

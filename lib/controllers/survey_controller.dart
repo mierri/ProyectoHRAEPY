@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:ssapp/models/bdi_questions.dart';
 import 'package:ssapp/models/gds_questions.dart';
+import 'package:ssapp/models/lawton_questions.dart';
 import 'package:ssapp/models/response_model.dart';
 import 'package:ssapp/models/survey_model.dart';
 import 'package:ssapp/Services/survey_service.dart';
@@ -10,7 +11,7 @@ import 'package:ssapp/Services/survey_service.dart';
 /// Handles responses, navigation, saving, and score calculations
 class SurveyController extends ChangeNotifier {
   final int patientId;
-  final String surveyType; // 'bdi', 'bai' or 'gds'
+  final String surveyType; // 'bdi', 'bai', 'gds' or 'lawton'
   final SurveyService surveyService;
 
   int _currentQuestionIndex = 0;
@@ -36,11 +37,13 @@ class SurveyController extends ChangeNotifier {
         return 2;
       case 'gds':
         return 7;
+      case 'lawton':
+        return 8;
       case 'bdi':
       default:
         return 1;
     }
-  } // 1=BDI, 2=BAI, 7=GDS-15
+  } // 1=BDI, 2=BAI, 7=GDS-15, 8=Lawton
   
   List<SurveyQuestion> get questions {
     if (surveyType == 'bai') {
@@ -48,6 +51,9 @@ class SurveyController extends ChangeNotifier {
     }
     if (surveyType == 'gds') {
       return GDSQuestions.questions;
+    }
+    if (surveyType == 'lawton') {
+      return LawtonQuestions.questions;
     }
     return BDIQuestions.questions;
   }
@@ -129,6 +135,11 @@ class SurveyController extends ChangeNotifier {
     } else if (surveyType == 'gds') {
       if (score <= 4) return 'Resultado dentro de la normalidad.';
       return 'Presenta síntomas depresivos.';
+    } else if (surveyType == 'lawton') {
+      if (score == questions.length) {
+        return 'Independencia total para las actividades instrumentales evaluadas.';
+      }
+      return 'Presenta deterioro funcional en una o más actividades instrumentales.';
     } else {
       // BDI interpretation
       if (score <= 13) return 'Los síntomas depresivos son mínimos o inexistentes.';
@@ -150,6 +161,9 @@ class SurveyController extends ChangeNotifier {
     } else if (surveyType == 'gds') {
       if (score <= 4) return 'Normal';
       return 'Síntomas depresivos';
+    } else if (surveyType == 'lawton') {
+      if (score == questions.length) return 'Independencia total';
+      return 'Deterioro funcional';
     } else {
       // BDI levels
       if (score <= 13) return 'Depresión Mínima';

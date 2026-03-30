@@ -93,6 +93,8 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
         return LightModeColors.lightSecondary;
       case 'gds':
         return const Color(0xFF0EA5E9);
+      case 'lawton':
+        return const Color(0xFF14B8A6);
       case 'whoqol':
         return const Color(0xFF7C3AED);
       case 'sf36':
@@ -175,6 +177,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
     final isBai = surveyType == 'bai';
     final isMoca = surveyType == 'moca';
     final isGds = surveyType == 'gds';
+    final isLawton = surveyType == 'lawton';
     final isWhoqol = surveyType == 'whoqol';
     final isSf36 = surveyType == 'sf36';
     final isAssist = surveyType == 'assist';
@@ -190,6 +193,9 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
     } else if (isGds) {
       surveyTitle = 'Escala de Depresión Geriátrica (GDS-15)';
       surveyInstructions = 'Este cuestionario consta de 15 preguntas con respuesta Sí o No. Responda según cómo se ha sentido recientemente. No hay respuestas correctas o incorrectas.';
+    } else if (isLawton) {
+      surveyTitle = 'Escala de Lawton (AIVD)';
+      surveyInstructions = 'Este cuestionario evalúa su nivel de independencia en actividades instrumentales de la vida diaria. Seleccione la opción que mejor describa su capacidad actual en cada actividad.';
     } else if (isWhoqol) {
       surveyTitle = 'Cuestionario de Calidad de Vida (WHOQOL-BREF)';
       surveyInstructions = 'Este cuestionario le pregunta cómo se ha sentido acerca de su calidad de vida, su salud y otros aspectos de su vida durante las dos últimas semanas. Por favor, responda todas las preguntas. Si no está seguro/a de qué respuesta dar a una pregunta, escoja la que le parezca más apropiada.';
@@ -325,6 +331,27 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                         label: 'Interpretación',
                         description: '0–4: Normal | 5–15: Síntomas depresivos.',
                         color: const Color(0xFF0369A1),
+                      ),
+                    ] else if (isLawton) ...[
+                      _ScaleItem(
+                        icon: Symbols.check_circle,
+                        label: 'Capacidad actual',
+                        description: 'Seleccione la opción que mejor describa su independencia en cada actividad.',
+                        color: const Color(0xFF14B8A6),
+                      ),
+                      const Gap(8),
+                      _ScaleItem(
+                        icon: Symbols.calculate,
+                        label: 'Puntaje total (0–8)',
+                        description: 'Cada item aporta 1 punto si la actividad se realiza con independencia.',
+                        color: const Color(0xFF0F766E),
+                      ),
+                      const Gap(8),
+                      _ScaleItem(
+                        icon: Symbols.rule,
+                        label: 'Interpretación',
+                        description: '8: Independencia total | 0–7: Deterioro funcional.',
+                        color: const Color(0xFF115E59),
                       ),
                     ] else if (isWhoqol) ...[
                       _ScaleItem(
@@ -762,6 +789,10 @@ class ConsentInfoCard extends StatelessWidget {
     switch (surveyType) {
       case 'bai':
         return 'Este cuestionario evalúa síntomas de ansiedad mediante el Inventario de Ansiedad de Beck (BAI). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
+      case 'gds':
+        return 'Este cuestionario evalúa síntomas depresivos en personas mayores mediante la Escala de Depresión Geriátrica de 15 items (GDS-15). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
+      case 'lawton':
+        return 'Este cuestionario evalúa la independencia en actividades instrumentales de la vida diaria mediante la Escala de Lawton (AIVD). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
       case 'moca':
         return 'Esta evaluación cognitiva evalúa diferentes dominios cognitivos mediante la Evaluación Cognitiva Montreal (MoCA). Evalúa atención, concentración, funciones ejecutivas, memoria, lenguaje, habilidades visuoconstructivas, pensamiento conceptual, cálculo y orientación. Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
       case 'whoqol':
@@ -782,6 +813,10 @@ class ConsentInfoCard extends StatelessWidget {
         return LightModeColors.lightTertiary;
       case 'moca':
         return LightModeColors.lightSecondary;
+      case 'gds':
+        return const Color(0xFF0EA5E9);
+      case 'lawton':
+        return const Color(0xFF14B8A6);
       case 'whoqol':
         return const Color(0xFF7C3AED);
       case 'sf36':

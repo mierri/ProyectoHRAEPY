@@ -93,7 +93,7 @@ class SurveyService extends ChangeNotifier {
     };
   }
   
-  /// Obtiene encuestas por tipo (BDI=1, BAI=2, WHOQOL=3, MoCA=4, SF-36=5, ASSIST=6, GDS-15=7)
+  /// Obtiene encuestas por tipo (BDI=1, BAI=2, WHOQOL=3, MoCA=4, SF-36=5, ASSIST=6, GDS-15=7, Lawton=8)
   List<Map<String, dynamic>> getSurveysByType(int surveyType) {
     return _surveys.where((survey) => survey['survey_type'] == surveyType).toList();
   }
@@ -115,6 +115,8 @@ class SurveyService extends ChangeNotifier {
         return 'ASSIST V3.0';
       case 7:
         return 'GDS-15';
+      case 8:
+        return 'Lawton AIVD';
       default:
         return 'Encuesta #$surveyId';
     }
@@ -137,6 +139,8 @@ class SurveyService extends ChangeNotifier {
         return 'secondary'; // ASSIST
       case 7:
         return 'secondary'; // GDS-15
+      case 8:
+        return 'secondary'; // Lawton AIVD
       default:
         return 'secondary';
     }
