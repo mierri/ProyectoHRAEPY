@@ -11,6 +11,9 @@ class InvestigationService extends ChangeNotifier {
     5: 'SF-36',
     6: 'ASSIST V3.0',
     7: 'GDS-15',
+    8: 'Lawton AIVD',
+    9: 'Osteoporosis',
+    10: 'Katz ABVD',
   };
 
   static const Map<int, String> surveyTypeToRouteCode = {
@@ -21,6 +24,9 @@ class InvestigationService extends ChangeNotifier {
     5: 'sf36',
     6: 'assist',
     7: 'gds',
+    8: 'lawton',
+    9: 'osteoporosis',
+    10: 'katz',
   };
 
   List<InvestigationModel> _investigations = [];

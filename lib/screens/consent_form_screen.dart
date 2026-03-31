@@ -127,6 +127,8 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
         return const Color(0xFF0EA5E9);
       case 'lawton':
         return const Color(0xFF14B8A6);
+      case 'katz':
+        return const Color(0xFF0D9488);
       case 'whoqol':
         return const Color(0xFF7C3AED);
       case 'sf36':
@@ -241,6 +243,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
     final isMoca = surveyType == 'moca';
     final isGds = surveyType == 'gds';
     final isLawton = surveyType == 'lawton';
+    final isKatz = surveyType == 'katz';
     final isWhoqol = surveyType == 'whoqol';
     final isSf36 = surveyType == 'sf36';
     final isAssist = surveyType == 'assist';
@@ -262,6 +265,9 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
     } else if (isLawton) {
       surveyTitle = 'Escala de Lawton (AIVD)';
       surveyInstructions = 'Este cuestionario evalúa su nivel de independencia en actividades instrumentales de la vida diaria. Seleccione la opción que mejor describa su capacidad actual en cada actividad.';
+    } else if (isKatz) {
+      surveyTitle = 'Indice de Katz (ABVD)';
+      surveyInstructions = 'Este instrumento evalua independencia en actividades basicas de la vida diaria. Cada item puntua 1 si existe independencia total o con minima ayuda, y 0 si existe dependencia.';
     } else if (isWhoqol) {
       surveyTitle = 'Cuestionario de Calidad de Vida (WHOQOL-BREF)';
       surveyInstructions = 'Este cuestionario le pregunta cómo se ha sentido acerca de su calidad de vida, su salud y otros aspectos de su vida durante las dos últimas semanas. Por favor, responda todas las preguntas. Si no está seguro/a de qué respuesta dar a una pregunta, escoja la que le parezca más apropiada.';
@@ -424,6 +430,27 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                         icon: Symbols.rule,
                         label: 'Interpretación',
                         description: '8: Independencia total | 0–7: Deterioro funcional.',
+                        color: const Color(0xFF115E59),
+                      ),
+                    ] else if (isKatz) ...[
+                      _ScaleItem(
+                        icon: Symbols.check_circle,
+                        label: 'Independiente = 1',
+                        description: 'Independencia total o con minima ayuda.',
+                        color: const Color(0xFF0D9488),
+                      ),
+                      const Gap(8),
+                      _ScaleItem(
+                        icon: Symbols.warning,
+                        label: 'Dependiente = 0',
+                        description: 'Requiere ayuda o supervision significativa.',
+                        color: const Color(0xFFF59E0B),
+                      ),
+                      const Gap(8),
+                      _ScaleItem(
+                        icon: Symbols.rule,
+                        label: 'Resultado y clasificacion',
+                        description: 'Puntaje 0–6 y clasificacion Katz A–H segun patron de dependencia.',
                         color: const Color(0xFF115E59),
                       ),
                     ] else if (isWhoqol) ...[
@@ -913,6 +940,8 @@ class ConsentInfoCard extends StatelessWidget {
         return 'Este cuestionario evalúa síntomas depresivos en personas mayores mediante la Escala de Depresión Geriátrica de 15 items (GDS-15). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
       case 'lawton':
         return 'Este cuestionario evalúa la independencia en actividades instrumentales de la vida diaria mediante la Escala de Lawton (AIVD). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
+      case 'katz':
+        return 'Este cuestionario evalua la independencia en actividades basicas de la vida diaria mediante el Indice de Katz (ABVD). Genera puntaje total de 0 a 6 y clasificacion alfabetica A-H segun patron de dependencia. Los datos recopilados seran utilizados exclusivamente para propositos clinicos y de investigacion del Departamento de Psicologia del HRAEPY.';
       case 'osteoporosis':
         return 'Este cuestionario detecta el riesgo de fracturas por osteoporosis. Los datos de peso, talla e IMC se solicitan solo para el consentimiento y no se almacenan en la base de datos. Los resultados deben cruzarse con la edad, IMC y puntaje obtenido.';
       case 'moca':
@@ -939,6 +968,8 @@ class ConsentInfoCard extends StatelessWidget {
         return const Color(0xFF0EA5E9);
       case 'lawton':
         return const Color(0xFF14B8A6);
+      case 'katz':
+        return const Color(0xFF0D9488);
       case 'whoqol':
         return const Color(0xFF7C3AED);
       case 'sf36':

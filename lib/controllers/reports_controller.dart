@@ -236,6 +236,7 @@ class ReportsController {
   static String baiLevel(int score) => _baiLevel(score);
   static String gdsLevel(int score) => _gdsLevel(score);
   static String lawtonLevel(int score) => _lawtonLevel(score);
+  static String katzLevel(int score) => _katzLevel(score);
   static String assistLevel(int score) => _assistLevel(score);
 
   static String _bdiLevel(int score) {
@@ -266,6 +267,11 @@ class ReportsController {
   static String _lawtonLevel(int score) {
     if (score == 8) return 'Independencia total';
     return 'Deterioro funcional';
+  }
+
+  static String _katzLevel(int score) {
+    if (score == 6) return 'Independencia total';
+    return 'Dependencia en algun grado';
   }
 
   // Whoqol
@@ -425,6 +431,14 @@ class ReportsController {
     }
     return 'La media sugiere DETERIORO FUNCIONAL en una o más actividades instrumentales. '
         'Se recomienda valoración funcional y seguimiento.';
+  }
+
+  static String katzInterpretation(double mean) {
+    if (mean >= 6) {
+      return 'La media indica INDEPENDENCIA TOTAL en actividades basicas de la vida diaria (Katz).';
+    }
+    return 'La media sugiere DEPENDENCIA EN ALGUN GRADO en actividades basicas de la vida diaria. '
+        'Se recomienda valoracion funcional y plan de apoyo.';
   }
 
   static String whoqolDomainInterpretation(WhoqolDomainStats dom) {

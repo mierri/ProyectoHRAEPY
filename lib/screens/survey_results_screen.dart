@@ -6,6 +6,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/Services/patient_service.dart';
 import 'package:ssapp/Services/survey_service.dart';
 import 'package:ssapp/models/assist_questions.dart';
+import 'package:ssapp/models/katz_questions.dart';
 import 'package:ssapp/utils/theme.dart';
 import 'package:ssapp/utils/toast_helper.dart';
 
@@ -78,6 +79,9 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         return LightModeColors.lightError;
       case 'independencia total':
         return LightModeColors.lightTertiary;
+      case 'dependencia en algún grado':
+      case 'dependencia en algun grado':
+        return const Color(0xFFF59E0B);
       case 'deterioro funcional':
         return const Color(0xFFF59E0B);
       case 'moderado':
@@ -117,10 +121,30 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         return material.Icons.sentiment_dissatisfied;
       case 'independencia total':
         return material.Icons.check_circle_outline;
+      case 'dependencia en algún grado':
+      case 'dependencia en algun grado':
+        return material.Icons.warning_amber_outlined;
       case 'deterioro funcional':
         return material.Icons.warning_amber_outlined;
       default:
         return material.Icons.help_outline;
+    }
+  }
+
+  String _katzClassificationFromSurvey(Map<String, dynamic> survey) {
+    final responses = survey['responses'] as List? ?? const [];
+    final responseMap = <int, int>{};
+    for (final r in responses) {
+      final qId = r['question_id'] as int?;
+      final val = r['answer_value'] as int?;
+      if (qId != null && val != null) {
+        responseMap[qId] = val;
+      }
+    }
+    try {
+      return KatzQuestions.evaluate(responseMap).clasificacionKatz;
+    } catch (_) {
+      return 'H';
     }
   }
 
@@ -162,6 +186,9 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         if (score <= 2) return 'Bajo';
         if (score <= 5) return 'Moderado';
         return 'Alto';
+      case 10: // Katz ABVD
+        if (score == 6) return 'Independencia total';
+        return 'Dependencia en algún grado';
       default:
         return 'Resultado';
     }
@@ -260,6 +287,11 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
             default:
               return 'Se recomienda consultar con un profesional de salud para una evaluación completa del riesgo de osteoporosis.';
           }
+      case 10: // Katz ABVD
+        if (level.toLowerCase().contains('independencia total')) {
+          return 'El resultado sugiere independencia total en actividades basicas de la vida diaria (Katz A).';
+        }
+        return 'El resultado indica dependencia en algun grado. Revise la clasificacion alfabetica de Katz (A-H) para definir el nivel funcional y plan de apoyo.';
       default:
         return 'Se recomienda consultar con un profesional de salud para una evaluación completa.';
     }
@@ -340,6 +372,7 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         case 7: return 'GDS-15';
         case 8: return 'Lawton AIVD';
         case 9: return 'Osteoporosis';
+        case 10: return 'Katz ABVD';
         default: return 'Encuesta';
       }
     }
@@ -355,14 +388,20 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         case 7: return 'Escala de Depresión Geriátrica de 15 ítems';
         case 8: return 'Escala de Lawton para Actividades Instrumentales de la Vida Diaria';
         case 9: return 'Cuestionario de Riesgo de Fractura por Osteoporosis';
+        case 10: return 'Indice de Katz para Actividades Basicas de la Vida Diaria';
         default: return 'Encuesta';
       }
     }
 
     final surveyTypeName = getSurveyTypeName(surveyType);
     final surveyFullName = getSurveyFullName(surveyType);
-    final level = _getScoreLevel(score, surveyType);
-    final color = _getLevelColor(level);
+    final baseLevel = _getScoreLevel(score, surveyType);
+    final katzClassification =
+      surveyType == 10 ? _katzClassificationFromSurvey(_survey!) : null;
+    final level = surveyType == 10 && katzClassification != null
+      ? '$baseLevel (Katz $katzClassification)'
+      : baseLevel;
+    final color = _getLevelColor(baseLevel);
     final createdAt = DateTime.parse(_survey!['created_at']);
 
     // Obtener información del paciente
@@ -503,7 +542,7 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
               child: Column(
                 children: [
                   Icon(
-                    _getLevelIcon(level),
+                    _getLevelIcon(baseLevel),
                     size: 80,
                     color: Colors.white,
                   ),
@@ -568,7 +607,7 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
             // Recomendaciones
             _RecommendationsCard(
               level: level,
-              recommendation: _getRecommendation(level, surveyType),
+              recommendation: _getRecommendation(baseLevel, surveyType),
             ),
             const Gap(24),
 
@@ -739,6 +778,13 @@ class _ScoreInterpretationCard extends StatelessWidget {
           {'range': '0-2', 'label': 'Bajo riesgo de osteoporosis', 'color': LightModeColors.lightTertiary},
           {'range': '3-5', 'label': 'Riesgo moderado de osteoporosis', 'color': const Color(0xFFF59E0B)},
           {'range': '6-10', 'label': 'Alto riesgo de osteoporosis', 'color': LightModeColors.lightError},
+        ];
+        break;
+      case 10: // Katz ABVD
+        ranges = [
+          {'range': '6', 'label': 'Independencia total', 'color': LightModeColors.lightTertiary},
+          {'range': '0-5', 'label': 'Dependencia en algún grado', 'color': const Color(0xFFF59E0B)},
+          {'range': 'A-H', 'label': 'Clasificación alfabética Katz', 'color': LightModeColors.lightSecondary},
         ];
         break;
       default:

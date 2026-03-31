@@ -93,7 +93,7 @@ class SurveyService extends ChangeNotifier {
     };
   }
   
-  /// Obtiene encuestas por tipo (BDI=1, BAI=2, WHOQOL=3, MoCA=4, SF-36=5, ASSIST=6, GDS-15=7, Lawton=8)
+  /// Obtiene encuestas por tipo (BDI=1, BAI=2, WHOQOL=3, MoCA=4, SF-36=5, ASSIST=6, GDS-15=7, Lawton=8, Osteoporosis=9, Katz=10)
   List<Map<String, dynamic>> getSurveysByType(int surveyType) {
     return _surveys.where((survey) => survey['survey_type'] == surveyType).toList();
   }
@@ -119,6 +119,8 @@ class SurveyService extends ChangeNotifier {
         return 'Lawton AIVD';
       case 9:
         return 'Osteoporosis';
+      case 10:
+        return 'Katz ABVD';
       default:
         return 'Encuesta #$surveyId';
     }
@@ -145,6 +147,8 @@ class SurveyService extends ChangeNotifier {
         return 'secondary'; // Lawton AIVD
       case 9:
         return 'secondary'; // Osteoporosis
+      case 10:
+        return 'secondary'; // Katz ABVD
       default:
         return 'secondary';
     }

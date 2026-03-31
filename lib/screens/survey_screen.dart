@@ -11,7 +11,7 @@ import 'package:ssapp/utils/toast_helper.dart';
 
 class SurveyScreen extends StatefulWidget {
   final int patientId;
-  final String surveyType; // 'bdi', 'bai', 'gds' or 'lawton' - solo para UI
+  final String surveyType; // 'bdi', 'bai', 'gds', 'lawton', 'katz' or 'osteoporosis' - solo para UI
 
   const SurveyScreen({
     super.key,
@@ -58,6 +58,9 @@ class _SurveyScreenState extends State<SurveyScreen> {
     }
     if (widget.surveyType == 'lawton') {
       return const Color(0xFF14B8A6);
+    }
+    if (widget.surveyType == 'katz') {
+      return const Color(0xFF0D9488);
     }
     if (widget.surveyType == 'osteoporosis') {
       return const Color(0xFF145374);
@@ -311,6 +314,12 @@ class _SurveyScreenState extends State<SurveyScreen> {
       }
     } else if (widget.surveyType == 'lawton') {
       if (totalScore == 8) {
+        levelColor = LightModeColors.lightTertiary;
+      } else {
+        levelColor = const Color(0xFFF59E0B);
+      }
+    } else if (widget.surveyType == 'katz') {
+      if (totalScore == 6) {
         levelColor = LightModeColors.lightTertiary;
       } else {
         levelColor = const Color(0xFFF59E0B);
@@ -613,6 +622,8 @@ class _SurveyScreenState extends State<SurveyScreen> {
                                         ? 'Responda según su situación actual'
                                     : widget.surveyType == 'lawton'
                                       ? 'Responda según su capacidad actual'
+                                    : widget.surveyType == 'katz'
+                                      ? 'Responda según su nivel de independencia actual'
                                         : 'Últimas dos semanas incluyendo hoy',
                                 style: TextStyle(
                                   fontSize: 13,

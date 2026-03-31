@@ -265,7 +265,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       value: _selectedSurveyType,
       onChanged: (v) { if (v != null) setState(() => _selectedSurveyType = v); },
       itemBuilder: (context, item) {
-        const names = {1: 'BDI-II', 2: 'BAI', 3: 'WHOQOL-BREF', 5: 'SF-36', 6: 'ASSIST V3.0', 7: 'GDS-15', 8: 'Lawton AIVD'};
+        const names = {1: 'BDI-II', 2: 'BAI', 3: 'WHOQOL-BREF', 5: 'SF-36', 6: 'ASSIST V3.0', 7: 'GDS-15', 8: 'Lawton AIVD', 10: 'Katz ABVD'};
         return Text(names[item] ?? '$item');
       },
       popup: SelectPopup(
@@ -275,6 +275,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           SelectItemButton(value: 6, child: const Text('ASSIST V3.0 — Riesgo por consumo de sustancias')),
           SelectItemButton(value: 7, child: const Text('GDS-15 — Escala de Depresión Geriátrica')),
           SelectItemButton(value: 8, child: const Text('Lawton AIVD — Actividades instrumentales de la vida diaria')),
+          SelectItemButton(value: 10, child: const Text('Katz ABVD — Actividades basicas de la vida diaria')),
           SelectItemButton(value: 3, child: const Text('WHOQOL-BREF — Calidad de Vida')),
           SelectItemButton(value: 5, child: const Text('SF-36 — Estado de Salud')),
         ]),
@@ -304,6 +305,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     if (surveyType == 2) return ReportsController.baiLevel(score);
     if (surveyType == 7) return ReportsController.gdsLevel(score);
     if (surveyType == 8) return ReportsController.lawtonLevel(score);
+    if (surveyType == 10) return ReportsController.katzLevel(score);
     return '';
   }
 
@@ -329,11 +331,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ? 'GDS-15'
               : _selectedSurveyType == 8
                 ? 'Lawton AIVD'
+              : _selectedSurveyType == 10
+                ? 'Katz ABVD'
                   : 'Encuesta';
         final questionCount = _selectedSurveyType == 7
           ? 15
           : _selectedSurveyType == 8
             ? 8
+            : _selectedSurveyType == 10
+              ? 6
             : 21;
 
       // Header
@@ -433,6 +439,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     if (surveyType == 6) return ReportsController.assistLevel(score);
     if (surveyType == 7) return ReportsController.gdsLevel(score);
     if (surveyType == 8) return ReportsController.lawtonLevel(score);
+    if (surveyType == 10) return ReportsController.katzLevel(score);
     return '';
   }
 
@@ -1035,6 +1042,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
               ? 'GDS-15'
               : surveyType == 8
                 ? 'Lawton AIVD'
+              : surveyType == 10
+                ? 'Katz ABVD'
               : 'Otro';
         final surveyId = survey['survey_id'];
         final patientId = survey['patient_id'] ?? 'N/A';
@@ -1859,6 +1868,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
               ? 'GDS-15'
               : surveyType == 8
                 ? 'Lawton AIVD'
+              : surveyType == 10
+                ? 'Katz ABVD'
               : 'Encuesta';
         final surveyFullName = surveyType == 1
           ? 'Inventario de Depresión de Beck II'
@@ -1868,6 +1879,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
               ? 'Escala de Depresión Geriátrica de 15 ítems'
               : surveyType == 8
                 ? 'Escala de Lawton para Actividades Instrumentales de la Vida Diaria'
+              : surveyType == 10
+                ? 'Indice de Katz para Actividades Basicas de la Vida Diaria'
               : 'Encuesta';
 
       final fontRegular = await PdfGoogleFonts.notoSansRegular();
@@ -1878,6 +1891,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
       final distribution = surveyType == 8
           ? <String, int>{'Independencia total': 0, 'Deterioro funcional': 0}
+          : surveyType == 10
+            ? <String, int>{'Independencia total': 0, 'Dependencia en algun grado': 0}
           : <String, int>{
               'Mínima': 0,
               'Leve': 0,
@@ -1896,6 +1911,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       final orderedLevels = distribution.keys.toList();
       String shortLabel(String level) {
         if (level == 'Independencia total') return 'Indep';
+        if (level == 'Dependencia en algun grado') return 'Depend';
         if (level == 'Deterioro funcional') return 'Deter';
         if (level == 'Mínima') return 'Min';
         if (level == 'Leve') return 'Lev';
@@ -1910,6 +1926,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ? {'Mínima': '0-7', 'Leve': '8-15', 'Moderada': '16-25', 'Severa': '26-63'}
             : surveyType == 8
               ? {'Independencia total': '8', 'Deterioro funcional': '0-7'}
+            : surveyType == 10
+              ? {'Independencia total': '6', 'Dependencia en algun grado': '0-5'}
             : {'Mínima': '0-4 (Normal)', 'Leve': '-', 'Moderada': '-', 'Severa': '5-15 (Síntomas depresivos)'};
 
       final pieColors = [PdfColors.green400, PdfColors.yellow600, PdfColors.orange400, PdfColors.red400];
@@ -2269,6 +2287,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     if (surveyType == 6) return ReportsController.assistLevel(intScore);
     if (surveyType == 7) return ReportsController.gdsLevel(intScore);
     if (surveyType == 8) return ReportsController.lawtonLevel(intScore);
+  if (surveyType == 10) return ReportsController.katzLevel(intScore);
     return '';
   }
 
@@ -2278,6 +2297,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     if (surveyType == 6) return ReportsController.assistInterpretation(mean);
     if (surveyType == 7) return ReportsController.gdsInterpretation(mean);
     if (surveyType == 8) return ReportsController.lawtonInterpretation(mean);
+    if (surveyType == 10) return ReportsController.katzInterpretation(mean);
     return '';
   }
 
@@ -2403,6 +2423,7 @@ class _LevelDistributionChart extends StatelessWidget {
     if (surveyType == 6) return ['low', 'moderate', 'high'];
     if (surveyType == 7) return ['normal', 'depressive'];
     if (surveyType == 8) return ['independent', 'impaired'];
+    if (surveyType == 10) return ['independent', 'dependent'];
     return ['minimal', 'mild', 'moderate', 'severe'];
   }
 
@@ -2426,6 +2447,8 @@ class _LevelDistributionChart extends StatelessWidget {
         return 'Síntomas';
       case 'independent':
         return 'Independencia';
+      case 'dependent':
+        return 'Dependencia';
       case 'impaired':
         return 'Deterioro';
       default:
@@ -2453,6 +2476,10 @@ class _LevelDistributionChart extends StatelessWidget {
     if (surveyType == 8) {
       if (score == 8) return 'independent';
       return 'impaired';
+    }
+    if (surveyType == 10) {
+      if (score == 6) return 'independent';
+      return 'dependent';
     }
     return 'low';
   }
@@ -2814,6 +2841,8 @@ class _SeverityPieChart extends StatelessWidget {
             ? <String, int>{'Normal': 0, 'Síntomas depresivos': 0}
         : surveyType == 8
           ? <String, int>{'Independencia total': 0, 'Deterioro funcional': 0}
+        : surveyType == 10
+          ? <String, int>{'Independencia total': 0, 'Dependencia en algun grado': 0}
             : <String, int>{'Mínima': 0, 'Leve': 0, 'Moderada': 0, 'Severa': 0};
     final scoreRanges = <String, String>{};
 
@@ -2831,6 +2860,7 @@ class _SeverityPieChart extends StatelessWidget {
                 'normal': 'Normal',
                 'depressive': 'Síntomas depresivos',
                 'independent': 'Independencia total',
+                'dependent': 'Dependencia en algun grado',
                 'impaired': 'Deterioro funcional',
               };
               return labelMap[level]!;
@@ -2858,6 +2888,9 @@ class _SeverityPieChart extends StatelessWidget {
     } else if (surveyType == 8) {
       scoreRanges['Independencia total'] = '8';
       scoreRanges['Deterioro funcional'] = '0–7';
+    } else if (surveyType == 10) {
+      scoreRanges['Independencia total'] = '6';
+      scoreRanges['Dependencia en algun grado'] = '0–5';
     } else {
       scoreRanges['Mínima'] = '0–4 (Normal)';
       scoreRanges['Leve'] = '-';
@@ -2875,6 +2908,7 @@ class _SeverityPieChart extends StatelessWidget {
       'Síntomas depresivos': const Color(0xFFEF4444),
       'Independencia total': const Color(0xFF10B981),
       'Deterioro funcional': const Color(0xFFF59E0B),
+      'Dependencia en algun grado': const Color(0xFFF59E0B),
       'Bajo': const Color(0xFF10B981),
       'Alto': const Color(0xFFEF4444),
     };
@@ -3044,6 +3078,9 @@ class _SeverityPieChart extends StatelessWidget {
     } else if (surveyType == 8) {
       if (score == 8) return 'independent';
       return 'impaired';
+    } else if (surveyType == 10) {
+      if (score == 6) return 'independent';
+      return 'dependent';
     }
     return 'normal';
   }

@@ -791,6 +791,7 @@ class _PatientDetailsDialog extends StatelessWidget {
                               case 7: return 'GDS-15';
                               case 8: return 'Lawton';
                               case 9: return 'Osteoporosis';
+                              case 10: return 'Katz';
 
                               default: return 'Encuesta';
                             }

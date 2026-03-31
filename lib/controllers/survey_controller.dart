@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:ssapp/models/bdi_questions.dart';
 import 'package:ssapp/models/gds_questions.dart';
+import 'package:ssapp/models/katz_questions.dart';
 import 'package:ssapp/models/lawton_questions.dart';
 import 'package:ssapp/models/response_model.dart';
 import 'package:ssapp/models/survey_model.dart';
@@ -13,7 +14,7 @@ import '../models/osteoporosis_questions.dart';
 /// Handles responses, navigation, saving, and score calculations
 class SurveyController extends ChangeNotifier {
   final int patientId;
-  final String surveyType; // 'bdi', 'bai', 'gds', 'lawton', or 'osteoporosis'
+  final String surveyType; // 'bdi', 'bai', 'gds', 'lawton', 'katz', or 'osteoporosis'
   final SurveyService surveyService;
 
   int _currentQuestionIndex = 0;
@@ -41,13 +42,15 @@ class SurveyController extends ChangeNotifier {
         return 7;
       case 'lawton':
         return 8;
+      case 'katz':
+        return 10;
       case 'osteoporosis':
         return 9;
       case 'bdi':
       default:
         return 1;
     }
-  } // 1=BDI, 2=BAI, 7=GDS-15, 8=Lawton, 9=Osteoporosis
+  } // 1=BDI, 2=BAI, 7=GDS-15, 8=Lawton, 9=Osteoporosis, 10=Katz
 
   List<SurveyQuestion> get questions {
     if (surveyType == 'bai') {
@@ -58,6 +61,9 @@ class SurveyController extends ChangeNotifier {
     }
     if (surveyType == 'lawton') {
       return LawtonQuestions.questions;
+    }
+    if (surveyType == 'katz') {
+      return KatzQuestions.questions;
     }
     if (surveyType == 'osteoporosis') {
       return OsteoporosisQuestions.questions;
@@ -130,6 +136,14 @@ class SurveyController extends ChangeNotifier {
     return _responses.values.fold(0, (sum, score) => sum + score);
   }
 
+  Map<String, dynamic> getKatzOutput() {
+    if (surveyType != 'katz') {
+      throw StateError('getKatzOutput solo aplica para surveyType = katz');
+    }
+    final result = KatzQuestions.evaluate(_responses);
+    return result.toMap();
+  }
+
   /// Get interpretation based on score
   String getInterpretation() {
     final score = calculateTotalScore();
@@ -147,6 +161,8 @@ class SurveyController extends ChangeNotifier {
         return 'Independencia total para las actividades instrumentales evaluadas.';
       }
       return 'Presenta deterioro funcional en una o más actividades instrumentales.';
+    } else if (surveyType == 'katz') {
+      return KatzQuestions.evaluate(_responses).interpretacion;
     } else if (surveyType == 'osteoporosis') {
       // Osteoporosis interpretation: instruct to cross with age, BMI, and score
       if (score >= 7) {
@@ -177,6 +193,9 @@ class SurveyController extends ChangeNotifier {
     } else if (surveyType == 'lawton') {
       if (score == questions.length) return 'Independencia total';
       return 'Deterioro funcional';
+    } else if (surveyType == 'katz') {
+      final result = KatzQuestions.evaluate(_responses);
+      return 'Katz ${result.clasificacionKatz}';
     } else if (surveyType == 'osteoporosis') {
       // Osteoporosis: just return the score (max 6)
       return 'Puntaje: ${score > 6 ? 6 : score}';
