@@ -59,6 +59,9 @@ class _SurveyScreenState extends State<SurveyScreen> {
     if (widget.surveyType == 'lawton') {
       return const Color(0xFF14B8A6);
     }
+    if (widget.surveyType == 'osteoporosis') {
+      return const Color(0xFF145374);
+    }
     return LightModeColors.lightPrimary;
   }
 
@@ -311,6 +314,16 @@ class _SurveyScreenState extends State<SurveyScreen> {
         levelColor = LightModeColors.lightTertiary;
       } else {
         levelColor = const Color(0xFFF59E0B);
+      }
+    } else if (widget.surveyType == 'osteoporosis') {
+      if (totalScore <= 5) {
+        levelColor = LightModeColors.lightTertiary;
+      } else if (totalScore <= 8) {
+        levelColor = const Color(0xFFFFA726);
+      } else if (totalScore <= 11) {
+        levelColor = const Color(0xFFFF7043);
+      } else {
+        levelColor = LightModeColors.lightError;
       }
     } else {
       // BDI-II levels

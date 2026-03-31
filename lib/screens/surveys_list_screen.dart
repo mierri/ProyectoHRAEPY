@@ -40,7 +40,7 @@ class _SurveysListScreenState extends State<SurveysListScreen> {
 
   List<Map<String, dynamic>> _filteredSurveys(List<Map<String, dynamic>> all) {
     var result = all;
-    const _typeIdMap = {'bdi': 1, 'bai': 2, 'whoqol': 3, 'moca': 4, 'sf36': 5, 'assist': 6, 'gds': 7, 'lawton': 8};
+    const _typeIdMap = {'bdi': 1, 'bai': 2, 'whoqol': 3, 'moca': 4, 'sf36': 5, 'assist': 6, 'gds': 7, 'lawton': 8, 'osteoporosis': 9};
     if (_typeIdMap.containsKey(_filterType)) {
       final typeId = _typeIdMap[_filterType]!;
       result = result.where((s) => (s['survey_type'] ?? 1) == typeId).toList();
@@ -199,6 +199,7 @@ class _FiltersSection extends StatelessWidget {
         _FilterOption(value: 'whoqol', label: 'WHOQOL-BREF'),
         _FilterOption(value: 'sf36', label: 'SF-36'),
         _FilterOption(value: 'assist', label: 'ASSIST V3.0'),
+        _FilterOption(value: 'osteoporosis', label: 'Osteoporosis'),
       ],
       selected: filterType == 'all' ? null : filterType,
       hint: 'Todas',
@@ -388,6 +389,7 @@ class _SurveyCard extends StatelessWidget {
       case 6: return LightModeColors.lightSecondary; // ASSIST
       case 7: return const Color(0xFF0EA5E9); // GDS-15 - celeste
       case 8: return const Color(0xFF14B8A6); // Lawton AIVD - teal
+      case 9: return const Color(0xFF145374); // Osteoporosis
       default: return LightModeColors.lightPrimary;
     }
   }
@@ -402,6 +404,7 @@ class _SurveyCard extends StatelessWidget {
       case 6: return 'ASSIST';
       case 7: return 'GDS-15';
       case 8: return 'Lawton AIVD';
+      case 9: return 'Osteoporosis';
       default: return 'Encuesta';
     }
   }
@@ -413,6 +416,7 @@ class _SurveyCard extends StatelessWidget {
       case 5: return 36; // SF-36
       case 7: return 15; // GDS-15
       case 8: return 8;  // Lawton
+      case 9: return 7;  // Osteoporosis
       default: return 21; // BDI / BAI
     }
   }
@@ -441,6 +445,7 @@ class _SurveyCard extends StatelessWidget {
     if (type == 5) return 'SF-36';  // SF-36
     if (type == 7) return score <= 4 ? 'Normal' : 'Síntomas depresivos';
     if (type == 8) return score == 8 ? 'Independencia total' : 'Deterioro funcional';
+    if (type == 9) return 'Puntaje: $score'; // Osteoporosis - just show score
     return '';
   }
 
@@ -462,6 +467,8 @@ class _SurveyCard extends StatelessWidget {
     if (type == 5) return const Color(0xFF06B6D4); // SF-36 cyan
     if (type == 7) return score <= 4 ? LightModeColors.lightTertiary : LightModeColors.lightError;
     if (type == 8) return score == 8 ? LightModeColors.lightTertiary : const Color(0xFFF59E0B);
+    if (type == 9) return const Color(0xFF145374);
+
     return LightModeColors.lightPrimary;
   }
 

@@ -92,79 +92,79 @@ class _PatientsScreenState extends State<PatientsScreen> {
       child: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
+        children: [
+          // Barra de búsqueda
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Row(
               children: [
-                // Barra de búsqueda
-                Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _searchController,
-                          placeholder: const Text('Buscar paciente por nombre...'),
-                          onChanged: (value) {
-                            setState(() => _searchQuery = value);
-                          },
-                        ),
-                      ),
-                      if (_searchQuery.isNotEmpty) ...[
-                        const Gap(8),
-                        IconButton(
-                          icon: const Icon(material.Icons.clear),
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() => _searchQuery = '');
-                          },
-                          variance: ButtonVariance.ghost,
-                        ),
-                      ],
-                    ],
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    placeholder: const Text('Buscar paciente por nombre...'),
+                    onChanged: (value) {
+                      setState(() => _searchQuery = value);
+                    },
                   ),
                 ),
-
-                // Lista de pacientes
-                Expanded(
-                  child: patients.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                material.Icons.people_outline,
-                                size: 80,
-                                color: Theme.of(context).colorScheme.mutedForeground,
-                              ),
-                              const Gap(16),
-                              Text(
-                                _searchQuery.isEmpty
-                                    ? 'No hay pacientes registrados'
-                                    : 'No se encontraron resultados',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  color: Theme.of(context).colorScheme.mutedForeground,
-                                ),
-                              ),
-                              const Gap(8),
-                              Text(
-                                _searchQuery.isEmpty
-                                    ? 'Agrega un nuevo paciente para comenzar'
-                                    : 'Intenta con otro término de búsqueda',
-                              ).muted().small(),
-                            ],
-                          ),
-                        )
-                      : ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                          itemCount: patients.length,
-                          separatorBuilder: (context, index) => const Gap(12),
-                          itemBuilder: (context, index) {
-                            final patient = patients[index];
-                            return _PatientCard(patient: patient);
-                          },
-                        ),
-                ),
+                if (_searchQuery.isNotEmpty) ...[
+                  const Gap(8),
+                  IconButton(
+                    icon: const Icon(material.Icons.clear),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() => _searchQuery = '');
+                    },
+                    variance: ButtonVariance.ghost,
+                  ),
+                ],
               ],
             ),
+          ),
+
+          // Lista de pacientes
+          Expanded(
+            child: patients.isEmpty
+                ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    material.Icons.people_outline,
+                    size: 80,
+                    color: Theme.of(context).colorScheme.mutedForeground,
+                  ),
+                  const Gap(16),
+                  Text(
+                    _searchQuery.isEmpty
+                        ? 'No hay pacientes registrados'
+                        : 'No se encontraron resultados',
+                    style: TextStyle(
+                      fontSize: 20,
+                      color: Theme.of(context).colorScheme.mutedForeground,
+                    ),
+                  ),
+                  const Gap(8),
+                  Text(
+                    _searchQuery.isEmpty
+                        ? 'Agrega un nuevo paciente para comenzar'
+                        : 'Intenta con otro término de búsqueda',
+                  ).muted().small(),
+                ],
+              ),
+            )
+                : ListView.separated(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              itemCount: patients.length,
+              separatorBuilder: (context, index) => const Gap(12),
+              itemBuilder: (context, index) {
+                final patient = patients[index];
+                return _PatientCard(patient: patient);
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -199,91 +199,91 @@ class _PatientsScreenState extends State<PatientsScreen> {
                     Expanded(
                       child: selectedGender == 'M'
                           ? PrimaryButton(
-                              onPressed: () {
-                                setDialogState(() => selectedGender = 'M');
-                              },
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(material.Icons.male, size: 18),
-                                  const Gap(8),
-                                  const Text('Masculino'),
-                                ],
-                              ),
-                            )
+                        onPressed: () {
+                          setDialogState(() => selectedGender = 'M');
+                        },
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(material.Icons.male, size: 18),
+                            const Gap(8),
+                            const Text('Masculino'),
+                          ],
+                        ),
+                      )
                           : OutlineButton(
-                              onPressed: () {
-                                setDialogState(() => selectedGender = 'M');
-                              },
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(material.Icons.male, size: 18),
-                                  const Gap(8),
-                                  const Text('Masculino'),
-                                ],
-                              ),
-                            ),
+                        onPressed: () {
+                          setDialogState(() => selectedGender = 'M');
+                        },
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(material.Icons.male, size: 18),
+                            const Gap(8),
+                            const Text('Masculino'),
+                          ],
+                        ),
+                      ),
                     ),
                     const Gap(8),
                     Expanded(
                       child: selectedGender == 'F'
                           ? PrimaryButton(
-                              onPressed: () {
-                                setDialogState(() => selectedGender = 'F');
-                              },
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(material.Icons.female, size: 18),
-                                  const Gap(8),
-                                  const Text('Femenino'),
-                                ],
-                              ),
-                            )
+                        onPressed: () {
+                          setDialogState(() => selectedGender = 'F');
+                        },
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(material.Icons.female, size: 18),
+                            const Gap(8),
+                            const Text('Femenino'),
+                          ],
+                        ),
+                      )
                           : OutlineButton(
-                              onPressed: () {
-                                setDialogState(() => selectedGender = 'F');
-                              },
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(material.Icons.female, size: 18),
-                                  const Gap(8),
-                                  const Text('Femenino'),
-                                ],
-                              ),
-                            ),
+                        onPressed: () {
+                          setDialogState(() => selectedGender = 'F');
+                        },
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(material.Icons.female, size: 18),
+                            const Gap(8),
+                            const Text('Femenino'),
+                          ],
+                        ),
+                      ),
                     ),
                     const Gap(8),
                     Expanded(
                       child: selectedGender == 'O'
                           ? PrimaryButton(
-                              onPressed: () {
-                                setDialogState(() => selectedGender = 'O');
-                              },
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(material.Icons.transgender, size: 18),
-                                  const Gap(8),
-                                  const Text('Otro'),
-                                ],
-                              ),
-                            )
+                        onPressed: () {
+                          setDialogState(() => selectedGender = 'O');
+                        },
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(material.Icons.transgender, size: 18),
+                            const Gap(8),
+                            const Text('Otro'),
+                          ],
+                        ),
+                      )
                           : OutlineButton(
-                              onPressed: () {
-                                setDialogState(() => selectedGender = 'O');
-                              },
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(material.Icons.transgender, size: 18),
-                                  const Gap(8),
-                                  const Text('Otro'),
-                                ],
-                              ),
-                            ),
+                        onPressed: () {
+                          setDialogState(() => selectedGender = 'O');
+                        },
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(material.Icons.transgender, size: 18),
+                            const Gap(8),
+                            const Text('Otro'),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -667,260 +667,265 @@ class _PatientDetailsDialog extends StatelessWidget {
               Flexible(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Información básica
-              SurfaceCard(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text('Información Personal').semiBold().large(),
-                      const Gap(16),
-                      _buildInfoRow(
-                        context,
-                        material.Icons.person,
-                        'Nombre',
-                        patient.name,
-                      ),
-                      const Gap(12),
-                      _buildInfoRow(
-                        context,
-                        material.Icons.cake,
-                        'Edad',
-                        '${patient.age} años',
-                      ),
-                      const Gap(12),
-                      _buildInfoRow(
-                        context,
-                        material.Icons.calendar_today,
-                        'Fecha de nacimiento',
-                        DateFormat('dd/MM/yyyy').format(patient.birthDate),
-                      ),
-                      const Gap(12),
-                      _buildInfoRow(
-                        context,
-                        material.Icons.wc,
-                        'Sexo',
-                        _getGenderLabel(patient.gender),
-                      ),
-                      const Gap(12),
-                      _buildInfoRow(
-                        context,
-                        material.Icons.fingerprint,
-                        'ID del Paciente',
-                        patient.patientId.toString(),
-                      ),
-                      const Gap(12),
-                      _buildInfoRow(
-                        context,
-                        material.Icons.cloud_sync,
-                        'Estado de sincronización',
-                        patient.synced ? 'Sincronizado' : 'Pendiente',
-                        valueColor: patient.synced
-                            ? LightModeColors.lightTertiary
-                            : LightModeColors.lightError,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const Gap(24),
-
-              // Historial de encuestas
-              Row(
-                children: [
-                  const Text('Historial de Encuestas').semiBold().large(),
-                  const Gap(8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: LightModeColors.lightPrimary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '${patientSurveys.length}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: LightModeColors.lightPrimary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const Gap(16),
-
-              if (patientSurveys.isEmpty)
-                SurfaceCard(
-                  child: Padding(
-                    padding: const EdgeInsets.all(40),
-                    child: Center(
-                      child: Column(
-                        children: [
-                          Icon(
-                            material.Icons.assignment_outlined,
-                            size: 48,
-                            color: Theme.of(context).colorScheme.mutedForeground,
-                          ),
-                          const Gap(12),
-                          const Text('No hay encuestas registradas').muted(),
-                        ],
-                      ),
-                    ),
-                  ),
-                )
-              else
-                ...patientSurveys.map((survey) {
-                  final responses = survey['responses'] as List?;
-                  final isComplete = responses != null && responses.isNotEmpty;
-                  final score = isComplete ? surveyService.calculateSurveyScore(survey) : 0;
-                  final surveyType = survey['survey_type'] as int? ?? 1;
-                  String getSurveyTypeName(int type) {
-                    switch (type) {
-                      case 1: return 'BDI-II';
-                      case 2: return 'BAI';
-                      case 3: return 'WHOQOL-BREF';
-                      case 4: return 'MoCA';
-                      case 5: return 'SF-36';
-                      default: return 'Encuesta';
-                    }
-                  }
-
-                  final createdAt = DateTime.parse(survey['created_at']);
-                  final isSynced = survey['synced'] == true;
-
-                  final surveyTypeName = getSurveyTypeName(surveyType);
-
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: GestureDetector(
-                      onTap: isComplete
-                          ? () {
-                              Navigator.of(context).pop();
-                              context.push('/survey-result/${survey['survey_id']}');
-                            }
-                          : null,
-                      child: OutlinedContainer(
-                        borderRadius: BorderRadius.circular(12),
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          children: [
-                            // Icono de estado
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: isComplete
-                                    ? LightModeColors.lightTertiary.withValues(alpha: 0.1)
-                                    : LightModeColors.lightError.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
+                      // Información básica
+                      SurfaceCard(
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Información Personal').semiBold().large(),
+                              const Gap(16),
+                              _buildInfoRow(
+                                context,
+                                material.Icons.person,
+                                'Nombre',
+                                patient.name,
                               ),
-                              child: Icon(
-                                isComplete ? material.Icons.check_circle : material.Icons.pending,
-                                color: isComplete
+                              const Gap(12),
+                              _buildInfoRow(
+                                context,
+                                material.Icons.cake,
+                                'Edad',
+                                '${patient.age} años',
+                              ),
+                              const Gap(12),
+                              _buildInfoRow(
+                                context,
+                                material.Icons.calendar_today,
+                                'Fecha de nacimiento',
+                                DateFormat('dd/MM/yyyy').format(patient.birthDate),
+                              ),
+                              const Gap(12),
+                              _buildInfoRow(
+                                context,
+                                material.Icons.wc,
+                                'Sexo',
+                                _getGenderLabel(patient.gender),
+                              ),
+                              const Gap(12),
+                              _buildInfoRow(
+                                context,
+                                material.Icons.fingerprint,
+                                'ID del Paciente',
+                                patient.patientId.toString(),
+                              ),
+                              const Gap(12),
+                              _buildInfoRow(
+                                context,
+                                material.Icons.cloud_sync,
+                                'Estado de sincronización',
+                                patient.synced ? 'Sincronizado' : 'Pendiente',
+                                valueColor: patient.synced
                                     ? LightModeColors.lightTertiary
                                     : LightModeColors.lightError,
-                                size: 20,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const Gap(24),
+
+                      // Historial de encuestas
+                      Row(
+                        children: [
+                          const Text('Historial de Encuestas').semiBold().large(),
+                          const Gap(8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: LightModeColors.lightPrimary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '${patientSurveys.length}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: LightModeColors.lightPrimary,
                               ),
                             ),
-                            const Gap(16),
+                          ),
+                        ],
+                      ),
+                      const Gap(16),
 
-                            // Información de la encuesta
-                            Expanded(
+                      if (patientSurveys.isEmpty)
+                        SurfaceCard(
+                          child: Padding(
+                            padding: const EdgeInsets.all(40),
+                            child: Center(
                               child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        surveyTypeName,
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      const Gap(8),
-                                      if (!isSynced)
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: LightModeColors.lightError.withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(4),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(
-                                                material.Icons.cloud_off,
-                                                size: 10,
-                                                color: LightModeColors.lightError,
-                                              ),
-                                              const Gap(4),
-                                              Text(
-                                                'Sin sync',
-                                                style: TextStyle(
-                                                  fontSize: 10,
-                                                  color: LightModeColors.lightError,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                    ],
+                                  Icon(
+                                    material.Icons.assignment_outlined,
+                                    size: 48,
+                                    color: Theme.of(context).colorScheme.mutedForeground,
                                   ),
-                                  const Gap(4),
-                                  Text(
-                                    DateFormat('dd/MM/yyyy HH:mm').format(createdAt),
-                                  ).muted().small(),
-                                  if (isComplete) ...[
-                                    const Gap(4),
-                                    if (surveyType == 1 || surveyType == 2)
-                                      Text(
-                                        'Puntaje: $score - ${_getScoreLevel(score, surveyType)}',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: _getScoreLevelColor(score, surveyType),
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      )
-                                    else if (surveyType == 3)
-                                      // WHOQOL: calcular promedio de dominios
-                                      _buildWhoqolScore(survey)
-                                    else if (surveyType == 5)
-                                      // SF-36: calcular promedio de dimensiones
-                                      _buildSF36Score(survey)
-                                    else
-                                      Text(
-                                        'Encuesta completada',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: _getScoreLevelColor(0, surveyType),
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                  ],
+                                  const Gap(12),
+                                  const Text('No hay encuestas registradas').muted(),
                                 ],
                               ),
                             ),
+                          ),
+                        )
+                      else
+                        ...patientSurveys.map((survey) {
+                          final responses = survey['responses'] as List?;
+                          final isComplete = responses != null && responses.isNotEmpty;
+                          final score = isComplete ? surveyService.calculateSurveyScore(survey) : 0;
+                          final surveyType = survey['survey_type'] as int? ?? 1;
+                          String getSurveyTypeName(int type) {
+                            switch (type) {
+                              case 1: return 'BDI-II';
+                              case 2: return 'BAI';
+                              case 3: return 'WHOQOL-BREF';
+                              case 4: return 'MoCA';
+                              case 5: return 'SF-36';
+                              case 6: return 'ASSIST';
+                              case 7: return 'GDS-15';
+                              case 8: return 'Lawton';
+                              case 9: return 'Osteoporosis';
 
-                            // Flecha para ver detalles
-                            if (isComplete)
-                              Icon(
-                                material.Icons.chevron_right,
-                                color: Theme.of(context).colorScheme.mutedForeground,
+                              default: return 'Encuesta';
+                            }
+                          }
+
+                          final createdAt = DateTime.parse(survey['created_at']);
+                          final isSynced = survey['synced'] == true;
+
+                          final surveyTypeName = getSurveyTypeName(surveyType);
+
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: GestureDetector(
+                              onTap: isComplete
+                                  ? () {
+                                Navigator.of(context).pop();
+                                context.push('/survey-result/${survey['survey_id']}');
+                              }
+                                  : null,
+                              child: OutlinedContainer(
+                                borderRadius: BorderRadius.circular(12),
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
+                                  children: [
+                                    // Icono de estado
+                                    Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: isComplete
+                                            ? LightModeColors.lightTertiary.withValues(alpha: 0.1)
+                                            : LightModeColors.lightError.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(
+                                        isComplete ? material.Icons.check_circle : material.Icons.pending,
+                                        color: isComplete
+                                            ? LightModeColors.lightTertiary
+                                            : LightModeColors.lightError,
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const Gap(16),
+
+                                    // Información de la encuesta
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Text(
+                                                surveyTypeName,
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                              const Gap(8),
+                                              if (!isSynced)
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: LightModeColors.lightError.withValues(alpha: 0.1),
+                                                    borderRadius: BorderRadius.circular(4),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      Icon(
+                                                        material.Icons.cloud_off,
+                                                        size: 10,
+                                                        color: LightModeColors.lightError,
+                                                      ),
+                                                      const Gap(4),
+                                                      Text(
+                                                        'Sin sync',
+                                                        style: TextStyle(
+                                                          fontSize: 10,
+                                                          color: LightModeColors.lightError,
+                                                          fontWeight: FontWeight.w500,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                          const Gap(4),
+                                          Text(
+                                            DateFormat('dd/MM/yyyy HH:mm').format(createdAt),
+                                          ).muted().small(),
+                                          if (isComplete) ...[
+                                            const Gap(4),
+                                            if (surveyType == 1 || surveyType == 2)
+                                              Text(
+                                                'Puntaje: $score - ${_getScoreLevel(score, surveyType)}',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: _getScoreLevelColor(score, surveyType),
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              )
+                                            else if (surveyType == 3)
+                                            // WHOQOL: calcular promedio de dominios
+                                              _buildWhoqolScore(survey)
+                                            else if (surveyType == 5)
+                                              // SF-36: calcular promedio de dimensiones
+                                                _buildSF36Score(survey)
+                                              else
+                                                Text(
+                                                  'Encuesta completada',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: _getScoreLevelColor(0, surveyType),
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+
+                                    // Flecha para ver detalles
+                                    if (isComplete)
+                                      Icon(
+                                        material.Icons.chevron_right,
+                                        color: Theme.of(context).colorScheme.mutedForeground,
+                                      ),
+                                  ],
+                                ),
                               ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-              ],
+                            ),
+                          );
+                        }),
+                    ],
                   ),
                 ),
               ),
@@ -946,12 +951,12 @@ class _PatientDetailsDialog extends StatelessWidget {
   }
 
   Widget _buildInfoRow(
-    BuildContext context,
-    IconData icon,
-    String label,
-    String value, {
-    Color? valueColor,
-  }) {
+      BuildContext context,
+      IconData icon,
+      String label,
+      String value, {
+        Color? valueColor,
+      }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1023,6 +1028,7 @@ class _PatientDetailsDialog extends StatelessWidget {
         return const Color(0xFF0EA5E9);
       case 5: // SF-36
         return const Color(0xFF06B6D4);
+
       default:
         return LightModeColors.lightPrimary;
     }
@@ -1099,4 +1105,3 @@ class _PatientDetailsDialog extends StatelessWidget {
     );
   }
 }
-

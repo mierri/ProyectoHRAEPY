@@ -8,6 +8,7 @@ enum SurveyType {
   bdi,
   gds,
   lawton,
+  osteoporosis,
   whoqol,
   moca,
   sf36,
@@ -25,6 +26,8 @@ extension SurveyTypeExtension on SurveyType {
         return 'GDS-15';
       case SurveyType.lawton:
         return 'Lawton';
+      case SurveyType.osteoporosis:
+        return 'Osteoporosis';
       case SurveyType.moca:
         return 'MoCA';
       case SurveyType.whoqol:
@@ -46,6 +49,8 @@ extension SurveyTypeExtension on SurveyType {
         return 'Geriatric Depression Scale — 15 Items';
       case SurveyType.lawton:
         return 'Lawton Instrumental Activities of Daily Living';
+      case SurveyType.osteoporosis:
+        return 'Osteoporosis Fracture Risk Questionnaire';
       case SurveyType.moca:
         return 'Montreal Cognitive Assessment';
       case SurveyType.whoqol:
@@ -67,6 +72,8 @@ extension SurveyTypeExtension on SurveyType {
         return 'Escala de Depresión Geriátrica';
       case SurveyType.lawton:
         return 'Escala de Actividades Instrumentales de la Vida Diaria';
+      case SurveyType.osteoporosis:
+        return 'Cuestionario de Riesgo de Fractura por Osteoporosis';
       case SurveyType.moca:
         return 'Evaluación Cognitiva Montreal';
       case SurveyType.whoqol:
@@ -88,6 +95,8 @@ extension SurveyTypeExtension on SurveyType {
         return material.Icons.elderly_outlined;
       case SurveyType.lawton:
         return material.Icons.home_work_outlined;
+      case SurveyType.osteoporosis:
+        return material.Icons.medical_services_outlined; // Use a visible icon (bone icon if available)
       case SurveyType.moca:
         return material.Icons.spa_outlined;
       case SurveyType.whoqol:
@@ -109,6 +118,8 @@ extension SurveyTypeExtension on SurveyType {
         return const Color(0xFF0EA5E9);
       case SurveyType.lawton:
         return const Color(0xFF14B8A6);
+      case SurveyType.osteoporosis:
+        return const Color(0xFF145374); // Azul petróleo
       case SurveyType.moca:
         return LightModeColors.lightSecondary;
       case SurveyType.whoqol:

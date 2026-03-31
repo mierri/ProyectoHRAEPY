@@ -17,6 +17,35 @@ class ConsentFormScreen extends StatefulWidget {
 }
 
 class _ConsentFormScreenState extends State<ConsentFormScreen> {
+          void _autoCalculateIMC() {
+            if (widget.surveyType == 'osteoporosis') {
+              final peso = num.tryParse(_pesoController.text.trim());
+              final talla = num.tryParse(_tallaController.text.trim());
+              if (peso != null && talla != null && talla > 0) {
+                final imc = peso / (talla * talla);
+                _imcController.text = imc.toStringAsFixed(2);
+              }
+            }
+          }
+  // Osteoporosis fields
+  final _pesoController = TextEditingController();
+  final _tallaController = TextEditingController();
+  final _imcController = TextEditingController();
+  String? _osteoporosisWarning;
+
+  bool get _isOsteoporosisSurvey => widget.surveyType == 'osteoporosis';
+  int? get _patientAge {
+    if (_selectedPatient != null) return _selectedPatient!.age;
+    if (_dateOfBirth != null) {
+      final now = DateTime.now();
+      int age = now.year - _dateOfBirth!.year;
+      if (now.month < _dateOfBirth!.month || (now.month == _dateOfBirth!.month && now.day < _dateOfBirth!.day)) {
+        age--;
+      }
+      return age;
+    }
+    return null;
+  }
   final _nameController = TextEditingController();
   DateTime? _dateOfBirth;
   String _gender = 'M'; // Masculino
@@ -35,6 +64,9 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _pesoController.dispose();
+    _tallaController.dispose();
+    _imcController.dispose();
     super.dispose();
   }
 
@@ -101,6 +133,8 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
         return const Color(0xFF06B6D4);
       case 'assist':
         return LightModeColors.lightSecondary;
+      case 'osteoporosis':
+        return const Color(0xFF145374); // Azul petróleo
       case 'bdi':
       default:
         return LightModeColors.lightPrimary;
@@ -108,6 +142,35 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
   }
 
   Future<void> _submit() async {
+                            // Osteoporosis: restrict to age >= 50
+                            if (_isOsteoporosisSurvey) {
+                              final age = _patientAge;
+                              if (age != null && age < 50) {
+                                setState(() { _osteoporosisWarning = 'Solo disponible para pacientes de 50 años o más.'; });
+                                _showError('Solo disponible para pacientes de 50 años o más.');
+                                return;
+                              }
+                            }
+            // Osteoporosis: validate numeric fields
+            if (widget.surveyType == 'osteoporosis') {
+              final peso = _pesoController.text.trim();
+              final talla = _tallaController.text.trim();
+              final imc = _imcController.text.trim();
+              if (peso.isEmpty || talla.isEmpty || imc.isEmpty) {
+                setState(() { _osteoporosisWarning = 'Por favor complete peso, talla e IMC.'; });
+                _showError('Por favor complete peso, talla e IMC.');
+                return;
+              }
+              final pesoNum = num.tryParse(peso);
+              final tallaNum = num.tryParse(talla);
+              final imcNum = num.tryParse(imc);
+              if (pesoNum == null || tallaNum == null || imcNum == null) {
+                setState(() { _osteoporosisWarning = 'Peso, talla e IMC deben ser valores numéricos.'; });
+                _showError('Peso, talla e IMC deben ser valores numéricos.');
+                return;
+              }
+              setState(() { _osteoporosisWarning = null; });
+            }
     if (_nameController.text.trim().isEmpty) {
       _showError('Por favor ingrese el nombre completo o seleccione un paciente');
       return;
@@ -170,10 +233,10 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
   }
 
   static Future<bool> _showInstructionsDialog(
-    BuildContext context, {
-    required String surveyType,
-    required Color surveyColor,
-  }) async {
+      BuildContext context, {
+        required String surveyType,
+        required Color surveyColor,
+      }) async {
     final isBai = surveyType == 'bai';
     final isMoca = surveyType == 'moca';
     final isGds = surveyType == 'gds';
@@ -192,7 +255,10 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
       surveyInstructions = 'A continuación se le presentarán una serie de tareas y preguntas que evalúan diferentes áreas de su funcionamiento cognitivo. Siga las instrucciones de cada actividad con atención. No hay respuestas buenas o malas, simplemente haga su mejor esfuerzo.';
     } else if (isGds) {
       surveyTitle = 'Escala de Depresión Geriátrica (GDS-15)';
-      surveyInstructions = 'Este cuestionario consta de 15 preguntas con respuesta Sí o No. Responda según cómo se ha sentido recientemente. No hay respuestas correctas o incorrectas.';
+      surveyInstructions = 'Este cuestionario consta de 15 preguntas, cada una con dos opciones de respuesta: Sí o No. Responda según cómo se ha sentido recientemente. No hay respuestas correctas o incorrectas.';
+    } else if (surveyType == 'osteoporosis') {
+      surveyTitle = 'Encuesta de Riesgo de Fractura por Osteoporosis';
+      surveyInstructions = 'Este cuestionario se aplica a personas de 50 años o más y permite identificar el riesgo para fractura por osteoporosis. En las preguntas siguientes, marque con una X en la columna correspondiente a la respuesta por la persona entrevistada. Cada pregunta tiene solo dos opciones de respuesta: Sí o No.';
     } else if (isLawton) {
       surveyTitle = 'Escala de Lawton (AIVD)';
       surveyInstructions = 'Este cuestionario evalúa su nivel de independencia en actividades instrumentales de la vida diaria. Seleccione la opción que mejor describa su capacidad actual en cada actividad.';
@@ -331,6 +397,13 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                         label: 'Interpretación',
                         description: '0–4: Normal | 5–15: Síntomas depresivos.',
                         color: const Color(0xFF0369A1),
+                      ),
+                    ] else if (surveyType == 'osteoporosis') ...[
+                      _ScaleItem(
+                        icon: Symbols.check_circle,
+                        label: 'Sí / No',
+                        description: 'Marque con una X la respuesta correspondiente para cada pregunta.',
+                        color: const Color(0xFF145374),
                       ),
                     ] else if (isLawton) ...[
                       _ScaleItem(
@@ -490,6 +563,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final osteoporosisAgeInvalid = _isOsteoporosisSurvey && _patientAge != null && _patientAge! < 50;
     return Scaffold(
       headers: [
         AppBar(
@@ -519,65 +593,65 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
             const Gap(8),
             _isLoadingPatients
                 ? Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: LightModeColors.lightOutline.withValues(alpha: 0.5),
-                      ),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: LightModeColors.lightOutline.withValues(alpha: 0.5),
+                ),
+              ),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: _getSurveyColor(),
                     ),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: _getSurveyColor(),
-                          ),
-                        ),
-                        const Gap(12),
-                        const Text('Cargando pacientes...'),
-                      ],
-                    ),
-                  )
-                : Select<PatientModel?>(
-                    value: _selectedPatient,
-                    onChanged: (patient) {
-                      if (patient != null) {
-                        _selectPatient(patient);
-                      } else {
-                        setState(() {
-                          _selectedPatient = null;
-                          _nameController.clear();
-                          _dateOfBirth = null;
-                        });
-                      }
-                    },
-                    itemBuilder: (context, patient) {
-                      if (patient == null) {
-                        return const Text('Crear nuevo paciente');
-                      }
-                      return Text('${patient.name} (${patient.age} años)');
-                    },
-                    popup: SelectPopup(
-                      items: SelectItemList(
-                        children: [
-                          const SelectItemButton(
-                            value: null,
-                            child: Text('Crear nuevo paciente'),
-                          ),
-                          ..._availablePatients.map((patient) {
-                            return SelectItemButton(
-                              value: patient,
-                              child: Text('${patient.name} (${patient.age} años)'),
-                            );
-                          }),
-                        ],
-                      ),
-                    ).call,
-                    placeholder: const Text('Seleccionar o crear paciente'),
                   ),
+                  const Gap(12),
+                  const Text('Cargando pacientes...'),
+                ],
+              ),
+            )
+                : Select<PatientModel?>(
+              value: _selectedPatient,
+              onChanged: (patient) {
+                if (patient != null) {
+                  _selectPatient(patient);
+                } else {
+                  setState(() {
+                    _selectedPatient = null;
+                    _nameController.clear();
+                    _dateOfBirth = null;
+                  });
+                }
+              },
+              itemBuilder: (context, patient) {
+                if (patient == null) {
+                  return const Text('Crear nuevo paciente');
+                }
+                return Text('${patient.name} (${patient.age} años)');
+              },
+              popup: SelectPopup(
+                items: SelectItemList(
+                  children: [
+                    const SelectItemButton(
+                      value: null,
+                      child: Text('Crear nuevo paciente'),
+                    ),
+                    ..._availablePatients.map((patient) {
+                      return SelectItemButton(
+                        value: patient,
+                        child: Text('${patient.name} (${patient.age} años)'),
+                      );
+                    }),
+                  ],
+                ),
+              ).call,
+              placeholder: const Text('Seleccionar o crear paciente'),
+            ),
             const Gap(16),
 
             if (_selectedPatient == null) ...[
@@ -648,6 +722,44 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
             ),
             const Gap(16),
 
+            // Osteoporosis: Peso, Talla, IMC
+            if (widget.surveyType == 'osteoporosis') ...[
+              const Text('Peso (Kg)').medium(),
+              const Gap(5),
+              TextField(
+                controller: _pesoController,
+                keyboardType: TextInputType.number,
+                placeholder: const Text('Ejemplo: 70'),
+                onChanged: (_) => setState(() => _autoCalculateIMC()),
+              ),
+              const Gap(12),
+              const Text('Talla (mts)').medium(),
+              const Gap(5),
+              TextField(
+                controller: _tallaController,
+                keyboardType: TextInputType.number,
+                placeholder: const Text('Ejemplo: 1.65'),
+                onChanged: (_) => setState(() => _autoCalculateIMC()),
+              ),
+              const Gap(12),
+              const Text('IMC').medium(),
+              const Gap(5),
+              TextField(
+                controller: _imcController,
+                keyboardType: TextInputType.number,
+                placeholder: const Text('Ejemplo: 25.7'),
+                readOnly: true,
+              ),
+              const Gap(8),
+              if (_osteoporosisWarning != null) ...[
+                Text(
+                  _osteoporosisWarning!,
+                  style: const TextStyle(color: material.Colors.red, fontWeight: FontWeight.w600),
+                ),
+                const Gap(8),
+              ],
+            ],
+
             GestureDetector(
               onTap: () => setState(() => _consentGiven = !_consentGiven),
               child: Row(
@@ -668,49 +780,57 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
             ),
             const Gap(32),
 
+            if (osteoporosisAgeInvalid) ...[
+              const Gap(8),
+              Text(
+                'Solo disponible para pacientes de 50 años o más.',
+                style: TextStyle(color: material.Colors.red, fontWeight: FontWeight.bold),
+              ),
+              const Gap(8),
+            ],
             SizedBox(
               width: double.infinity,
               child: GestureDetector(
-                onTap: _isLoading ? null : _submit,
+                onTap: (_isLoading || osteoporosisAgeInvalid) ? null : _submit,
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: _isLoading
+                    color: (_isLoading || osteoporosisAgeInvalid)
                         ? _getSurveyColor().withValues(alpha: 0.5)
                         : _getSurveyColor(),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: _isLoading
                       ? Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const Gap(8),
-                            const Text(
-                              'Procesando...',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        )
-                      : const Text(
-                          'Continuar con la encuesta',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                          ),
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
                         ),
+                      ),
+                      const Gap(8),
+                      const Text(
+                        'Procesando...',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  )
+                      : const Text(
+                    'Continuar con la encuesta',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -793,6 +913,8 @@ class ConsentInfoCard extends StatelessWidget {
         return 'Este cuestionario evalúa síntomas depresivos en personas mayores mediante la Escala de Depresión Geriátrica de 15 items (GDS-15). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
       case 'lawton':
         return 'Este cuestionario evalúa la independencia en actividades instrumentales de la vida diaria mediante la Escala de Lawton (AIVD). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
+      case 'osteoporosis':
+        return 'Este cuestionario detecta el riesgo de fracturas por osteoporosis. Los datos de peso, talla e IMC se solicitan solo para el consentimiento y no se almacenan en la base de datos. Los resultados deben cruzarse con la edad, IMC y puntaje obtenido.';
       case 'moca':
         return 'Esta evaluación cognitiva evalúa diferentes dominios cognitivos mediante la Evaluación Cognitiva Montreal (MoCA). Evalúa atención, concentración, funciones ejecutivas, memoria, lenguaje, habilidades visuoconstructivas, pensamiento conceptual, cálculo y orientación. Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
       case 'whoqol':
@@ -823,6 +945,8 @@ class ConsentInfoCard extends StatelessWidget {
         return const Color(0xFF06B6D4);
       case 'assist':
         return LightModeColors.lightSecondary;
+      case 'osteoporosis':
+        return const Color(0xFF145374); // Azul petróleo
       case 'bdi':
       default:
         return LightModeColors.lightPrimary;
@@ -854,8 +978,8 @@ class ConsentInfoCard extends StatelessWidget {
             const Gap(16),
             const Text(
               '• Su participación es completamente voluntaria\n'
-              '• Toda la información será tratada con confidencialidad\n'
-              '• Los resultados serán utilizados para mejorar la atención psicológica',
+                  '• Toda la información será tratada con confidencialidad\n'
+                  '• Los resultados serán utilizados para mejorar la atención psicológica',
             ).small().muted(),
           ],
         ),
@@ -925,4 +1049,3 @@ class _ScaleItem extends StatelessWidget {
     );
   }
 }
-

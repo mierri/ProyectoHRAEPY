@@ -117,6 +117,8 @@ class SurveyService extends ChangeNotifier {
         return 'GDS-15';
       case 8:
         return 'Lawton AIVD';
+      case 9:
+        return 'Osteoporosis';
       default:
         return 'Encuesta #$surveyId';
     }
@@ -141,6 +143,8 @@ class SurveyService extends ChangeNotifier {
         return 'secondary'; // GDS-15
       case 8:
         return 'secondary'; // Lawton AIVD
+      case 9:
+        return 'secondary'; // Osteoporosis
       default:
         return 'secondary';
     }

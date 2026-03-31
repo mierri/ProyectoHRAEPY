@@ -7,11 +7,13 @@ import 'package:ssapp/models/response_model.dart';
 import 'package:ssapp/models/survey_model.dart';
 import 'package:ssapp/Services/survey_service.dart';
 
+import '../models/osteoporosis_questions.dart';
+
 /// Controller for BDI/BAI survey logic
 /// Handles responses, navigation, saving, and score calculations
 class SurveyController extends ChangeNotifier {
   final int patientId;
-  final String surveyType; // 'bdi', 'bai', 'gds' or 'lawton'
+  final String surveyType; // 'bdi', 'bai', 'gds', 'lawton', or 'osteoporosis'
   final SurveyService surveyService;
 
   int _currentQuestionIndex = 0;
@@ -39,12 +41,14 @@ class SurveyController extends ChangeNotifier {
         return 7;
       case 'lawton':
         return 8;
+      case 'osteoporosis':
+        return 9;
       case 'bdi':
       default:
         return 1;
     }
-  } // 1=BDI, 2=BAI, 7=GDS-15, 8=Lawton
-  
+  } // 1=BDI, 2=BAI, 7=GDS-15, 8=Lawton, 9=Osteoporosis
+
   List<SurveyQuestion> get questions {
     if (surveyType == 'bai') {
       return BAIQuestions.questions;
@@ -54,6 +58,9 @@ class SurveyController extends ChangeNotifier {
     }
     if (surveyType == 'lawton') {
       return LawtonQuestions.questions;
+    }
+    if (surveyType == 'osteoporosis') {
+      return OsteoporosisQuestions.questions;
     }
     return BDIQuestions.questions;
   }
@@ -140,6 +147,12 @@ class SurveyController extends ChangeNotifier {
         return 'Independencia total para las actividades instrumentales evaluadas.';
       }
       return 'Presenta deterioro funcional en una o más actividades instrumentales.';
+    } else if (surveyType == 'osteoporosis') {
+      // Osteoporosis interpretation: instruct to cross with age, BMI, and score
+      if (score >= 7) {
+        return 'El puntaje máximo para comparación es 6. Cruce el puntaje, edad e IMC en la tabla correspondiente.';
+      }
+      return 'Cruce el puntaje, edad e IMC en la tabla correspondiente para determinar el riesgo.';
     } else {
       // BDI interpretation
       if (score <= 13) return 'Los síntomas depresivos son mínimos o inexistentes.';
@@ -164,6 +177,9 @@ class SurveyController extends ChangeNotifier {
     } else if (surveyType == 'lawton') {
       if (score == questions.length) return 'Independencia total';
       return 'Deterioro funcional';
+    } else if (surveyType == 'osteoporosis') {
+      // Osteoporosis: just return the score (max 6)
+      return 'Puntaje: ${score > 6 ? 6 : score}';
     } else {
       // BDI levels
       if (score <= 13) return 'Depresión Mínima';

@@ -158,6 +158,10 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
       case 8: // Lawton
         if (score == 8) return 'Independencia total';
         return 'Deterioro funcional';
+      case 9: // hay que checar bien este pq se calcula con un tabla :(
+        if (score <= 2) return 'Bajo';
+        if (score <= 5) return 'Moderado';
+        return 'Alto';
       default:
         return 'Resultado';
     }
@@ -245,6 +249,17 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
           return 'El resultado sugiere independencia para las actividades instrumentales evaluadas.';
         }
         return 'El resultado sugiere deterioro funcional en al menos una actividad instrumental. Se recomienda valoración geriátrica y plan de apoyo funcional.';
+      case 9:
+          switch (level.toLowerCase()) {
+            case 'bajo':
+              return 'El puntaje indica bajo riesgo de osteoporosis. Mantenga hábitos saludables para la salud ósea.';
+            case 'moderado':
+              return 'El puntaje indica riesgo moderado de osteoporosis. Se recomienda evaluación médica y medidas preventivas.';
+            case 'alto':
+              return 'El puntaje indica alto riesgo de osteoporosis. Se requiere evaluación médica urgente y posible tratamiento.';
+            default:
+              return 'Se recomienda consultar con un profesional de salud para una evaluación completa del riesgo de osteoporosis.';
+          }
       default:
         return 'Se recomienda consultar con un profesional de salud para una evaluación completa.';
     }
@@ -324,6 +339,7 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         case 6: return 'ASSIST V3.0';
         case 7: return 'GDS-15';
         case 8: return 'Lawton AIVD';
+        case 9: return 'Osteoporosis';
         default: return 'Encuesta';
       }
     }
@@ -338,6 +354,7 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         case 6: return 'OMS-ASSIST V3.0';
         case 7: return 'Escala de Depresión Geriátrica de 15 ítems';
         case 8: return 'Escala de Lawton para Actividades Instrumentales de la Vida Diaria';
+        case 9: return 'Cuestionario de Riesgo de Fractura por Osteoporosis';
         default: return 'Encuesta';
       }
     }
@@ -715,6 +732,13 @@ class _ScoreInterpretationCard extends StatelessWidget {
         ranges = [
           {'range': '8', 'label': 'Independencia total', 'color': LightModeColors.lightTertiary},
           {'range': '0-7', 'label': 'Deterioro funcional', 'color': const Color(0xFFF59E0B)},
+        ];
+        break;
+      case 9:
+        ranges = [
+          {'range': '0-2', 'label': 'Bajo riesgo de osteoporosis', 'color': LightModeColors.lightTertiary},
+          {'range': '3-5', 'label': 'Riesgo moderado de osteoporosis', 'color': const Color(0xFFF59E0B)},
+          {'range': '6-10', 'label': 'Alto riesgo de osteoporosis', 'color': LightModeColors.lightError},
         ];
         break;
       default:
