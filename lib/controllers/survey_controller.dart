@@ -7,6 +7,8 @@ import 'package:ssapp/models/lawton_questions.dart';
 import 'package:ssapp/models/response_model.dart';
 import 'package:ssapp/models/survey_model.dart';
 import 'package:ssapp/Services/survey_service.dart';
+import 'package:ssapp/models/osteoporosis_risk_model.dart';
+import 'package:ssapp/Services/osteoporosis_risk_service.dart';
 
 import '../models/osteoporosis_questions.dart';
 
@@ -17,23 +19,33 @@ class SurveyController extends ChangeNotifier {
   final String surveyType; // 'bdi', 'bai', 'gds', 'lawton', 'katz', or 'osteoporosis'
   final SurveyService surveyService;
 
-  int _currentQuestionIndex = 0;
-  final Map<int, int> _responses = {};
-  int? _selectedOptionIndex;
-  bool _isSaving = false;
+   int _currentQuestionIndex = 0;
+   final Map<int, int> _responses = {};
+   int? _selectedOptionIndex;
+   bool _isSaving = false;
+
+   final double? weight;
+   final double? height;
+   final double? imc;
+
+   RiskResult? _osteoporosisRiskResult;
 
   SurveyController({
     required this.patientId,
     required this.surveyType,
     required this.surveyService,
+    this.weight,
+    this.height,
+    this.imc,
   });
 
-  // Getters
-  int get currentQuestionIndex => _currentQuestionIndex;
-  Map<int, int> get responses => Map.unmodifiable(_responses);
-  int? get selectedOptionIndex => _selectedOptionIndex;
-  bool get isSaving => _isSaving;
-  
+   // Getters
+   int get currentQuestionIndex => _currentQuestionIndex;
+   Map<int, int> get responses => Map.unmodifiable(_responses);
+   int? get selectedOptionIndex => _selectedOptionIndex;
+   bool get isSaving => _isSaving;
+   RiskResult? get osteoporosisRiskResult => _osteoporosisRiskResult;
+
   int get surveyTypeId {
     switch (surveyType) {
       case 'bai':
@@ -144,39 +156,48 @@ class SurveyController extends ChangeNotifier {
     return result.toMap();
   }
 
-  /// Get interpretation based on score
-  String getInterpretation() {
-    final score = calculateTotalScore();
-    if (surveyType == 'bai') {
-      // BAI interpretation
-      if (score <= 7) return 'Los síntomas de ansiedad son mínimos o inexistentes.';
-      if (score <= 15) return 'Presenta síntomas leves de ansiedad.';
-      if (score <= 25) return 'Presenta síntomas moderados de ansiedad.';
-      return 'Presenta síntomas severos de ansiedad.';
-    } else if (surveyType == 'gds') {
-      if (score <= 4) return 'Resultado dentro de la normalidad.';
-      return 'Presenta síntomas depresivos.';
-    } else if (surveyType == 'lawton') {
-      if (score == questions.length) {
-        return 'Independencia total para las actividades instrumentales evaluadas.';
-      }
-      return 'Presenta deterioro funcional en una o más actividades instrumentales.';
-    } else if (surveyType == 'katz') {
-      return KatzQuestions.evaluate(_responses).interpretacion;
-    } else if (surveyType == 'osteoporosis') {
-      // Osteoporosis interpretation: instruct to cross with age, BMI, and score
-      if (score >= 7) {
-        return 'El puntaje máximo para comparación es 6. Cruce el puntaje, edad e IMC en la tabla correspondiente.';
-      }
-      return 'Cruce el puntaje, edad e IMC en la tabla correspondiente para determinar el riesgo.';
-    } else {
-      // BDI interpretation
-      if (score <= 13) return 'Los síntomas depresivos son mínimos o inexistentes.';
-      if (score <= 19) return 'Presenta síntomas leves de depresión.';
-      if (score <= 28) return 'Presenta síntomas moderados de depresión.';
-      return 'Presenta síntomas graves de depresión.';
-    }
-  }
+   /// Get interpretation based on score
+   String getInterpretation() {
+     final score = calculateTotalScore();
+     if (surveyType == 'bai') {
+       // BAI interpretation
+       if (score <= 7) return 'Los síntomas de ansiedad son mínimos o inexistentes.';
+       if (score <= 15) return 'Presenta síntomas leves de ansiedad.';
+       if (score <= 25) return 'Presenta síntomas moderados de ansiedad.';
+       return 'Presenta síntomas severos de ansiedad.';
+     } else if (surveyType == 'gds') {
+       if (score <= 4) return 'Resultado dentro de la normalidad.';
+       return 'Presenta síntomas depresivos.';
+     } else if (surveyType == 'lawton') {
+       if (score == questions.length) {
+         return 'Independencia total para las actividades instrumentales evaluadas.';
+       }
+       return 'Presenta deterioro funcional en una o más actividades instrumentales.';
+     } else if (surveyType == 'osteoporosis') {
+       // Osteoporosis interpretation with risk calculation
+       if (_osteoporosisRiskResult == null) {
+         return 'No se pudo calcular el riesgo de fractura.';
+       }
+
+       final risk = _osteoporosisRiskResult!;
+
+       if (!risk.isApplicable) {
+         return 'No hay datos clínicos suficientes para esta combinación de edad, IMC y sexo. Se recomienda consultar con un especialista.';
+       }
+
+       if (risk.isHighRisk) {
+         return 'Según la tabla clínica: RIESGO ALTO de fractura osteoporótica. IMC: ${risk.bmi.toStringAsFixed(2)}, Puntuación: ${risk.score}/6. Se recomienda valoración médica especializada y posible tratamiento preventivo.';
+       } else {
+         return 'Según la tabla clínica: RIESGO BAJO de fractura osteoporótica. IMC: ${risk.bmi.toStringAsFixed(2)}, Puntuación: ${risk.score}/6. Mantener actividad física regular, adecuada ingesta de calcio y vitamina D.';
+       }
+     } else {
+       // BDI interpretation
+       if (score <= 13) return 'Los síntomas depresivos son mínimos o inexistentes.';
+       if (score <= 19) return 'Presenta síntomas leves de depresión.';
+       if (score <= 28) return 'Presenta síntomas moderados de depresión.';
+       return 'Presenta síntomas graves de depresión.';
+     }
+   }
 
   /// Get severity level
   String getSeverityLevel() {
@@ -208,7 +229,50 @@ class SurveyController extends ChangeNotifier {
     }
   }
 
-  /// Save survey to Hive and sync with Supabase
+   /// Calculate osteoporosis risk based on survey answers, age, weight, and height
+   void calculateOsteoporosisRisk({required int patientAge, required String patientGender}) {
+     if (surveyType != 'osteoporosis') {
+       return;
+     }
+
+     try {
+       // Validate required data
+       if (weight == null || height == null) {
+         throw ArgumentError('Peso y talla son requeridos para calcular el riesgo');
+       }
+
+       // Convert responses to boolean list (Yes=1, No=0 → true/false)
+       final answers = <bool>[];
+       for (int i = 1; i <= 7; i++) {
+         final response = _responses[i];
+         answers.add(response == 1);
+       }
+
+       // Convert gender to Sex enum
+       final sex = (patientGender.toUpperCase() == 'M' ||
+                    patientGender.toLowerCase() == 'masculino')
+           ? Sex.male
+           : Sex.female;
+
+       // Create patient data
+       final patientData = PatientData(
+         age: patientAge,
+         weightKg: weight!,
+         heightMeters: height!,
+         sex: sex,
+         answers: answers,
+       );
+
+       // Calculate risk
+       _osteoporosisRiskResult = OsteoporosisRiskService.calculateRisk(patientData);
+       notifyListeners();
+     } catch (e) {
+       print('Error calculating osteoporosis risk: $e');
+       _osteoporosisRiskResult = null;
+     }
+   }
+
+   /// Save survey to Hive and sync with Supabase
   Future<SurveySaveResult> saveSurvey() async {
     if (_isSaving) {
       return SurveySaveResult(
@@ -247,6 +311,9 @@ class SurveyController extends ChangeNotifier {
         patientId: patientId,
         responses: responseModels,
         synced: false,
+        weight: surveyType == 'osteoporosis' ? weight : null,
+        height: surveyType == 'osteoporosis' ? height : null,
+        imc: surveyType == 'osteoporosis' ? imc : null,
       );
 
       // Save locally in Hive
@@ -279,14 +346,15 @@ class SurveyController extends ChangeNotifier {
         wasSynced = false;
       }
 
-      final totalScore = calculateTotalScore();
-      return SurveySaveResult(
-        success: true,
-        wasSynced: wasSynced,
-        totalScore: totalScore,
-        interpretation: getInterpretation(),
-        severityLevel: getSeverityLevel(),
-      );
+       final totalScore = calculateTotalScore();
+       return SurveySaveResult(
+         success: true,
+         wasSynced: wasSynced,
+         totalScore: totalScore,
+         interpretation: getInterpretation(),
+         severityLevel: getSeverityLevel(),
+         riskResult: _osteoporosisRiskResult,
+       );
     } catch (e, stackTrace) {
       print('Error al guardar encuesta: $e');
       print('Stack trace: $stackTrace');
@@ -316,6 +384,7 @@ class SurveySaveResult {
   final int? totalScore;
   final String? interpretation;
   final String? severityLevel;
+  final RiskResult? riskResult;
 
   SurveySaveResult({
     required this.success,
@@ -324,5 +393,6 @@ class SurveySaveResult {
     this.totalScore,
     this.interpretation,
     this.severityLevel,
+    this.riskResult,
   });
 }

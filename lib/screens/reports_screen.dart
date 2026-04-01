@@ -1035,8 +1035,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
       for (var survey in allSurveys) {
         final surveyType = survey['survey_type'] as int? ?? 1;
         final surveyTypeName = surveyType == 1
-          ? 'BDI-II'
-          : surveyType == 2
+            ? 'BDI-II'
+            : surveyType == 2
             ? 'BAI'
             : surveyType == 7
               ? 'GDS-15'
@@ -1416,440 +1416,440 @@ class _ReportsScreenState extends State<ReportsScreen> {
           location: ToastLocation.bottomCenter,
         );
       }
-      }
     }
   }
+}
 
-  Future<void> _exportSf36CSV(
-      BuildContext context,
-      List<Map<String, dynamic>> surveys,
-      ) async {
-    try {
-      // Header
-      List<List<dynamic>> rows = [
-        [
-          'ID_Encuesta', 'ID_Paciente', 'Fecha',
-          'Funcion_Fisica', 'Rol_Fisico', 'Dolor_Corporal', 'Salud_General',
-          'Vitalidad', 'Funcion_Social', 'Rol_Emocional', 'Salud_Mental',
-          'Puntaje_Global',
-          ...List.generate(36, (i) => 'Q${i + 1}'),
-        ]
-      ];
+Future<void> _exportSf36CSV(
+    BuildContext context,
+    List<Map<String, dynamic>> surveys,
+    ) async {
+  try {
+    // Header
+    List<List<dynamic>> rows = [
+      [
+        'ID_Encuesta', 'ID_Paciente', 'Fecha',
+        'Funcion_Fisica', 'Rol_Fisico', 'Dolor_Corporal', 'Salud_General',
+        'Vitalidad', 'Funcion_Social', 'Rol_Emocional', 'Salud_Mental',
+        'Puntaje_Global',
+        ...List.generate(36, (i) => 'Q${i + 1}'),
+      ]
+    ];
 
-      for (var survey in surveys) {
-        final surveyId = survey['survey_id'];
-        final patientId = survey['patient_id'] ?? 'N/A';
-        final date = DateTime.parse(survey['created_at']).toString().split(' ')[0];
+    for (var survey in surveys) {
+      final surveyId = survey['survey_id'];
+      final patientId = survey['patient_id'] ?? 'N/A';
+      final date = DateTime.parse(survey['created_at']).toString().split(' ')[0];
 
-        // Extraer respuestas
-        final responses = survey['responses'] as List? ?? [];
-        final responseMap = <int, int>{};
-        for (final r in responses) {
-          final qId = r['question_id'] as int?;
-          final val = r['answer_value'] as int?;
-          if (qId != null && val != null) {
-            responseMap[qId] = val;
-          }
+      // Extraer respuestas
+      final responses = survey['responses'] as List? ?? [];
+      final responseMap = <int, int>{};
+      for (final r in responses) {
+        final qId = r['question_id'] as int?;
+        final val = r['answer_value'] as int?;
+        if (qId != null && val != null) {
+          responseMap[qId] = val;
         }
-
-        // Calcular puntuaciones de dimensiones (implementación simplificada)
-        final pf = responseMap[1] ?? 0; // Función Física (simplificado)
-        final rp = responseMap[2] ?? 0; // Rol Físico
-        final bp = responseMap[8] ?? 0; // Dolor Corporal
-        final gh = responseMap[5] ?? 0; // Salud General
-        final vt = responseMap[9] ?? 0; // Vitalidad
-        final sf = responseMap[6] ?? 0; // Función Social
-        final re = responseMap[3] ?? 0; // Rol Emocional
-        final mh = responseMap[10] ?? 0; // Salud Mental
-        final global = (pf + rp + bp + gh + vt + sf + re + mh) ~/ 8;
-
-        final row = [
-          surveyId,
-          patientId,
-          date,
-          pf,
-          rp,
-          bp,
-          gh,
-          vt,
-          sf,
-          re,
-          mh,
-          global,
-          ...List.generate(36, (i) => responseMap[i + 1] ?? ''),
-        ];
-
-        rows.add(row);
       }
 
-      String csvString = '';
-      for (var row in rows) {
-        csvString += '${row.map((cell) {
-          final cellStr = cell.toString();
-          if (cellStr.contains(',') || cellStr.contains('"') || cellStr.contains('\n')) {
-            return '"${cellStr.replaceAll('"', '""')}"';
-          }
-          return cellStr;
-        }).join(',')}\n';
-      }
+      // Calcular puntuaciones de dimensiones (implementación simplificada)
+      final pf = responseMap[1] ?? 0; // Función Física (simplificado)
+      final rp = responseMap[2] ?? 0; // Rol Físico
+      final bp = responseMap[8] ?? 0; // Dolor Corporal
+      final gh = responseMap[5] ?? 0; // Salud General
+      final vt = responseMap[9] ?? 0; // Vitalidad
+      final sf = responseMap[6] ?? 0; // Función Social
+      final re = responseMap[3] ?? 0; // Rol Emocional
+      final mh = responseMap[10] ?? 0; // Salud Mental
+      final global = (pf + rp + bp + gh + vt + sf + re + mh) ~/ 8;
 
-      final bom = [0xEF, 0xBB, 0xBF];
-      final bytes = Uint8List.fromList(bom + utf8.encode(csvString));
-      final fileName = 'datos_SF36_${DateTime.now().millisecondsSinceEpoch}.csv';
+      final row = [
+        surveyId,
+        patientId,
+        date,
+        pf,
+        rp,
+        bp,
+        gh,
+        vt,
+        sf,
+        re,
+        mh,
+        global,
+        ...List.generate(36, (i) => responseMap[i + 1] ?? ''),
+      ];
 
-      if (kIsWeb) {
-        await Printing.sharePdf(bytes: bytes, filename: fileName);
-      } else {
-        final dir = await getTemporaryDirectory();
-        final file = File('${dir.path}/$fileName');
-        await file.writeAsBytes(bytes);
-        await SharePlus.instance.share(
-          ShareParams(files: [XFile(file.path)], text: 'Datos SF-36 CSV'),
-        );
-      }
+      rows.add(row);
+    }
 
-      if (context.mounted) {
-        showCenteredToast(
-          context,
-          title: 'CSV exportado',
-          subtitle: '${surveys.length} encuestas SF-36 exportadas',
-          icon: material.Icons.check_circle,
-          iconColor: const Color(0xFF10B981),
-          location: ToastLocation.bottomCenter,
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        showCenteredToast(
-          context,
-          title: 'Error al exportar',
-          subtitle: 'No se pudo generar el CSV: $e',
-          icon: material.Icons.error,
-          iconColor: const Color(0xFFEF4444),
-          location: ToastLocation.bottomCenter,
-        );
-      }
+    String csvString = '';
+    for (var row in rows) {
+      csvString += '${row.map((cell) {
+        final cellStr = cell.toString();
+        if (cellStr.contains(',') || cellStr.contains('"') || cellStr.contains('\n')) {
+          return '"${cellStr.replaceAll('"', '""')}"';
+        }
+        return cellStr;
+      }).join(',')}\n';
+    }
+
+    final bom = [0xEF, 0xBB, 0xBF];
+    final bytes = Uint8List.fromList(bom + utf8.encode(csvString));
+    final fileName = 'datos_SF36_${DateTime.now().millisecondsSinceEpoch}.csv';
+
+    if (kIsWeb) {
+      await Printing.sharePdf(bytes: bytes, filename: fileName);
+    } else {
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/$fileName');
+      await file.writeAsBytes(bytes);
+      await SharePlus.instance.share(
+        ShareParams(files: [XFile(file.path)], text: 'Datos SF-36 CSV'),
+      );
+    }
+
+    if (context.mounted) {
+      showCenteredToast(
+        context,
+        title: 'CSV exportado',
+        subtitle: '${surveys.length} encuestas SF-36 exportadas',
+        icon: material.Icons.check_circle,
+        iconColor: const Color(0xFF10B981),
+        location: ToastLocation.bottomCenter,
+      );
+    }
+  } catch (e) {
+    if (context.mounted) {
+      showCenteredToast(
+        context,
+        title: 'Error al exportar',
+        subtitle: 'No se pudo generar el CSV: $e',
+        icon: material.Icons.error,
+        iconColor: const Color(0xFFEF4444),
+        location: ToastLocation.bottomCenter,
+      );
     }
   }
+}
 
-  Future<void> _generateSf36PDFReport(
-      BuildContext context,
-      List<Map<String, dynamic>> surveys,
-      SF36ReportData data,
-      ) async {
-    try {
-      final pdf = pw.Document();
-      final fontRegular = await PdfGoogleFonts.notoSansRegular();
-      final fontBold = await PdfGoogleFonts.notoSansBold();
+Future<void> _generateSf36PDFReport(
+    BuildContext context,
+    List<Map<String, dynamic>> surveys,
+    SF36ReportData data,
+    ) async {
+  try {
+    final pdf = pw.Document();
+    final fontRegular = await PdfGoogleFonts.notoSansRegular();
+    final fontBold = await PdfGoogleFonts.notoSansBold();
 
-      // Colores muy distintos para el pie chart
-      final dimColors = [
-        PdfColors.red500,      // Función Física
-        PdfColors.orange500,   // Rol Físico
-        PdfColors.yellow600,   // Dolor Corporal
-        PdfColors.green500,    // Salud General
-        PdfColors.blue500,     // Vitalidad
-        PdfColors.indigo600,   // Función Social
-        PdfColors.purple500,   // Rol Emocional
-        PdfColors.pink500,     // Salud Mental
-      ];
+    // Colores muy distintos para el pie chart
+    final dimColors = [
+      PdfColors.red500,      // Función Física
+      PdfColors.orange500,   // Rol Físico
+      PdfColors.yellow600,   // Dolor Corporal
+      PdfColors.green500,    // Salud General
+      PdfColors.blue500,     // Vitalidad
+      PdfColors.indigo600,   // Función Social
+      PdfColors.purple500,   // Rol Emocional
+      PdfColors.pink500,     // Salud Mental
+    ];
 
-      pw.TextStyle pdfStyle({double fontSize = 10, bool bold = false, PdfColor? color}) =>
-          pw.TextStyle(font: bold ? fontBold : fontRegular, fontSize: fontSize, color: color);
+    pw.TextStyle pdfStyle({double fontSize = 10, bool bold = false, PdfColor? color}) =>
+        pw.TextStyle(font: bold ? fontBold : fontRegular, fontSize: fontSize, color: color);
 
-      final dimensions = [
-        ('Función Física', 'FF', data.physicalFunctioning),
-        ('Rol Físico', 'RF', data.rolePhysical),
-        ('Dolor Corporal', 'DC', data.bodilyPain),
-        ('Salud General', 'SG', data.generalHealth),
-        ('Vitalidad', 'VT', data.vitality),
-        ('Función Social', 'FS', data.socialFunctioning),
-        ('Rol Emocional', 'RE', data.roleEmotional),
-        ('Salud Mental', 'SM', data.mentalHealth),
-      ];
+    final dimensions = [
+      ('Función Física', 'FF', data.physicalFunctioning),
+      ('Rol Físico', 'RF', data.rolePhysical),
+      ('Dolor Corporal', 'DC', data.bodilyPain),
+      ('Salud General', 'SG', data.generalHealth),
+      ('Vitalidad', 'VT', data.vitality),
+      ('Función Social', 'FS', data.socialFunctioning),
+      ('Rol Emocional', 'RE', data.roleEmotional),
+      ('Salud Mental', 'SM', data.mentalHealth),
+    ];
 
-      pdf.addPage(
-        pw.MultiPage(
-          pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.all(40),
-          theme: pw.ThemeData.withFont(base: fontRegular, bold: fontBold),
-          build: (pw.Context ctx) => [
-            pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-              pw.Text('Reporte de Salud SF-36',
-                  style: pw.TextStyle(font: fontBold, fontSize: 22, color: PdfColors.blue800)),
-              pw.SizedBox(height: 4),
-              pw.Text('Encuesta de Salud de 36 Items',
-                  style: pw.TextStyle(font: fontRegular, fontSize: 14, color: PdfColors.grey700)),
-              pw.SizedBox(height: 4),
-              pw.Text(
-                  'Generado el ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}  |  Total: ${surveys.length} encuestas',
-                  style: pw.TextStyle(font: fontRegular, fontSize: 11, color: PdfColors.grey600)),
-              pw.Divider(thickness: 2, color: PdfColors.blue800),
-            ]),
-            pw.SizedBox(height: 16),
-            pw.Container(
-              padding: const pw.EdgeInsets.all(12),
-              decoration: pw.BoxDecoration(color: PdfColors.blue50, borderRadius: pw.BorderRadius.circular(8)),
-              child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-                pw.Text('Resumen Ejecutivo', style: pdfStyle(fontSize: 14, bold: true, color: PdfColors.blue900)),
-                pw.SizedBox(height: 8),
-                pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-                  _buildStatItemF('Total', surveys.length.toString(), fontRegular, fontBold),
-                  _buildStatItemF('Promedio Global', data.globalStats.mean.toStringAsFixed(1), fontRegular, fontBold),
-                  _buildStatItemF('Mínimo', data.globalStats.min.toInt().toString(), fontRegular, fontBold),
-                  _buildStatItemF('Máximo', data.globalStats.max.toInt().toString(), fontRegular, fontBold),
-                ]),
-              ]),
-            ),
-            pw.SizedBox(height: 20),
-            pw.Text('Estadísticas Completas por Dimensión', style: pdfStyle(fontSize: 16, bold: true)),
-            pw.SizedBox(height: 8),
-            pw.Table(border: pw.TableBorder.all(color: PdfColors.grey400), children: [
-              pw.TableRow(decoration: const pw.BoxDecoration(color: PdfColors.grey200), children: [
-                _buildTableHeaderF('Dim', fontBold),
-                _buildTableHeaderF('Media', fontBold),
-                _buildTableHeaderF('Med', fontBold),
-                _buildTableHeaderF('D.E.', fontBold),
-                _buildTableHeaderF('Mín', fontBold),
-                _buildTableHeaderF('Máx', fontBold),
-              ]),
-              ...dimensions.map((dim) => pw.TableRow(children: [
-                pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(dim.$2, style: pdfStyle(fontSize: 9, bold: true))),
-                pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(dim.$3.mean.toStringAsFixed(1), style: pdfStyle(fontSize: 9))),
-                pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(dim.$3.median.toStringAsFixed(1), style: pdfStyle(fontSize: 9))),
-                pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(dim.$3.stdDev.toStringAsFixed(2), style: pdfStyle(fontSize: 8))),
-                pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(dim.$3.min.toInt().toString(), style: pdfStyle(fontSize: 9))),
-                pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(dim.$3.max.toInt().toString(), style: pdfStyle(fontSize: 9))),
-              ])).toList(),
-            ]),
-            pw.SizedBox(height: 20),
-            pw.Text('Gráfica 1: Dimensiones (por Abreviación)', style: pdfStyle(fontSize: 14, bold: true)),
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(40),
+        theme: pw.ThemeData.withFont(base: fontRegular, bold: fontBold),
+        build: (pw.Context ctx) => [
+          pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+            pw.Text('Reporte de Salud SF-36',
+                style: pw.TextStyle(font: fontBold, fontSize: 22, color: PdfColors.blue800)),
             pw.SizedBox(height: 4),
-            pw.Text('FF=Función Física, RF=Rol Físico, DC=Dolor Corporal, SG=Salud General, VT=Vitalidad, FS=Función Social, RE=Rol Emocional, SM=Salud Mental',
-                style: pdfStyle(fontSize: 8, color: PdfColors.grey700)),
+            pw.Text('Encuesta de Salud de 36 Items',
+                style: pw.TextStyle(font: fontRegular, fontSize: 14, color: PdfColors.grey700)),
+            pw.SizedBox(height: 4),
+            pw.Text(
+                'Generado el ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}  |  Total: ${surveys.length} encuestas',
+                style: pw.TextStyle(font: fontRegular, fontSize: 11, color: PdfColors.grey600)),
+            pw.Divider(thickness: 2, color: PdfColors.blue800),
+          ]),
+          pw.SizedBox(height: 16),
+          pw.Container(
+            padding: const pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(color: PdfColors.blue50, borderRadius: pw.BorderRadius.circular(8)),
+            child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+              pw.Text('Resumen Ejecutivo', style: pdfStyle(fontSize: 14, bold: true, color: PdfColors.blue900)),
+              pw.SizedBox(height: 8),
+              pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
+                _buildStatItemF('Total', surveys.length.toString(), fontRegular, fontBold),
+                _buildStatItemF('Promedio Global', data.globalStats.mean.toStringAsFixed(1), fontRegular, fontBold),
+                _buildStatItemF('Mínimo', data.globalStats.min.toInt().toString(), fontRegular, fontBold),
+                _buildStatItemF('Máximo', data.globalStats.max.toInt().toString(), fontRegular, fontBold),
+              ]),
+            ]),
+          ),
+          pw.SizedBox(height: 20),
+          pw.Text('Estadísticas Completas por Dimensión', style: pdfStyle(fontSize: 16, bold: true)),
+          pw.SizedBox(height: 8),
+          pw.Table(border: pw.TableBorder.all(color: PdfColors.grey400), children: [
+            pw.TableRow(decoration: const pw.BoxDecoration(color: PdfColors.grey200), children: [
+              _buildTableHeaderF('Dim', fontBold),
+              _buildTableHeaderF('Media', fontBold),
+              _buildTableHeaderF('Med', fontBold),
+              _buildTableHeaderF('D.E.', fontBold),
+              _buildTableHeaderF('Mín', fontBold),
+              _buildTableHeaderF('Máx', fontBold),
+            ]),
+            ...dimensions.map((dim) => pw.TableRow(children: [
+              pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(dim.$2, style: pdfStyle(fontSize: 9, bold: true))),
+              pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(dim.$3.mean.toStringAsFixed(1), style: pdfStyle(fontSize: 9))),
+              pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(dim.$3.median.toStringAsFixed(1), style: pdfStyle(fontSize: 9))),
+              pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(dim.$3.stdDev.toStringAsFixed(2), style: pdfStyle(fontSize: 8))),
+              pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(dim.$3.min.toInt().toString(), style: pdfStyle(fontSize: 9))),
+              pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(dim.$3.max.toInt().toString(), style: pdfStyle(fontSize: 9))),
+            ])).toList(),
+          ]),
+          pw.SizedBox(height: 20),
+          pw.Text('Gráfica 1: Dimensiones (por Abreviación)', style: pdfStyle(fontSize: 14, bold: true)),
+          pw.SizedBox(height: 4),
+          pw.Text('FF=Función Física, RF=Rol Físico, DC=Dolor Corporal, SG=Salud General, VT=Vitalidad, FS=Función Social, RE=Rol Emocional, SM=Salud Mental',
+              style: pdfStyle(fontSize: 8, color: PdfColors.grey700)),
+          pw.SizedBox(height: 8),
+          pw.SizedBox(
+            height: 200,
+            child: pw.Chart(
+              grid: pw.CartesianGrid(
+                xAxis: pw.FixedAxis.fromStrings(dimensions.map((d) => d.$2).toList(), marginStart: 15, marginEnd: 15, ticks: true),
+                yAxis: pw.FixedAxis([0, 100], divisions: true),
+              ),
+              datasets: [
+                pw.BarDataSet(
+                  color: PdfColors.blue400,
+                  width: 20, offset: 0,
+                  borderColor: PdfColors.blue700,
+                  data: dimensions
+                      .asMap()
+                      .entries
+                      .map((e) => pw.PointChartValue(e.key.toDouble(), e.value.$3.mean))
+                      .toList(),
+                ),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 20),
+          pw.Text('Gráfica 2: Proporción de Dimensiones', style: pdfStyle(fontSize: 14, bold: true)),
+          pw.SizedBox(height: 8),
+          pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.center, children: [
+            pw.SizedBox(
+              width: 150, height: 150,
+              child: pw.CustomPaint(
+                painter: (canvas, size) {
+                  final cx = size.x / 2;
+                  final cy = size.y / 2;
+                  final r = size.x / 2 - 4;
+                  final vals = dimensions.map((d) => d.$3.mean).toList();
+                  final tv = vals.fold<double>(0.0, (a, b) => a + b);
+                  if (tv == 0) return;
+                  double startAng = -math.pi / 2;
+                  for (int i = 0; i < vals.length; i++) {
+                    final sweepAng = vals[i] / tv * 2 * math.pi;
+                    canvas.setFillColor(dimColors[i]);
+                    _drawPdfSector(canvas, cx, cy, r, startAng, sweepAng);
+                    startAng += sweepAng;
+                  }
+                  canvas.setFillColor(PdfColors.white);
+                  _drawPdfCircle(canvas, cx, cy, r * 0.4);
+                },
+              ),
+            ),
+            pw.SizedBox(width: 16),
+            pw.Expanded(
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  ...dimensions.asMap().entries.map((e) {
+                    final pct = (e.value.$3.mean / dimensions.fold(0.0, (s, d) => s + d.$3.mean) * 100);
+                    return pw.Padding(
+                      padding: const pw.EdgeInsets.only(bottom: 6),
+                      child: pw.Row(children: [
+                        pw.Container(width: 8, height: 8, decoration: pw.BoxDecoration(color: dimColors[e.key], shape: pw.BoxShape.circle)),
+                        pw.SizedBox(width: 4),
+                        pw.Expanded(child: pw.Text('${e.value.$2}: ${pct.toStringAsFixed(1)}%', style: pdfStyle(fontSize: 8))),
+                      ]),
+                    );
+                  }).toList(),
+                ],
+              ),
+            ),
+          ]),
+          pw.SizedBox(height: 20),
+          if (data.globalTimeline.isNotEmpty && data.globalTimeline.length > 1) ...[
+            pw.Text('Gráfica 3: Tendencia Temporal del Puntaje Global', style: pdfStyle(fontSize: 14, bold: true)),
+            pw.SizedBox(height: 4),
+            pw.Text('Evolución del puntaje general de salud por encuesta', style: pdfStyle(fontSize: 9, color: PdfColors.grey700)),
             pw.SizedBox(height: 8),
             pw.SizedBox(
-              height: 200,
+              height: 180,
               child: pw.Chart(
                 grid: pw.CartesianGrid(
-                  xAxis: pw.FixedAxis.fromStrings(dimensions.map((d) => d.$2).toList(), marginStart: 15, marginEnd: 15, ticks: true),
+                  xAxis: pw.FixedAxis(
+                        () {
+                      final n = data.globalTimeline.length;
+                      const maxLabels = 8;
+                      final step = (n / maxLabels).ceil().clamp(1, n);
+                      return [
+                        for (int i = 0; i < n; i += step) i.toDouble(),
+                        if ((n - 1) % step != 0) (n - 1).toDouble(),
+                      ];
+                    }(),
+                    divisions: false,
+                    ticks: true,
+                  ),
                   yAxis: pw.FixedAxis([0, 100], divisions: true),
                 ),
                 datasets: [
-                  pw.BarDataSet(
-                    color: PdfColors.blue400,
-                    width: 20, offset: 0,
-                    borderColor: PdfColors.blue700,
-                    data: dimensions
-                        .asMap()
-                        .entries
-                        .map((e) => pw.PointChartValue(e.key.toDouble(), e.value.$3.mean))
+                  pw.LineDataSet(
+                    color: PdfColors.blue600,
+                    lineWidth: 2, drawPoints: true,
+                    pointColor: PdfColors.blue900,
+                    data: data.globalTimeline.asMap().entries
+                        .map((e) => pw.PointChartValue(e.key.toDouble(), e.value))
                         .toList(),
                   ),
                 ],
               ),
             ),
             pw.SizedBox(height: 20),
-            pw.Text('Gráfica 2: Proporción de Dimensiones', style: pdfStyle(fontSize: 14, bold: true)),
-            pw.SizedBox(height: 8),
-            pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.center, children: [
-              pw.SizedBox(
-                width: 150, height: 150,
-                child: pw.CustomPaint(
-                  painter: (canvas, size) {
-                    final cx = size.x / 2;
-                    final cy = size.y / 2;
-                    final r = size.x / 2 - 4;
-                    final vals = dimensions.map((d) => d.$3.mean).toList();
-                    final tv = vals.fold<double>(0.0, (a, b) => a + b);
-                    if (tv == 0) return;
-                    double startAng = -math.pi / 2;
-                    for (int i = 0; i < vals.length; i++) {
-                      final sweepAng = vals[i] / tv * 2 * math.pi;
-                      canvas.setFillColor(dimColors[i]);
-                      _drawPdfSector(canvas, cx, cy, r, startAng, sweepAng);
-                      startAng += sweepAng;
-                    }
-                    canvas.setFillColor(PdfColors.white);
-                    _drawPdfCircle(canvas, cx, cy, r * 0.4);
-                  },
-                ),
-              ),
-              pw.SizedBox(width: 16),
-              pw.Expanded(
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+          ],
+          pw.SizedBox(height: 20),
+          pw.Text('Gráfica 4: Tendencias Temporales por Dimensión', style: pdfStyle(fontSize: 14, bold: true)),
+          pw.SizedBox(height: 4),
+          pw.Text('Evolución temporal de cada dimensión del SF-36', style: pdfStyle(fontSize: 9, color: PdfColors.grey700)),
+          pw.SizedBox(height: 12),
+          ...dimensions.asMap().entries.map((dimEntry) {
+            final dimIndex = dimEntry.key;
+            final dimData = dimEntry.value;
+            final dimLabel = dimData.$1;
+            final dimStats = dimData.$3;
+            final timeline = dimStats.timeline;
+
+            if (timeline.isEmpty || timeline.length < 2) {
+              return pw.SizedBox.shrink();
+            }
+
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text('${dimData.$2}: $dimLabel', style: pdfStyle(fontSize: 11, bold: true, color: dimColors[dimIndex])),
+                pw.SizedBox(height: 3),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    ...dimensions.asMap().entries.map((e) {
-                      final pct = (e.value.$3.mean / dimensions.fold(0.0, (s, d) => s + d.$3.mean) * 100);
-                      return pw.Padding(
-                        padding: const pw.EdgeInsets.only(bottom: 6),
-                        child: pw.Row(children: [
-                          pw.Container(width: 8, height: 8, decoration: pw.BoxDecoration(color: dimColors[e.key], shape: pw.BoxShape.circle)),
-                          pw.SizedBox(width: 4),
-                          pw.Expanded(child: pw.Text('${e.value.$2}: ${pct.toStringAsFixed(1)}%', style: pdfStyle(fontSize: 8))),
-                        ]),
-                      );
-                    }).toList(),
-                  ],
-                ),
-              ),
-            ]),
-            pw.SizedBox(height: 20),
-            if (data.globalTimeline.isNotEmpty && data.globalTimeline.length > 1) ...[
-              pw.Text('Gráfica 3: Tendencia Temporal del Puntaje Global', style: pdfStyle(fontSize: 14, bold: true)),
-              pw.SizedBox(height: 4),
-              pw.Text('Evolución del puntaje general de salud por encuesta', style: pdfStyle(fontSize: 9, color: PdfColors.grey700)),
-              pw.SizedBox(height: 8),
-              pw.SizedBox(
-                height: 180,
-                child: pw.Chart(
-                  grid: pw.CartesianGrid(
-                    xAxis: pw.FixedAxis(
-                      () {
-                        final n = data.globalTimeline.length;
-                        const maxLabels = 8;
-                        final step = (n / maxLabels).ceil().clamp(1, n);
-                        return [
-                          for (int i = 0; i < n; i += step) i.toDouble(),
-                          if ((n - 1) % step != 0) (n - 1).toDouble(),
-                        ];
-                      }(),
-                      divisions: false,
-                      ticks: true,
-                    ),
-                    yAxis: pw.FixedAxis([0, 100], divisions: true),
-                  ),
-                  datasets: [
-                    pw.LineDataSet(
-                      color: PdfColors.blue600,
-                      lineWidth: 2, drawPoints: true,
-                      pointColor: PdfColors.blue900,
-                      data: data.globalTimeline.asMap().entries
-                          .map((e) => pw.PointChartValue(e.key.toDouble(), e.value))
-                          .toList(),
-                    ),
-                  ],
-                ),
-              ),
-              pw.SizedBox(height: 20),
-            ],
-            pw.SizedBox(height: 20),
-            pw.Text('Gráfica 4: Tendencias Temporales por Dimensión', style: pdfStyle(fontSize: 14, bold: true)),
-            pw.SizedBox(height: 4),
-            pw.Text('Evolución temporal de cada dimensión del SF-36', style: pdfStyle(fontSize: 9, color: PdfColors.grey700)),
-            pw.SizedBox(height: 12),
-            ...dimensions.asMap().entries.map((dimEntry) {
-              final dimIndex = dimEntry.key;
-              final dimData = dimEntry.value;
-              final dimLabel = dimData.$1;
-              final dimStats = dimData.$3;
-              final timeline = dimStats.timeline;
-
-              if (timeline.isEmpty || timeline.length < 2) {
-                return pw.SizedBox.shrink();
-              }
-
-              return pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Text('${dimData.$2}: $dimLabel', style: pdfStyle(fontSize: 11, bold: true, color: dimColors[dimIndex])),
-                  pw.SizedBox(height: 3),
-                  pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.Text('Media: ${dimStats.mean.toStringAsFixed(1)} | Mín: ${dimStats.min.toInt()} | Máx: ${dimStats.max.toInt()} | D.E: ${dimStats.stdDev.toStringAsFixed(2)}',
+                    pw.Text('Media: ${dimStats.mean.toStringAsFixed(1)} | Mín: ${dimStats.min.toInt()} | Máx: ${dimStats.max.toInt()} | D.E: ${dimStats.stdDev.toStringAsFixed(2)}',
                         style: pdfStyle(fontSize: 8, color: PdfColors.grey700)),
+                  ],
+                ),
+                pw.SizedBox(height: 6),
+                pw.SizedBox(
+                  height: 120,
+                  child: pw.Chart(
+                    grid: pw.CartesianGrid(
+                      xAxis: pw.FixedAxis(
+                            () {
+                          final n = timeline.length;
+                          const maxLabels = 6;
+                          final step = (n / maxLabels).ceil().clamp(1, n);
+                          return [
+                            for (int i = 0; i < n; i += step) i.toDouble(),
+                            if ((n - 1) % step != 0) (n - 1).toDouble(),
+                          ];
+                        }(),
+                        divisions: false,
+                        ticks: true,
+                      ),
+                      yAxis: pw.FixedAxis([0, 100], divisions: true),
+                    ),
+                    datasets: [
+                      pw.LineDataSet(
+                        color: dimColors[dimIndex],
+                        lineWidth: 1.5,
+                        drawPoints: true,
+                        pointColor: dimColors[dimIndex],
+                        data: timeline.asMap().entries
+                            .map((e) => pw.PointChartValue(e.key.toDouble(), e.value))
+                            .toList(),
+                      ),
                     ],
                   ),
-                  pw.SizedBox(height: 6),
-                  pw.SizedBox(
-                    height: 120,
-                    child: pw.Chart(
-                      grid: pw.CartesianGrid(
-                        xAxis: pw.FixedAxis(
-                          () {
-                            final n = timeline.length;
-                            const maxLabels = 6;
-                            final step = (n / maxLabels).ceil().clamp(1, n);
-                            return [
-                              for (int i = 0; i < n; i += step) i.toDouble(),
-                              if ((n - 1) % step != 0) (n - 1).toDouble(),
-                            ];
-                          }(),
-                          divisions: false,
-                          ticks: true,
-                        ),
-                        yAxis: pw.FixedAxis([0, 100], divisions: true),
-                      ),
-                      datasets: [
-                        pw.LineDataSet(
-                          color: dimColors[dimIndex],
-                          lineWidth: 1.5,
-                          drawPoints: true,
-                          pointColor: dimColors[dimIndex],
-                          data: timeline.asMap().entries
-                              .map((e) => pw.PointChartValue(e.key.toDouble(), e.value))
-                              .toList(),
-                        ),
-                      ],
-                    ),
-                  ),
-                  pw.SizedBox(height: 12),
-                ],
-              );
-            }).toList(),
-            pw.SizedBox(height: 20),
-            pw.Container(
-              padding: const pw.EdgeInsets.all(10),
-              decoration: const pw.BoxDecoration(color: PdfColors.grey100),
-              child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-                pw.Text('Nota Importante:', style: pdfStyle(fontSize: 10, bold: true)),
-                pw.SizedBox(height: 4),
-                pw.Text(
-                    'Este reporte es generado automáticamente con fines estadísticos. Los resultados deben ser interpretados por un profesional de la salud calificado.',
-                    style: pw.TextStyle(font: fontRegular, fontSize: 9)),
-              ]),
-            ),
-          ],
-        ),
+                ),
+                pw.SizedBox(height: 12),
+              ],
+            );
+          }).toList(),
+          pw.SizedBox(height: 20),
+          pw.Container(
+            padding: const pw.EdgeInsets.all(10),
+            decoration: const pw.BoxDecoration(color: PdfColors.grey100),
+            child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+              pw.Text('Nota Importante:', style: pdfStyle(fontSize: 10, bold: true)),
+              pw.SizedBox(height: 4),
+              pw.Text(
+                  'Este reporte es generado automáticamente con fines estadísticos. Los resultados deben ser interpretados por un profesional de la salud calificado.',
+                  style: pw.TextStyle(font: fontRegular, fontSize: 9)),
+            ]),
+          ),
+        ],
+      ),
+    );
+
+    final pdfBytes = await pdf.save();
+    final fileName = 'reporte_SF36_${DateTime.now().millisecondsSinceEpoch}.pdf';
+
+    if (kIsWeb) {
+      await Printing.sharePdf(bytes: pdfBytes, filename: fileName);
+    } else {
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/$fileName');
+      await file.writeAsBytes(pdfBytes);
+      await SharePlus.instance.share(ShareParams(files: [XFile(file.path)], text: 'Reporte PDF SF-36'));
+    }
+
+    if (context.mounted) {
+      showCenteredToast(
+        context,
+        title: 'Reporte generado',
+        subtitle: 'PDF SF-36 descargado exitosamente',
+        icon: material.Icons.check_circle,
+        iconColor: const Color(0xFF10B981),
+        location: ToastLocation.bottomCenter,
       );
-
-      final pdfBytes = await pdf.save();
-      final fileName = 'reporte_SF36_${DateTime.now().millisecondsSinceEpoch}.pdf';
-
-      if (kIsWeb) {
-        await Printing.sharePdf(bytes: pdfBytes, filename: fileName);
-      } else {
-        final dir = await getTemporaryDirectory();
-        final file = File('${dir.path}/$fileName');
-        await file.writeAsBytes(pdfBytes);
-        await SharePlus.instance.share(ShareParams(files: [XFile(file.path)], text: 'Reporte PDF SF-36'));
-      }
-
-      if (context.mounted) {
-        showCenteredToast(
-          context,
-          title: 'Reporte generado',
-          subtitle: 'PDF SF-36 descargado exitosamente',
-          icon: material.Icons.check_circle,
-          iconColor: const Color(0xFF10B981),
-          location: ToastLocation.bottomCenter,
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        showCenteredToast(
-          context,
-          title: 'Error al generar PDF',
-          subtitle: 'No se pudo crear el reporte: $e',
-          icon: material.Icons.error,
-          iconColor: const Color(0xFFEF4444),
-          location: ToastLocation.bottomCenter,
-        );
-      }
+    }
+  } catch (e) {
+    if (context.mounted) {
+      showCenteredToast(
+        context,
+        title: 'Error al generar PDF',
+        subtitle: 'No se pudo crear el reporte: $e',
+        icon: material.Icons.error,
+        iconColor: const Color(0xFFEF4444),
+        location: ToastLocation.bottomCenter,
+      );
     }
   }
+}
 
   Future<void> _generatePDFReport(
       BuildContext context,
@@ -1883,11 +1883,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 ? 'Indice de Katz para Actividades Basicas de la Vida Diaria'
               : 'Encuesta';
 
-      final fontRegular = await PdfGoogleFonts.notoSansRegular();
-      final fontBold = await PdfGoogleFonts.notoSansBold();
+    final fontRegular = await PdfGoogleFonts.notoSansRegular();
+    final fontBold = await PdfGoogleFonts.notoSansBold();
 
-      pw.TextStyle pdfStyle({double fontSize = 10, bool bold = false, PdfColor? color}) =>
-          pw.TextStyle(font: bold ? fontBold : fontRegular, fontSize: fontSize, color: color);
+    pw.TextStyle pdfStyle({double fontSize = 10, bool bold = false, PdfColor? color}) =>
+        pw.TextStyle(font: bold ? fontBold : fontRegular, fontSize: fontSize, color: color);
 
       final distribution = surveyType == 8
           ? <String, int>{'Independencia total': 0, 'Deterioro funcional': 0}
@@ -1900,13 +1900,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
               'Severa': 0,
             };
 
-      for (var survey in surveys) {
-        final score = ReportsController.calculateSurveyScore(survey);
-        final level = _getLevelText(score, surveyType);
-        if (distribution.containsKey(level)) {
-          distribution[level] = distribution[level]! + 1;
-        }
+    for (var survey in surveys) {
+      final score = ReportsController.calculateSurveyScore(survey);
+      final level = _getLevelText(score, surveyType);
+      if (distribution.containsKey(level)) {
+        distribution[level] = distribution[level]! + 1;
       }
+    }
 
       final orderedLevels = distribution.keys.toList();
       String shortLabel(String level) {
@@ -1930,355 +1930,355 @@ class _ReportsScreenState extends State<ReportsScreen> {
               ? {'Independencia total': '6', 'Dependencia en algun grado': '0-5'}
             : {'Mínima': '0-4 (Normal)', 'Leve': '-', 'Moderada': '-', 'Severa': '5-15 (Síntomas depresivos)'};
 
-      final pieColors = [PdfColors.green400, PdfColors.yellow600, PdfColors.orange400, PdfColors.red400];
+    final pieColors = [PdfColors.green400, PdfColors.yellow600, PdfColors.orange400, PdfColors.red400];
 
-      final total = distribution.values.fold(0, (a, b) => a + b);
-      final maxDist = distribution.values.isEmpty
-          ? 1
-          : distribution.values.reduce((a, b) => a > b ? a : b);
+    final total = distribution.values.fold(0, (a, b) => a + b);
+    final maxDist = distribution.values.isEmpty
+        ? 1
+        : distribution.values.reduce((a, b) => a > b ? a : b);
 
-      final sortedSurveys = List<Map<String, dynamic>>.from(surveys)
-        ..sort((a, b) => DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
-      final timelineScores = sortedSurveys
-          .map((s) => ReportsController.calculateSurveyScore(s))
-          .toList();
-      final maxTS = timelineScores.isEmpty
-          ? 5.0
-          : timelineScores.reduce((a, b) => a > b ? a : b).toDouble();
+    final sortedSurveys = List<Map<String, dynamic>>.from(surveys)
+      ..sort((a, b) => DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
+    final timelineScores = sortedSurveys
+        .map((s) => ReportsController.calculateSurveyScore(s))
+        .toList();
+    final maxTS = timelineScores.isEmpty
+        ? 5.0
+        : timelineScores.reduce((a, b) => a > b ? a : b).toDouble();
 
-      final statMin = (stats['min'] ?? 0).toInt();
-      final statMax = (stats['max'] ?? 0).toInt();
-      final statMean = stats['mean'] ?? 0.0;
-      final statMedian = stats['median'] ?? 0.0;
-      final statMode = stats['mode'] ?? 0.0;
-      final statStdDev = stats['stdDev'] ?? 0.0;
-      final statRange = statMax - statMin;
+    final statMin = (stats['min'] ?? 0).toInt();
+    final statMax = (stats['max'] ?? 0).toInt();
+    final statMean = stats['mean'] ?? 0.0;
+    final statMedian = stats['median'] ?? 0.0;
+    final statMode = stats['mode'] ?? 0.0;
+    final statStdDev = stats['stdDev'] ?? 0.0;
+    final statRange = statMax - statMin;
 
-      pdf.addPage(
-        pw.MultiPage(
-          pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.all(40),
-          theme: pw.ThemeData.withFont(base: fontRegular, bold: fontBold),
-          build: (pw.Context ctx) => [
-            pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-              pw.Text('Reporte de Analisis Estadistico',
-                  style: pw.TextStyle(font: fontBold, fontSize: 22, color: PdfColors.blue800)),
-              pw.SizedBox(height: 4),
-              pw.Text(surveyFullName,
-                  style: pw.TextStyle(font: fontRegular, fontSize: 14, color: PdfColors.grey700)),
-              pw.SizedBox(height: 4),
-              pw.Text(
-                  'Generado el ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}  |  Total: ${surveys.length} encuestas',
-                  style: pw.TextStyle(font: fontRegular, fontSize: 11, color: PdfColors.grey600)),
-              pw.Divider(thickness: 2, color: PdfColors.blue800),
-            ]),
-            pw.SizedBox(height: 16),
-            pw.Container(
-              padding: const pw.EdgeInsets.all(12),
-              decoration: pw.BoxDecoration(color: PdfColors.blue50, borderRadius: pw.BorderRadius.circular(8)),
-              child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-                pw.Text('Resumen Ejecutivo', style: pdfStyle(fontSize: 14, bold: true, color: PdfColors.blue900)),
-                pw.SizedBox(height: 8),
-                pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-                  _buildStatItemF('Total', surveys.length.toString(), fontRegular, fontBold),
-                  _buildStatItemF('Minimo', statMin.toString(), fontRegular, fontBold),
-                  _buildStatItemF('Maximo', statMax.toString(), fontRegular, fontBold),
-                  _buildStatItemF('Rango', statRange.toString(), fontRegular, fontBold),
-                ]),
-              ]),
-            ),
-            pw.SizedBox(height: 20),
-            pw.Text('Medidas de Tendencia Central', style: pdfStyle(fontSize: 16, bold: true)),
-            pw.SizedBox(height: 8),
-            pw.Table(border: pw.TableBorder.all(color: PdfColors.grey400), children: [
-              pw.TableRow(decoration: const pw.BoxDecoration(color: PdfColors.grey200), children: [
-                _buildTableHeaderF('Medida', fontBold),
-                _buildTableHeaderF('Valor', fontBold),
-                _buildTableHeaderF('Interpretacion', fontBold),
-              ]),
-              _buildTableRowF('Media', statMean.toStringAsFixed(2), 'Promedio aritmetico', fontRegular),
-              _buildTableRowF('Mediana', statMedian.toStringAsFixed(2), 'Valor central', fontRegular),
-              _buildTableRowF('Moda', statMode.toStringAsFixed(0), 'Puntaje mas frecuente', fontRegular),
-              _buildTableRowF('Desv. Estandar', statStdDev.toStringAsFixed(2), 'Medida de dispersion', fontRegular),
-            ]),
-            pw.SizedBox(height: 20),
-            pw.Text('Distribucion por Nivel de Severidad', style: pdfStyle(fontSize: 16, bold: true)),
-            pw.SizedBox(height: 8),
-            pw.Table(border: pw.TableBorder.all(color: PdfColors.grey400), children: [
-              pw.TableRow(decoration: const pw.BoxDecoration(color: PdfColors.grey200), children: [
-                _buildTableHeaderF('Nivel', fontBold),
-                _buildTableHeaderF('Rango', fontBold),
-                _buildTableHeaderF('Cantidad', fontBold),
-                _buildTableHeaderF('Porcentaje', fontBold),
-              ]),
-              ...distribution.entries.map((entry) {
-                final pct = total == 0 ? '0.0%' : '${(entry.value / total * 100).toStringAsFixed(1)}%';
-                return pw.TableRow(children: [
-                  pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(entry.key, style: pdfStyle())),
-                  pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(scoreRanges[entry.key] ?? '', style: pdfStyle())),
-                  pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(entry.value.toString(), style: pdfStyle())),
-                  pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(pct, style: pdfStyle())),
-                ]);
-              }).toList(),
-            ]),
-            pw.SizedBox(height: 20),
-            pw.Text('Gráfica 1: Distribución por Nivel de Severidad', style: pdfStyle(fontSize: 16, bold: true)),
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(40),
+        theme: pw.ThemeData.withFont(base: fontRegular, bold: fontBold),
+        build: (pw.Context ctx) => [
+          pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+            pw.Text('Reporte de Analisis Estadistico',
+                style: pw.TextStyle(font: fontBold, fontSize: 22, color: PdfColors.blue800)),
             pw.SizedBox(height: 4),
-            pw.Text('Eje X: niveles de severidad | Eje Y: número de encuestados', style: pdfStyle(fontSize: 9, color: PdfColors.grey600)),
+            pw.Text(surveyFullName,
+                style: pw.TextStyle(font: fontRegular, fontSize: 14, color: PdfColors.grey700)),
+            pw.SizedBox(height: 4),
+            pw.Text(
+                'Generado el ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}  |  Total: ${surveys.length} encuestas',
+                style: pw.TextStyle(font: fontRegular, fontSize: 11, color: PdfColors.grey600)),
+            pw.Divider(thickness: 2, color: PdfColors.blue800),
+          ]),
+          pw.SizedBox(height: 16),
+          pw.Container(
+            padding: const pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(color: PdfColors.blue50, borderRadius: pw.BorderRadius.circular(8)),
+            child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+              pw.Text('Resumen Ejecutivo', style: pdfStyle(fontSize: 14, bold: true, color: PdfColors.blue900)),
+              pw.SizedBox(height: 8),
+              pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
+                _buildStatItemF('Total', surveys.length.toString(), fontRegular, fontBold),
+                _buildStatItemF('Minimo', statMin.toString(), fontRegular, fontBold),
+                _buildStatItemF('Maximo', statMax.toString(), fontRegular, fontBold),
+                _buildStatItemF('Rango', statRange.toString(), fontRegular, fontBold),
+              ]),
+            ]),
+          ),
+          pw.SizedBox(height: 20),
+          pw.Text('Medidas de Tendencia Central', style: pdfStyle(fontSize: 16, bold: true)),
+          pw.SizedBox(height: 8),
+          pw.Table(border: pw.TableBorder.all(color: PdfColors.grey400), children: [
+            pw.TableRow(decoration: const pw.BoxDecoration(color: PdfColors.grey200), children: [
+              _buildTableHeaderF('Medida', fontBold),
+              _buildTableHeaderF('Valor', fontBold),
+              _buildTableHeaderF('Interpretacion', fontBold),
+            ]),
+            _buildTableRowF('Media', statMean.toStringAsFixed(2), 'Promedio aritmetico', fontRegular),
+            _buildTableRowF('Mediana', statMedian.toStringAsFixed(2), 'Valor central', fontRegular),
+            _buildTableRowF('Moda', statMode.toStringAsFixed(0), 'Puntaje mas frecuente', fontRegular),
+            _buildTableRowF('Desv. Estandar', statStdDev.toStringAsFixed(2), 'Medida de dispersion', fontRegular),
+          ]),
+          pw.SizedBox(height: 20),
+          pw.Text('Distribucion por Nivel de Severidad', style: pdfStyle(fontSize: 16, bold: true)),
+          pw.SizedBox(height: 8),
+          pw.Table(border: pw.TableBorder.all(color: PdfColors.grey400), children: [
+            pw.TableRow(decoration: const pw.BoxDecoration(color: PdfColors.grey200), children: [
+              _buildTableHeaderF('Nivel', fontBold),
+              _buildTableHeaderF('Rango', fontBold),
+              _buildTableHeaderF('Cantidad', fontBold),
+              _buildTableHeaderF('Porcentaje', fontBold),
+            ]),
+            ...distribution.entries.map((entry) {
+              final pct = total == 0 ? '0.0%' : '${(entry.value / total * 100).toStringAsFixed(1)}%';
+              return pw.TableRow(children: [
+                pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(entry.key, style: pdfStyle())),
+                pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(scoreRanges[entry.key] ?? '', style: pdfStyle())),
+                pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(entry.value.toString(), style: pdfStyle())),
+                pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(pct, style: pdfStyle())),
+              ]);
+            }).toList(),
+          ]),
+          pw.SizedBox(height: 20),
+          pw.Text('Gráfica 1: Distribución por Nivel de Severidad', style: pdfStyle(fontSize: 16, bold: true)),
+          pw.SizedBox(height: 4),
+          pw.Text('Eje X: niveles de severidad | Eje Y: número de encuestados', style: pdfStyle(fontSize: 9, color: PdfColors.grey600)),
+          pw.SizedBox(height: 8),
+          pw.SizedBox(
+            height: 200,
+            child: pw.Chart(
+              grid: pw.CartesianGrid(
+                xAxis: pw.FixedAxis.fromStrings(orderedLevels.map(shortLabel).toList(), marginStart: 10, marginEnd: 10, ticks: true),
+                yAxis: pw.FixedAxis([0, (maxDist + 1).toDouble()], divisions: true),
+              ),
+              datasets: [
+                pw.BarDataSet(
+                  color: surveyType == 1 ? PdfColors.blue400 : surveyType == 2 ? PdfColors.teal400 : PdfColors.cyan400,
+                  width: 30, offset: 0,
+                  borderColor: surveyType == 1 ? PdfColors.blue700 : surveyType == 2 ? PdfColors.teal700 : PdfColors.cyan700,
+                  data: orderedLevels
+                      .asMap()
+                      .entries
+                      .map((e) => pw.PointChartValue(e.key.toDouble(), (distribution[e.value] ?? 0).toDouble()))
+                      .toList(),
+                ),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 20),
+          pw.Text('Gráfica 2: Proporción por Nivel de Severidad', style: pdfStyle(fontSize: 16, bold: true)),
+          pw.SizedBox(height: 4),
+          pw.Text('Distribución porcentual de encuestados por nivel', style: pdfStyle(fontSize: 9, color: PdfColors.grey600)),
+          pw.SizedBox(height: 12),
+          pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.center, children: [
+            pw.SizedBox(
+              width: 180, height: 180,
+              child: pw.CustomPaint(
+                painter: (canvas, size) {
+                  final cx = size.x / 2;
+                  final cy = size.y / 2;
+                  final r = size.x / 2 - 4;
+                  final vals = orderedLevels
+                      .map((level) => (distribution[level] ?? 0).toDouble())
+                      .toList();
+                  final tv = vals.fold<double>(0.0, (a, b) => a + b);
+                  if (tv == 0) return;
+                  double startAng = -math.pi / 2;
+                  for (int i = 0; i < vals.length; i++) {
+                    if (vals[i] == 0) continue;
+                    final sweepAng = vals[i] / tv * 2 * math.pi;
+                    canvas.setFillColor(pieColors[i]);
+                    _drawPdfSector(canvas, cx, cy, r, startAng, sweepAng);
+                    startAng += sweepAng;
+                  }
+                  canvas.setFillColor(PdfColors.white);
+                  _drawPdfCircle(canvas, cx, cy, r * 0.38);
+                },
+              ),
+            ),
+            pw.SizedBox(width: 24),
+            pw.Expanded(
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                mainAxisAlignment: pw.MainAxisAlignment.center,
+                children: [
+                  pw.Text('Total: $total', style: pdfStyle(fontSize: 10, bold: true)),
+                  pw.SizedBox(height: 8),
+                  ...orderedLevels.asMap().entries.map((entry) {
+                    final level = entry.value;
+                    final count = distribution[level] ?? 0;
+                    final pct = total == 0 ? 0.0 : (count / total * 100);
+                    return pw.Padding(
+                      padding: const pw.EdgeInsets.only(bottom: 4),
+                      child: pw.Row(children: [
+                        pw.Container(width: 10, height: 10, decoration: pw.BoxDecoration(color: pieColors[entry.key], borderRadius: pw.BorderRadius.circular(2))),
+                        pw.SizedBox(width: 6),
+                        pw.Expanded(child: pw.Text('${shortLabel(level)}: $count (${pct.toStringAsFixed(1)}%)', style: pdfStyle(fontSize: 9))),
+                      ]),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ]),
+          pw.SizedBox(height: 20),
+          if (timelineScores.length > 1) ...[
+            pw.Text('Gráfica 3: Tendencia Temporal de Puntajes', style: pdfStyle(fontSize: 16, bold: true)),
+            pw.SizedBox(height: 4),
+            pw.Text('Evolución de puntajes en el tiempo (Eje X: # de encuesta, Eje Y: Puntaje)', style: pdfStyle(fontSize: 9, color: PdfColors.grey600)),
             pw.SizedBox(height: 8),
             pw.SizedBox(
               height: 200,
               child: pw.Chart(
                 grid: pw.CartesianGrid(
-                  xAxis: pw.FixedAxis.fromStrings(orderedLevels.map(shortLabel).toList(), marginStart: 10, marginEnd: 10, ticks: true),
-                  yAxis: pw.FixedAxis([0, (maxDist + 1).toDouble()], divisions: true),
+                  xAxis: pw.FixedAxis(
+                        () {
+                      final n = timelineScores.length;
+                      const maxLabels = 8;
+                      final step = (n / maxLabels).ceil().clamp(1, n);
+                      return [
+                        for (int i = 0; i < n; i += step) i.toDouble(),
+                        if ((n - 1) % step != 0) (n - 1).toDouble(),
+                      ];
+                    }(),
+                    divisions: false,
+                    ticks: true,
+                  ),
+                  yAxis: pw.FixedAxis([0, maxTS + 5], divisions: true),
                 ),
                 datasets: [
-                  pw.BarDataSet(
-                    color: surveyType == 1 ? PdfColors.blue400 : surveyType == 2 ? PdfColors.teal400 : PdfColors.cyan400,
-                    width: 30, offset: 0,
-                    borderColor: surveyType == 1 ? PdfColors.blue700 : surveyType == 2 ? PdfColors.teal700 : PdfColors.cyan700,
-                    data: orderedLevels
-                        .asMap()
-                        .entries
-                        .map((e) => pw.PointChartValue(e.key.toDouble(), (distribution[e.value] ?? 0).toDouble()))
-                        .toList(),
+                  pw.LineDataSet(
+                    color: surveyType == 1 ? PdfColors.blue600 : surveyType == 2 ? PdfColors.teal600 : PdfColors.cyan600,
+                    lineWidth: 2, drawPoints: true,
+                    pointColor: surveyType == 1 ? PdfColors.blue900 : surveyType == 2 ? PdfColors.teal900 : PdfColors.cyan900,
+                    data: timelineScores.asMap().entries
+                        .map((e) => pw.PointChartValue(e.key.toDouble(), e.value.toDouble())).toList(),
                   ),
                 ],
               ),
             ),
             pw.SizedBox(height: 20),
-            pw.Text('Gráfica 2: Proporción por Nivel de Severidad', style: pdfStyle(fontSize: 16, bold: true)),
-            pw.SizedBox(height: 4),
-            pw.Text('Distribución porcentual de encuestados por nivel', style: pdfStyle(fontSize: 9, color: PdfColors.grey600)),
-            pw.SizedBox(height: 12),
-            pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.center, children: [
-              pw.SizedBox(
-                width: 180, height: 180,
-                child: pw.CustomPaint(
-                  painter: (canvas, size) {
-                    final cx = size.x / 2;
-                    final cy = size.y / 2;
-                    final r = size.x / 2 - 4;
-                    final vals = orderedLevels
-                        .map((level) => (distribution[level] ?? 0).toDouble())
-                        .toList();
-                    final tv = vals.fold<double>(0.0, (a, b) => a + b);
-                    if (tv == 0) return;
-                    double startAng = -math.pi / 2;
-                    for (int i = 0; i < vals.length; i++) {
-                      if (vals[i] == 0) continue;
-                      final sweepAng = vals[i] / tv * 2 * math.pi;
-                      canvas.setFillColor(pieColors[i]);
-                      _drawPdfSector(canvas, cx, cy, r, startAng, sweepAng);
-                      startAng += sweepAng;
-                    }
-                    canvas.setFillColor(PdfColors.white);
-                    _drawPdfCircle(canvas, cx, cy, r * 0.38);
-                  },
-                ),
-              ),
-              pw.SizedBox(width: 24),
-              pw.Expanded(
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  mainAxisAlignment: pw.MainAxisAlignment.center,
-                  children: [
-                    pw.Text('Total: $total', style: pdfStyle(fontSize: 10, bold: true)),
-                    pw.SizedBox(height: 8),
-                    ...orderedLevels.asMap().entries.map((entry) {
-                      final level = entry.value;
-                      final count = distribution[level] ?? 0;
-                      final pct = total == 0 ? 0.0 : (count / total * 100);
-                      return pw.Padding(
-                        padding: const pw.EdgeInsets.only(bottom: 4),
-                        child: pw.Row(children: [
-                          pw.Container(width: 10, height: 10, decoration: pw.BoxDecoration(color: pieColors[entry.key], borderRadius: pw.BorderRadius.circular(2))),
-                          pw.SizedBox(width: 6),
-                          pw.Expanded(child: pw.Text('${shortLabel(level)}: $count (${pct.toStringAsFixed(1)}%)', style: pdfStyle(fontSize: 9))),
-                        ]),
-                      );
-                    }),
-                  ],
-                ),
-              ),
-            ]),
-            pw.SizedBox(height: 20),
-            if (timelineScores.length > 1) ...[
-              pw.Text('Gráfica 3: Tendencia Temporal de Puntajes', style: pdfStyle(fontSize: 16, bold: true)),
-              pw.SizedBox(height: 4),
-              pw.Text('Evolución de puntajes en el tiempo (Eje X: # de encuesta, Eje Y: Puntaje)', style: pdfStyle(fontSize: 9, color: PdfColors.grey600)),
-              pw.SizedBox(height: 8),
-              pw.SizedBox(
-                height: 200,
-                child: pw.Chart(
-                  grid: pw.CartesianGrid(
-                    xAxis: pw.FixedAxis(
-                          () {
-                        final n = timelineScores.length;
-                        const maxLabels = 8;
-                        final step = (n / maxLabels).ceil().clamp(1, n);
-                        return [
-                          for (int i = 0; i < n; i += step) i.toDouble(),
-                          if ((n - 1) % step != 0) (n - 1).toDouble(),
-                        ];
-                      }(),
-                      divisions: false,
-                      ticks: true,
-                    ),
-                    yAxis: pw.FixedAxis([0, maxTS + 5], divisions: true),
-                  ),
-                  datasets: [
-                    pw.LineDataSet(
-                      color: surveyType == 1 ? PdfColors.blue600 : surveyType == 2 ? PdfColors.teal600 : PdfColors.cyan600,
-                      lineWidth: 2, drawPoints: true,
-                      pointColor: surveyType == 1 ? PdfColors.blue900 : surveyType == 2 ? PdfColors.teal900 : PdfColors.cyan900,
-                      data: timelineScores.asMap().entries
-                          .map((e) => pw.PointChartValue(e.key.toDouble(), e.value.toDouble())).toList(),
-                    ),
-                  ],
-                ),
-              ),
-              pw.SizedBox(height: 20),
-            ],
-            pw.Container(
-              padding: const pw.EdgeInsets.all(12),
-              decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfColors.blue300, width: 1.5), borderRadius: pw.BorderRadius.circular(6)),
-              child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-                pw.Text('Interpretacion de Resultados', style: pdfStyle(fontSize: 13, bold: true, color: PdfColors.blue900)),
-                pw.SizedBox(height: 6),
-                pw.Text(_getInterpretation(statMean, surveyType), style: pdfStyle(fontSize: 10)),
-              ]),
-            ),
-            pw.SizedBox(height: 16),
-            pw.Container(
-              padding: const pw.EdgeInsets.all(10),
-              decoration: const pw.BoxDecoration(color: PdfColors.grey100),
-              child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-                pw.Text('Nota Importante:', style: pdfStyle(fontSize: 10, bold: true)),
-                pw.SizedBox(height: 4),
-                pw.Text(
-                    'Este reporte es generado automaticamente con fines estadisticos. Los resultados deben ser interpretados por un profesional de la salud mental calificado.',
-                    style: pw.TextStyle(font: fontRegular, fontSize: 9)),
-              ]),
-            ),
           ],
-        ),
+          pw.Container(
+            padding: const pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfColors.blue300, width: 1.5), borderRadius: pw.BorderRadius.circular(6)),
+            child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+              pw.Text('Interpretacion de Resultados', style: pdfStyle(fontSize: 13, bold: true, color: PdfColors.blue900)),
+              pw.SizedBox(height: 6),
+              pw.Text(_getInterpretation(statMean, surveyType), style: pdfStyle(fontSize: 10)),
+            ]),
+          ),
+          pw.SizedBox(height: 16),
+          pw.Container(
+            padding: const pw.EdgeInsets.all(10),
+            decoration: const pw.BoxDecoration(color: PdfColors.grey100),
+            child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+              pw.Text('Nota Importante:', style: pdfStyle(fontSize: 10, bold: true)),
+              pw.SizedBox(height: 4),
+              pw.Text(
+                  'Este reporte es generado automaticamente con fines estadisticos. Los resultados deben ser interpretados por un profesional de la salud mental calificado.',
+                  style: pw.TextStyle(font: fontRegular, fontSize: 9)),
+            ]),
+          ),
+        ],
+      ),
+    );
+
+    final pdfBytes = await pdf.save();
+    final fileName = 'reporte_${surveyTypeName}_${DateTime.now().millisecondsSinceEpoch}.pdf';
+
+    if (kIsWeb) {
+      await Printing.sharePdf(bytes: pdfBytes, filename: fileName);
+    } else {
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/$fileName');
+      await file.writeAsBytes(pdfBytes);
+      await SharePlus.instance.share(
+        ShareParams(files: [XFile(file.path)], text: 'Reporte PDF $surveyTypeName'),
       );
+    }
 
-      final pdfBytes = await pdf.save();
-      final fileName = 'reporte_${surveyTypeName}_${DateTime.now().millisecondsSinceEpoch}.pdf';
-
-      if (kIsWeb) {
-        await Printing.sharePdf(bytes: pdfBytes, filename: fileName);
-      } else {
-        final dir = await getTemporaryDirectory();
-        final file = File('${dir.path}/$fileName');
-        await file.writeAsBytes(pdfBytes);
-        await SharePlus.instance.share(
-          ShareParams(files: [XFile(file.path)], text: 'Reporte PDF $surveyTypeName'),
-        );
-      }
-
-      if (context.mounted) {
-        showCenteredToast(
-          context,
-          title: 'Reporte generado',
-          subtitle: 'PDF $surveyTypeName descargado exitosamente',
-          icon: material.Icons.check_circle,
-          iconColor: const Color(0xFF10B981),
-          location: ToastLocation.bottomCenter,
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        showCenteredToast(
-          context,
-          title: 'Error al generar PDF',
-          subtitle: 'No se pudo crear el reporte: $e',
-          icon: material.Icons.error,
-          iconColor: const Color(0xFFEF4444),
-          location: ToastLocation.bottomCenter,
-        );
-      }
+    if (context.mounted) {
+      showCenteredToast(
+        context,
+        title: 'Reporte generado',
+        subtitle: 'PDF $surveyTypeName descargado exitosamente',
+        icon: material.Icons.check_circle,
+        iconColor: const Color(0xFF10B981),
+        location: ToastLocation.bottomCenter,
+      );
+    }
+  } catch (e) {
+    if (context.mounted) {
+      showCenteredToast(
+        context,
+        title: 'Error al generar PDF',
+        subtitle: 'No se pudo crear el reporte: $e',
+        icon: material.Icons.error,
+        iconColor: const Color(0xFFEF4444),
+        location: ToastLocation.bottomCenter,
+      );
     }
   }
+}
 
-  void _drawPdfSector(
-      PdfGraphics canvas,
-      double cx,
-      double cy,
-      double r,
-      double startAngle,
-      double sweepAngle,
-      ) {
-    const maxStep = math.pi / 2;
-    canvas.moveTo(cx, cy);
-    double a = startAngle;
-    double remaining = sweepAngle;
-    while (remaining > 0) {
-      final step = remaining > maxStep ? maxStep : remaining;
-      _addArcSegment(canvas, cx, cy, r, a, step);
-      a += step;
-      remaining -= step;
-    }
-    canvas.lineTo(cx, cy);
-    canvas.fillPath();
+void _drawPdfSector(
+    PdfGraphics canvas,
+    double cx,
+    double cy,
+    double r,
+    double startAngle,
+    double sweepAngle,
+    ) {
+  const maxStep = math.pi / 2;
+  canvas.moveTo(cx, cy);
+  double a = startAngle;
+  double remaining = sweepAngle;
+  while (remaining > 0) {
+    final step = remaining > maxStep ? maxStep : remaining;
+    _addArcSegment(canvas, cx, cy, r, a, step);
+    a += step;
+    remaining -= step;
   }
+  canvas.lineTo(cx, cy);
+  canvas.fillPath();
+}
 
-  void _addArcSegment(
-      PdfGraphics canvas,
-      double cx,
-      double cy,
-      double r,
-      double startAngle,
-      double sweepAngle,
-      ) {
-    final endAngle = startAngle + sweepAngle;
-    final k = (4.0 / 3.0) * math.tan(sweepAngle / 4);
-    final x0 = cx + r * math.cos(startAngle);
-    final y0 = cy + r * math.sin(startAngle);
-    final x1 = x0 - k * r * math.sin(startAngle);
-    final y1 = y0 + k * r * math.cos(startAngle);
-    final x3 = cx + r * math.cos(endAngle);
-    final y3 = cy + r * math.sin(endAngle);
-    final x2 = x3 + k * r * math.sin(endAngle);
-    final y2 = y3 - k * r * math.cos(endAngle);
-    canvas.lineTo(x0, y0);
-    canvas.curveTo(x1, y1, x2, y2, x3, y3);
-  }
+void _addArcSegment(
+    PdfGraphics canvas,
+    double cx,
+    double cy,
+    double r,
+    double startAngle,
+    double sweepAngle,
+    ) {
+  final endAngle = startAngle + sweepAngle;
+  final k = (4.0 / 3.0) * math.tan(sweepAngle / 4);
+  final x0 = cx + r * math.cos(startAngle);
+  final y0 = cy + r * math.sin(startAngle);
+  final x1 = x0 - k * r * math.sin(startAngle);
+  final y1 = y0 + k * r * math.cos(startAngle);
+  final x3 = cx + r * math.cos(endAngle);
+  final y3 = cy + r * math.sin(endAngle);
+  final x2 = x3 + k * r * math.sin(endAngle);
+  final y2 = y3 - k * r * math.cos(endAngle);
+  canvas.lineTo(x0, y0);
+  canvas.curveTo(x1, y1, x2, y2, x3, y3);
+}
 
-  void _drawPdfCircle(PdfGraphics canvas, double cx, double cy, double r) {
-    _drawPdfSector(canvas, cx, cy, r, 0, 2 * math.pi);
-  }
+void _drawPdfCircle(PdfGraphics canvas, double cx, double cy, double r) {
+  _drawPdfSector(canvas, cx, cy, r, 0, 2 * math.pi);
+}
 
-  pw.Widget _buildStatItemF(String label, String value, pw.Font fontRegular, pw.Font fontBold) {
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.center,
-      children: [
-        pw.Text(value, style: pw.TextStyle(font: fontBold, fontSize: 16, color: PdfColors.blue900)),
-        pw.SizedBox(height: 2),
-        pw.Text(label, style: pw.TextStyle(font: fontRegular, fontSize: 9, color: PdfColors.grey700)),
-      ],
-    );
-  }
+pw.Widget _buildStatItemF(String label, String value, pw.Font fontRegular, pw.Font fontBold) {
+  return pw.Column(
+    crossAxisAlignment: pw.CrossAxisAlignment.center,
+    children: [
+      pw.Text(value, style: pw.TextStyle(font: fontBold, fontSize: 16, color: PdfColors.blue900)),
+      pw.SizedBox(height: 2),
+      pw.Text(label, style: pw.TextStyle(font: fontRegular, fontSize: 9, color: PdfColors.grey700)),
+    ],
+  );
+}
 
-  pw.Widget _buildTableHeaderF(String text, pw.Font fontBold) {
-    return pw.Padding(
-      padding: const pw.EdgeInsets.all(6),
-      child: pw.Text(text, style: pw.TextStyle(font: fontBold, fontSize: 10)),
-    );
-  }
+pw.Widget _buildTableHeaderF(String text, pw.Font fontBold) {
+  return pw.Padding(
+    padding: const pw.EdgeInsets.all(6),
+    child: pw.Text(text, style: pw.TextStyle(font: fontBold, fontSize: 10)),
+  );
+}
 
-  pw.TableRow _buildTableRowF(String col1, String col2, String col3, pw.Font fontRegular) {
-    return pw.TableRow(
-      children: [
-        pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(col1, style: pw.TextStyle(font: fontRegular, fontSize: 10))),
-        pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(col2, style: pw.TextStyle(font: fontRegular, fontSize: 10))),
-        pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(col3, style: pw.TextStyle(font: fontRegular, fontSize: 10))),
-      ],
-    );
-  }
+pw.TableRow _buildTableRowF(String col1, String col2, String col3, pw.Font fontRegular) {
+  return pw.TableRow(
+    children: [
+      pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(col1, style: pw.TextStyle(font: fontRegular, fontSize: 10))),
+      pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(col2, style: pw.TextStyle(font: fontRegular, fontSize: 10))),
+      pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(col3, style: pw.TextStyle(font: fontRegular, fontSize: 10))),
+    ],
+  );
+}
 
   String _getLevelText(int score, int surveyType) {
     final intScore = score.toInt();
@@ -2626,9 +2626,9 @@ class _LevelDistributionChart extends StatelessWidget {
           alignment: WrapAlignment.center,
           children: levels
               .map((level) => _LegendItem(
-                    color: _getLevelColor(level),
-                    label: _labelFor(level),
-                  ))
+            color: _getLevelColor(level),
+            label: _labelFor(level),
+          ))
               .toList(),
         ),
       ],
@@ -2838,7 +2838,7 @@ class _SeverityPieChart extends StatelessWidget {
     final distribution = surveyType == 6
         ? <String, int>{'Bajo': 0, 'Moderado': 0, 'Alto': 0}
         : surveyType == 7
-            ? <String, int>{'Normal': 0, 'Síntomas depresivos': 0}
+        ? <String, int>{'Normal': 0, 'Síntomas depresivos': 0}
         : surveyType == 8
           ? <String, int>{'Independencia total': 0, 'Deterioro funcional': 0}
         : surveyType == 10

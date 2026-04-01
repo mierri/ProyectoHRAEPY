@@ -206,9 +206,18 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
       if (!mounted) return;
 
       if (patient != null) {
-
         final resolvedSurveyType = widget.surveyType ?? 'bdi';
         final patientId = patient.patientId;
+
+        // Solo para osteoporosis, guardar peso, talla e imc en Hive y Supabase
+        double? weight;
+        double? height;
+        double? imc;
+        if (resolvedSurveyType == 'osteoporosis') {
+          weight = double.tryParse(_pesoController.text.trim());
+          height = double.tryParse(_tallaController.text.trim());
+          imc = double.tryParse(_imcController.text.trim());
+        }
 
         if (mounted) {
           final shouldContinue = await _showInstructionsDialog(
@@ -217,7 +226,12 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
             surveyColor: _getSurveyColor(),
           );
           if (shouldContinue && mounted) {
-            context.push('/survey/$patientId?surveyType=$resolvedSurveyType');
+            // Pasar los datos por GoRouter
+            if (resolvedSurveyType == 'osteoporosis') {
+              context.push('/survey/$patientId?surveyType=$resolvedSurveyType&weight=${weight ?? ''}&height=${height ?? ''}&imc=${imc ?? ''}');
+            } else {
+              context.push('/survey/$patientId?surveyType=$resolvedSurveyType');
+            }
           }
         }
       } else {
@@ -943,7 +957,7 @@ class ConsentInfoCard extends StatelessWidget {
       case 'katz':
         return 'Este cuestionario evalua la independencia en actividades basicas de la vida diaria mediante el Indice de Katz (ABVD). Genera puntaje total de 0 a 6 y clasificacion alfabetica A-H segun patron de dependencia. Los datos recopilados seran utilizados exclusivamente para propositos clinicos y de investigacion del Departamento de Psicologia del HRAEPY.';
       case 'osteoporosis':
-        return 'Este cuestionario detecta el riesgo de fracturas por osteoporosis. Los datos de peso, talla e IMC se solicitan solo para el consentimiento y no se almacenan en la base de datos. Los resultados deben cruzarse con la edad, IMC y puntaje obtenido.';
+        return 'Este cuestionario detecta el riesgo de fracturas por osteoporosis. Los datos de peso, talla e IMC se solicitan y se almacenan en la base de datos junto con la encuesta. Los resultados deben cruzarse con la edad, IMC y puntaje obtenido.';
       case 'moca':
         return 'Esta evaluación cognitiva evalúa diferentes dominios cognitivos mediante la Evaluación Cognitiva Montreal (MoCA). Evalúa atención, concentración, funciones ejecutivas, memoria, lenguaje, habilidades visuoconstructivas, pensamiento conceptual, cálculo y orientación. Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
       case 'whoqol':

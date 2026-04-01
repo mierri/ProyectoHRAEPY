@@ -239,7 +239,7 @@ class SurveyService extends ChangeNotifier {
   Future<bool> syncSurveyToSupabase(SurveyModel survey) async {
     try {
       final supabase = SupabaseConfig.client;
-      
+
       // Validar datos antes de insertar
       if (survey.surveyId == 0) {
         print('Error: survey_id inválido');
