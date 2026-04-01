@@ -53,6 +53,16 @@ class SurveyService extends ChangeNotifier {
     final responses = survey['responses'] as List?;
     if (responses == null || responses.isEmpty) return 0;
 
+    final surveyType = survey['survey_type'] as int? ?? 1;
+    if (surveyType == 11) {
+      return responses.fold<int>(0, (sum, response) {
+        final questionId = response['question_id'] as int? ?? 0;
+        if (questionId == 4) return sum;
+        final answerValue = response['answer_value'] as int? ?? 0;
+        return sum + answerValue;
+      });
+    }
+
     return responses.fold<int>(0, (sum, response) {
       final answerValue = response['answer_value'] as int? ?? 0;
       return sum + answerValue;
@@ -93,7 +103,7 @@ class SurveyService extends ChangeNotifier {
     };
   }
   
-  /// Obtiene encuestas por tipo (BDI=1, BAI=2, WHOQOL=3, MoCA=4, SF-36=5, ASSIST=6, GDS-15=7, Lawton=8, Osteoporosis=9, Katz=10)
+  /// Obtiene encuestas por tipo (BDI=1, BAI=2, WHOQOL=3, MoCA=4, SF-36=5, ASSIST=6, GDS-15=7, Lawton=8, Osteoporosis=9, Katz=10, ICIQ-SF=11)
   List<Map<String, dynamic>> getSurveysByType(int surveyType) {
     return _surveys.where((survey) => survey['survey_type'] == surveyType).toList();
   }
@@ -121,6 +131,8 @@ class SurveyService extends ChangeNotifier {
         return 'Osteoporosis';
       case 10:
         return 'Katz ABVD';
+      case 11:
+        return 'ICIQ-SF';
       default:
         return 'Encuesta #$surveyId';
     }
@@ -149,6 +161,8 @@ class SurveyService extends ChangeNotifier {
         return 'secondary'; // Osteoporosis
       case 10:
         return 'secondary'; // Katz ABVD
+      case 11:
+        return 'secondary'; // ICIQ-SF
       default:
         return 'secondary';
     }

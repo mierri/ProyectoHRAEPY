@@ -6,6 +6,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/Services/patient_service.dart';
 import 'package:ssapp/Services/survey_service.dart';
 import 'package:ssapp/models/assist_questions.dart';
+import 'package:ssapp/models/iciq_sf_questions.dart';
 import 'package:ssapp/models/katz_questions.dart';
 import 'package:ssapp/utils/theme.dart';
 import 'package:ssapp/utils/toast_helper.dart';
@@ -84,6 +85,8 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         return const Color(0xFFF59E0B);
       case 'deterioro funcional':
         return const Color(0xFFF59E0B);
+      case 'sin incontinencia':
+        return LightModeColors.lightTertiary;
       case 'moderado':
         return const Color(0xFFF59E0B);
       case 'alto':
@@ -126,6 +129,8 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         return material.Icons.warning_amber_outlined;
       case 'deterioro funcional':
         return material.Icons.warning_amber_outlined;
+      case 'sin incontinencia':
+        return material.Icons.check_circle_outline;
       default:
         return material.Icons.help_outline;
     }
@@ -189,9 +194,29 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
       case 10: // Katz ABVD
         if (score == 6) return 'Independencia total';
         return 'Dependencia en algún grado';
+      case 11: // ICIQ-SF
+        if (score == 0) return 'Sin incontinencia';
+        if (score <= 5) return 'Leve';
+        if (score <= 12) return 'Moderada';
+        return 'Severa';
       default:
         return 'Resultado';
     }
+  }
+
+  List<String> _iciqOrientationFromSurvey(Map<String, dynamic> survey) {
+    final responses = survey['responses'] as List? ?? const [];
+    int mask = 0;
+    for (final r in responses) {
+      final qId = r['question_id'] as int?;
+      if (qId == 4) {
+        mask = r['answer_value'] as int? ?? 0;
+        break;
+      }
+    }
+
+    final situations = IciqSfQuestions.decodeSituationsFromMask(mask);
+    return IciqSfQuestions.inferIncontinenceType(situations);
   }
 
   String _getRecommendation(String level, int surveyType) {
@@ -292,6 +317,11 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
           return 'El resultado sugiere independencia total en actividades basicas de la vida diaria (Katz A).';
         }
         return 'El resultado indica dependencia en algun grado. Revise la clasificacion alfabetica de Katz (A-H) para definir el nivel funcional y plan de apoyo.';
+      case 11: // ICIQ-SF
+        if (level.toLowerCase() == 'sin incontinencia') {
+          return 'Sin evidencia de incontinencia urinaria segun ICIQ-SF.';
+        }
+        return 'Se detecta presencia de incontinencia urinaria. Se recomienda valoracion clinica para manejo individualizado.';
       default:
         return 'Se recomienda consultar con un profesional de salud para una evaluación completa.';
     }
@@ -373,6 +403,7 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         case 8: return 'Lawton AIVD';
         case 9: return 'Osteoporosis';
         case 10: return 'Katz ABVD';
+        case 11: return 'ICIQ-SF';
         default: return 'Encuesta';
       }
     }
@@ -389,6 +420,7 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         case 8: return 'Escala de Lawton para Actividades Instrumentales de la Vida Diaria';
         case 9: return 'Cuestionario de Riesgo de Fractura por Osteoporosis';
         case 10: return 'Indice de Katz para Actividades Basicas de la Vida Diaria';
+        case 11: return 'International Consultation on Incontinence Questionnaire - Short Form';
         default: return 'Encuesta';
       }
     }
@@ -401,6 +433,7 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
     final level = surveyType == 10 && katzClassification != null
       ? '$baseLevel (Katz $katzClassification)'
       : baseLevel;
+    final iciqOrientation = surveyType == 11 ? _iciqOrientationFromSurvey(_survey!) : const <String>[];
     final color = _getLevelColor(baseLevel);
     final createdAt = DateTime.parse(_survey!['created_at']);
 
@@ -607,7 +640,9 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
             // Recomendaciones
             _RecommendationsCard(
               level: level,
-              recommendation: _getRecommendation(baseLevel, surveyType),
+              recommendation: surveyType == 11 && iciqOrientation.isNotEmpty
+                  ? '${_getRecommendation(baseLevel, surveyType)} Orientacion tipo: ${iciqOrientation.join(', ')}.'
+                  : _getRecommendation(baseLevel, surveyType),
             ),
             const Gap(24),
 
@@ -785,6 +820,14 @@ class _ScoreInterpretationCard extends StatelessWidget {
           {'range': '6', 'label': 'Independencia total', 'color': LightModeColors.lightTertiary},
           {'range': '0-5', 'label': 'Dependencia en algún grado', 'color': const Color(0xFFF59E0B)},
           {'range': 'A-H', 'label': 'Clasificación alfabética Katz', 'color': LightModeColors.lightSecondary},
+        ];
+        break;
+      case 11: // ICIQ-SF
+        ranges = [
+          {'range': '0', 'label': 'Sin incontinencia', 'color': LightModeColors.lightTertiary},
+          {'range': '1-5', 'label': 'Impacto leve', 'color': const Color(0xFFFBBF24)},
+          {'range': '6-12', 'label': 'Impacto moderado', 'color': const Color(0xFFF97316)},
+          {'range': '13-21', 'label': 'Impacto severo', 'color': LightModeColors.lightError},
         ];
         break;
       default:

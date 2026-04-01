@@ -5,13 +5,14 @@ import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/controllers/survey_controller.dart';
 import 'package:ssapp/models/bdi_questions.dart';
+import 'package:ssapp/models/iciq_sf_questions.dart';
 import 'package:ssapp/Services/survey_service.dart';
 import 'package:ssapp/utils/theme.dart';
 import 'package:ssapp/utils/toast_helper.dart';
 
 class SurveyScreen extends StatefulWidget {
   final int patientId;
-  final String surveyType; // 'bdi', 'bai', 'gds', 'lawton', 'katz' or 'osteoporosis' - solo para UI
+  final String surveyType; // 'bdi', 'bai', 'gds', 'lawton', 'katz', 'iciqsf' or 'osteoporosis' - solo para UI
 
   const SurveyScreen({
     super.key,
@@ -25,6 +26,7 @@ class SurveyScreen extends StatefulWidget {
 
 class _SurveyScreenState extends State<SurveyScreen> {
   late SurveyController _controller;
+  final Set<int> _iciqSelectedIndices = <int>{};
 
   @override
   void initState() {
@@ -46,6 +48,20 @@ class _SurveyScreenState extends State<SurveyScreen> {
   }
 
   void _onControllerUpdate() {
+    final isIciqQ4 = widget.surveyType == 'iciqsf' &&
+        _controller.currentQuestion.number == 4;
+    if (isIciqQ4) {
+      final mask = _controller.responses[4] ?? 0;
+      final selected = <int>{};
+      for (final situation in IciqSfLeakSituation.values) {
+        if ((mask & (1 << situation.index)) != 0) {
+          selected.add(situation.index);
+        }
+      }
+      _iciqSelectedIndices
+        ..clear()
+        ..addAll(selected);
+    }
     if (mounted) setState(() {});
   }
 
@@ -61,6 +77,9 @@ class _SurveyScreenState extends State<SurveyScreen> {
     }
     if (widget.surveyType == 'katz') {
       return const Color(0xFF0D9488);
+    }
+    if (widget.surveyType == 'iciqsf') {
+      return const Color(0xFF2563EB);
     }
     if (widget.surveyType == 'osteoporosis') {
       return const Color(0xFF145374);
@@ -145,6 +164,25 @@ class _SurveyScreenState extends State<SurveyScreen> {
           _controller.nextQuestion();
         }
       });
+    }
+  }
+
+  void _toggleIciqSituation(int index) {
+    if (_iciqSelectedIndices.contains(index)) {
+      _iciqSelectedIndices.remove(index);
+    } else {
+      _iciqSelectedIndices.add(index);
+    }
+
+    var mask = 0;
+    for (final selected in _iciqSelectedIndices) {
+      mask |= (1 << selected);
+    }
+
+    if (mask == 0) {
+      _controller.clearResponse(4);
+    } else {
+      _controller.setRawResponse(4, mask);
     }
   }
 
@@ -331,6 +369,16 @@ class _SurveyScreenState extends State<SurveyScreen> {
         levelColor = const Color(0xFFFFA726);
       } else if (totalScore <= 11) {
         levelColor = const Color(0xFFFF7043);
+      } else {
+        levelColor = LightModeColors.lightError;
+      }
+    } else if (widget.surveyType == 'iciqsf') {
+      if (totalScore == 0) {
+        levelColor = LightModeColors.lightTertiary;
+      } else if (totalScore <= 5) {
+        levelColor = const Color(0xFFFBBF24);
+      } else if (totalScore <= 12) {
+        levelColor = const Color(0xFFF97316);
       } else {
         levelColor = LightModeColors.lightError;
       }
@@ -624,6 +672,8 @@ class _SurveyScreenState extends State<SurveyScreen> {
                                       ? 'Responda según su capacidad actual'
                                     : widget.surveyType == 'katz'
                                       ? 'Responda según su nivel de independencia actual'
+                                    : widget.surveyType == 'iciqsf'
+                                      ? 'Responda según su situación urinaria actual'
                                         : 'Últimas dos semanas incluyendo hoy',
                                 style: TextStyle(
                                   fontSize: 13,
@@ -637,49 +687,67 @@ class _SurveyScreenState extends State<SurveyScreen> {
                     ),
                   ),
                   const Gap(32),
-                  const Text(
-                    'Seleccione la opción que mejor describa cómo se ha sentido:',
-                    style: TextStyle(
+                  Text(
+                    widget.surveyType == 'iciqsf' && question.number == 4
+                        ? 'Seleccione una o varias situaciones:'
+                        : 'Seleccione la opción que mejor describa cómo se ha sentido:',
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   const Gap(24),
-                  ...question.options.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final option = entry.value;
-                    final isSelected = _controller.selectedOptionIndex == index;
-                    const faceIcons = [
-                      Symbols.sentiment_very_satisfied,
-                      Symbols.sentiment_satisfied,
-                      Symbols.sentiment_dissatisfied,
-                      Symbols.sentiment_very_dissatisfied,
-                    ];
-                    const faceColors = [
-                      Color(0xFF16A34A), // green
-                      Color(0xFF65A30D), // lime
-                      Color(0xFFF59E0B), // amber
-                      Color(0xFFDC2626), // red
-                    ];
-                    final faceIcon = index < faceIcons.length ? faceIcons[index] : Symbols.sentiment_neutral;
-                    final faceColor = index < faceColors.length ? faceColors[index] : const Color(0xFF6B7280);
-
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _OptionCard(
-                        option: option,
-                        isSelected: isSelected,
-                        faceIcon: faceIcon,
-                        faceColor: faceColor,
-                        surveyColor: _surveyColor,
-                        onTap: () => _selectOption(
-                          question.number,
-                          option.score,
-                          index,
+                  if (widget.surveyType == 'iciqsf' && question.number == 4)
+                    ...question.options.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final option = entry.value;
+                      final isSelected = _iciqSelectedIndices.contains(index);
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _MultiSelectOptionCard(
+                          text: option.text,
+                          isSelected: isSelected,
+                          surveyColor: _surveyColor,
+                          onTap: () => _toggleIciqSituation(index),
                         ),
-                      ),
-                    );
-                  }),
+                      );
+                    })
+                  else
+                    ...question.options.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final option = entry.value;
+                      final isSelected = _controller.selectedOptionIndex == index;
+                      const faceIcons = [
+                        Symbols.sentiment_very_satisfied,
+                        Symbols.sentiment_satisfied,
+                        Symbols.sentiment_dissatisfied,
+                        Symbols.sentiment_very_dissatisfied,
+                      ];
+                      const faceColors = [
+                        Color(0xFF16A34A), // green
+                        Color(0xFF65A30D), // lime
+                        Color(0xFFF59E0B), // amber
+                        Color(0xFFDC2626), // red
+                      ];
+                      final faceIcon = index < faceIcons.length ? faceIcons[index] : Symbols.sentiment_neutral;
+                      final faceColor = index < faceColors.length ? faceColors[index] : const Color(0xFF6B7280);
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _OptionCard(
+                          option: option,
+                          isSelected: isSelected,
+                          faceIcon: faceIcon,
+                          faceColor: faceColor,
+                          surveyColor: _surveyColor,
+                          onTap: () => _selectOption(
+                            question.number,
+                            option.score,
+                            index,
+                          ),
+                        ),
+                      );
+                    }),
                   const Gap(24),
                   // Pagination
                   _SurveyPagination(
@@ -903,6 +971,60 @@ class _OptionCard extends StatefulWidget {
 
   @override
   State<_OptionCard> createState() => _OptionCardState();
+}
+
+class _MultiSelectOptionCard extends StatelessWidget {
+  final String text;
+  final bool isSelected;
+  final Color surveyColor;
+  final VoidCallback onTap;
+
+  const _MultiSelectOptionCard({
+    required this.text,
+    required this.isSelected,
+    required this.surveyColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: OutlinedContainer(
+        backgroundColor: isSelected
+            ? surveyColor.withValues(alpha: 0.1)
+            : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        padding: const EdgeInsets.all(16),
+        borderColor: isSelected
+            ? surveyColor
+            : LightModeColors.lightOutline.withValues(alpha: 0.5),
+        borderWidth: isSelected ? 2.5 : 1.5,
+        child: Row(
+          children: [
+            Icon(
+              isSelected ? material.Icons.check_box : material.Icons.check_box_outline_blank,
+              color: isSelected ? surveyColor : LightModeColors.lightOnSurfaceVariant,
+              size: 24,
+            ),
+            const Gap(12),
+            Expanded(
+              child: Text(
+                text,
+                style: TextStyle(
+                  fontSize: 15,
+                  height: 1.45,
+                  color: isSelected
+                      ? surveyColor.withValues(alpha: 0.95)
+                      : LightModeColors.lightOnSurface,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _OptionCardState extends State<_OptionCard> with SingleTickerProviderStateMixin {
