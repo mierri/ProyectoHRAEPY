@@ -1,17 +1,21 @@
 import 'package:ssapp/models/osteoporosis_report_model.dart';
+import 'package:ssapp/Services/osteoporosis_risk_service.dart';
 
 /// Service for calculating osteoporosis reports and statistics
 class OsteoporosisReportService {
   /// Calculate complete report from survey data
   static OsteoporosisCompleteReport generateCompleteReport(List<Map<String, dynamic>> surveys) {
-    final overview = _calculateOverview(surveys);
-    final ageGroupData = _calculateAgeGroupData(surveys);
-    final bmiCategoryData = _calculateBMICategoryData(surveys);
-    final sexData = _calculateSexData(surveys);
-    final riskFactors = _calculateRiskFactors(surveys);
-    final naBreakdown = _calculateNABreakdown(surveys);
-    final scoreDistribution = _calculateScoreDistribution(surveys);
-    final timeEvolution = _calculateTimeEvolution(surveys);
+    // Flatten and normalize survey data
+    final flattenedSurveys = _flattenSurveyData(surveys);
+
+    final overview = _calculateOverview(flattenedSurveys);
+    final ageGroupData = _calculateAgeGroupData(flattenedSurveys);
+    final bmiCategoryData = _calculateBMICategoryData(flattenedSurveys);
+    final sexData = _calculateSexData(flattenedSurveys);
+    final riskFactors = _calculateRiskFactors(flattenedSurveys);
+    final naBreakdown = _calculateNABreakdown(flattenedSurveys);
+    final scoreDistribution = _calculateScoreDistribution(flattenedSurveys);
+    final timeEvolution = _calculateTimeEvolution(flattenedSurveys);
 
     return OsteoporosisCompleteReport(
       overview: overview,
@@ -24,6 +28,100 @@ class OsteoporosisReportService {
       timeEvolution: timeEvolution,
       generatedAt: DateTime.now(),
     );
+  }
+
+  /// Flatten and normalize survey data from Supabase
+  ///
+  /// Converts nested response data into flat structure with calculated fields:
+  /// - age_group: calculated from patient age (from birth_date)
+  /// - bmi_category: calculated from weight/height
+  /// - question_X: extracted from responses array
+  /// - created_at: from survey record
+  static List<Map<String, dynamic>> _flattenSurveyData(List<Map<String, dynamic>> surveys) {
+    final result = <Map<String, dynamic>>[];
+
+    for (final survey in surveys) {
+      try {
+        final flatSurvey = Map<String, dynamic>.from(survey);
+
+        // Extract basic fields
+        final weight = survey['weight'] as num?;
+        final height = survey['height'] as num?;
+        final birthDate = survey['birth_date'] as String?;
+        final createdAt = survey['created_at'] as String?;
+
+        // Calculate age from birth_date if available
+        int? age;
+        if (birthDate != null) {
+          try {
+            final birthDateTime = DateTime.parse(birthDate);
+            final now = DateTime.now();
+            age = now.year - birthDateTime.year;
+            // Ajustar si aún no ha cumplido años este año
+            if (now.month < birthDateTime.month ||
+                (now.month == birthDateTime.month && now.day < birthDateTime.day)) {
+              age--;
+            }
+            flatSurvey['age'] = age;
+          } catch (e) {
+            print('Error parsing birth_date: $birthDate');
+          }
+        }
+
+        // Calculate BMI if weight and height available
+        if (weight != null && height != null && weight > 0 && height > 0) {
+          final bmi = weight / (height * height);
+          flatSurvey['bmi'] = bmi;
+
+          // Calculate BMI category
+          try {
+            final bmiCategory = OsteoporosisRiskService.getBMICategory(bmi);
+            flatSurvey['bmi_category'] = bmiCategory;
+          } catch (e) {
+            // BMI out of range, skip categorization
+            print('BMI out of range for categorization: $bmi');
+          }
+        }
+
+        // Calculate age group if age available
+        if (age != null && age >= 50) {
+          try {
+            final ageGroup = OsteoporosisRiskService.getAgeGroup(age);
+            flatSurvey['age_group'] = ageGroup;
+          } catch (e) {
+            print('Age out of range for categorization: $age');
+          }
+        }
+
+        // Flatten responses array into question_X fields
+        final responses = survey['responses'] as List<dynamic>?;
+        if (responses != null) {
+          for (final response in responses) {
+            if (response is Map<String, dynamic>) {
+              final questionId = response['question_id'] as num?;
+              final answerValue = response['answer_value'] as num?;
+
+              if (questionId != null && answerValue != null) {
+                flatSurvey['question_${questionId.toInt()}'] = answerValue.toInt();
+              }
+            }
+          }
+        }
+
+        // Preserve created_at timestamp
+        if (createdAt != null) {
+          flatSurvey['created_at'] = createdAt;
+        }
+
+        result.add(flatSurvey);
+      } catch (e) {
+        print('Error flattening survey data: $e');
+        // Skip this survey if there's an error
+        continue;
+      }
+    }
+
+    return result;
   }
 
   /// Calculate overview metrics
@@ -95,14 +193,15 @@ class OsteoporosisReportService {
     for (final ageGroup in ageGroups) {
       final groupSurveys = surveys.where((s) => s['age_group'] == ageGroup).toList();
 
-      if (groupSurveys.isEmpty) continue;
-
+      int lowRiskCount = 0;
       int highRiskCount = 0;
       double totalScore = 0;
 
       for (final survey in groupSurveys) {
         if (survey['risk_level'] == 'high') {
           highRiskCount++;
+        } else if (survey['risk_level'] == 'low') {
+          lowRiskCount++;
         }
 
         final score = survey['score'] as num?;
@@ -111,12 +210,17 @@ class OsteoporosisReportService {
         }
       }
 
+      final totalCount = groupSurveys.length;
+      final highRiskPercentage = totalCount > 0 ? (highRiskCount / totalCount) * 100 : 0.0;
+      final averageScore = totalCount > 0 ? totalScore / totalCount : 0.0;
+
       result.add(AgeGroupRiskData(
         ageGroup: ageGroup,
-        totalCount: groupSurveys.length,
+        totalCount: totalCount,
         highRiskCount: highRiskCount,
-        highRiskPercentage: (highRiskCount / groupSurveys.length) * 100,
-        averageScore: totalScore / groupSurveys.length,
+        lowRiskCount: lowRiskCount,
+        highRiskPercentage: highRiskPercentage,
+        averageScore: averageScore,
       ));
     }
 
@@ -131,8 +235,6 @@ class OsteoporosisReportService {
 
     for (final category in bmiCategories) {
       final categorySurveys = surveys.where((s) => s['bmi_category'] == category).toList();
-
-      if (categorySurveys.isEmpty) continue;
 
       int lowRiskCount = 0;
       int highRiskCount = 0;
@@ -151,6 +253,9 @@ class OsteoporosisReportService {
       }
 
       final totalCount = categorySurveys.length;
+      final lowRiskPercentage = totalCount > 0 ? (lowRiskCount / totalCount) * 100 : 0.0;
+      final highRiskPercentage = totalCount > 0 ? (highRiskCount / totalCount) * 100 : 0.0;
+      final naPercentage = totalCount > 0 ? (naCount / totalCount) * 100 : 0.0;
 
       result.add(BMICategoryRiskData(
         bmiCategory: category,
@@ -158,9 +263,9 @@ class OsteoporosisReportService {
         lowRiskCount: lowRiskCount,
         highRiskCount: highRiskCount,
         naCount: naCount,
-        lowRiskPercentage: (lowRiskCount / totalCount) * 100,
-        highRiskPercentage: (highRiskCount / totalCount) * 100,
-        naPercentage: (naCount / totalCount) * 100,
+        lowRiskPercentage: lowRiskPercentage,
+        highRiskPercentage: highRiskPercentage,
+        naPercentage: naPercentage,
       ));
     }
 

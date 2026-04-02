@@ -29,6 +29,7 @@ class OsteoporosisReportMetrics {
 class AgeGroupRiskData {
   final String ageGroup;
   final int totalCount;
+  final int lowRiskCount;
   final int highRiskCount;
   final double highRiskPercentage;
   final double averageScore;
@@ -36,6 +37,7 @@ class AgeGroupRiskData {
   AgeGroupRiskData({
     required this.ageGroup,
     required this.totalCount,
+    required this.lowRiskCount,
     required this.highRiskCount,
     required this.highRiskPercentage,
     required this.averageScore,

@@ -2,9 +2,11 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart' as material;
 import 'package:shadcn_flutter/shadcn_flutter.dart';
+import 'package:ssapp/Services/osteoporosis_report_service.dart';
 import 'package:ssapp/Services/survey_service.dart';
 import 'package:ssapp/controllers/reports_controller.dart';
 import 'package:ssapp/models/assist_questions.dart';
+import 'package:ssapp/models/osteoporosis_report_model.dart';
 import 'package:ssapp/models/whoqol_questions.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
@@ -17,6 +19,20 @@ import 'dart:io';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:ssapp/utils/toast_helper.dart';
+
+Future<({pw.Font regular, pw.Font bold})> _loadPdfFonts() async {
+  if (kIsWeb) {
+    return (regular: pw.Font.helvetica(), bold: pw.Font.helveticaBold());
+  }
+  try {
+    return (
+      regular: await PdfGoogleFonts.notoSansRegular(),
+      bold: await PdfGoogleFonts.notoSansBold(),
+    );
+  } catch (_) {
+    return (regular: pw.Font.helvetica(), bold: pw.Font.helveticaBold());
+  }
+}
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -50,6 +66,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
     // SF-36 report data
     final sf36Data = _selectedSurveyType == 5
         ? ReportsController.computeSF36Report(surveys)
+        : null;
+
+    final osteoData = _selectedSurveyType == 9
+        ? OsteoporosisReportService.generateCompleteReport(surveys)
         : null;
 
     return Scaffold(
@@ -139,6 +159,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     } else if (_selectedSurveyType == 5) {
                       final sd = ReportsController.computeSF36Report(surveys);
                       _generateSf36PDFReport(context, surveys, sd);
+                    } else if (_selectedSurveyType == 9) {
+                      final od = OsteoporosisReportService.generateCompleteReport(surveys);
+                      _generateOsteoporosisPDFReport(context, surveys, od);
                     } else {
                       _generatePDFReport(context, surveys, surveyService, _calculateStatistics(surveys, surveyService), _selectedSurveyType);
                     }
@@ -158,6 +181,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
               _WhoqolReportSection(data: whoqolData),
             ] else if (_selectedSurveyType == 5 && sf36Data != null) ...[
               _Sf36ReportSection(data: sf36Data),
+            ] else if (_selectedSurveyType == 9 && osteoData != null) ...[
+              _OsteoporosisReportSection(report: osteoData),
             ] else ...[
               // bdi y bai layout
               Text('Medidas de Tendencia Central',
@@ -265,7 +290,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       value: _selectedSurveyType,
       onChanged: (v) { if (v != null) setState(() => _selectedSurveyType = v); },
       itemBuilder: (context, item) {
-        const names = {1: 'BDI-II', 2: 'BAI', 3: 'WHOQOL-BREF', 5: 'SF-36', 6: 'ASSIST V3.0', 7: 'GDS-15', 8: 'Lawton AIVD', 10: 'Katz ABVD', 11: 'ICIQ-SF'};
+        const names = {1: 'BDI-II', 2: 'BAI', 3: 'WHOQOL-BREF', 5: 'SF-36', 6: 'ASSIST V3.0', 7: 'GDS-15', 8: 'Lawton AIVD', 9: 'Osteoporosis', 10: 'Katz ABVD', 11: 'ICIQ-SF'};
         return Text(names[item] ?? '$item');
       },
       popup: SelectPopup(
@@ -275,6 +300,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           SelectItemButton(value: 6, child: const Text('ASSIST V3.0 — Riesgo por consumo de sustancias')),
           SelectItemButton(value: 7, child: const Text('GDS-15 — Escala de Depresión Geriátrica')),
           SelectItemButton(value: 8, child: const Text('Lawton AIVD — Actividades instrumentales de la vida diaria')),
+          SelectItemButton(value: 9, child: const Text('Osteoporosis — Riesgo de fractura')),
           SelectItemButton(value: 10, child: const Text('Katz ABVD — Actividades basicas de la vida diaria')),
           SelectItemButton(value: 11, child: const Text('ICIQ-SF — Incontinencia urinaria')),
           SelectItemButton(value: 3, child: const Text('WHOQOL-BREF — Calidad de Vida')),
@@ -301,6 +327,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   String _getLevelTextForSurvey(Map<String, dynamic> survey, int surveyType) {
     final score = ReportsController.calculateSurveyScore(survey);
+    if (surveyType == 9) {
+      final riskLevel = (survey['risk_level'] as String?)?.toLowerCase().trim();
+      if (riskLevel == 'high') return 'Alto';
+      if (riskLevel == 'low') return 'Bajo';
+      return '';
+    }
     if (surveyType == 6) return _assistLevelFromSurvey(survey);
     if (surveyType == 1) return ReportsController.bdiLevel(score);
     if (surveyType == 2) return ReportsController.baiLevel(score);
@@ -333,6 +365,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ? 'GDS-15'
               : _selectedSurveyType == 8
                 ? 'Lawton AIVD'
+              : _selectedSurveyType == 9
+                ? 'Osteoporosis'
               : _selectedSurveyType == 10
                 ? 'Katz ABVD'
               : _selectedSurveyType == 11
@@ -342,6 +376,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
           ? 15
           : _selectedSurveyType == 8
             ? 8
+            : _selectedSurveyType == 9
+              ? 7
             : _selectedSurveyType == 10
               ? 6
             : _selectedSurveyType == 11
@@ -572,8 +608,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
       ) async {
     try {
       final pdf = pw.Document();
-      final fontRegular = await PdfGoogleFonts.notoSansRegular();
-      final fontBold    = await PdfGoogleFonts.notoSansBold();
+      final fonts = await _loadPdfFonts();
+      final fontRegular = fonts.regular;
+      final fontBold = fonts.bold;
       final canvasFont = PdfFont.helvetica(pdf.document);
       final canvasFontBold = PdfFont.helveticaBold(pdf.document);
 
@@ -1049,6 +1086,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
               ? 'GDS-15'
               : surveyType == 8
                 ? 'Lawton AIVD'
+              : surveyType == 9
+                ? 'Osteoporosis'
               : surveyType == 10
                 ? 'Katz ABVD'
               : surveyType == 11
@@ -1126,8 +1165,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
       final baiStats = _calculateStatistics(baiSurveys, surveyService);
 
       final pdf = pw.Document();
-      final fontRegular = await PdfGoogleFonts.notoSansRegular();
-      final fontBold = await PdfGoogleFonts.notoSansBold();
+      final fonts = await _loadPdfFonts();
+      final fontRegular = fonts.regular;
+      final fontBold = fonts.bold;
 
       pw.Widget buildSection(
           String title,
@@ -1548,8 +1588,9 @@ Future<void> _generateSf36PDFReport(
     ) async {
   try {
     final pdf = pw.Document();
-    final fontRegular = await PdfGoogleFonts.notoSansRegular();
-    final fontBold = await PdfGoogleFonts.notoSansBold();
+    final fonts = await _loadPdfFonts();
+    final fontRegular = fonts.regular;
+    final fontBold = fonts.bold;
 
     // Colores muy distintos para el pie chart
     final dimColors = [
@@ -1860,6 +1901,352 @@ Future<void> _generateSf36PDFReport(
   }
 }
 
+  Future<void> _generateOsteoporosisPDFReport(
+      BuildContext context,
+      List<Map<String, dynamic>> surveys,
+      OsteoporosisCompleteReport report,
+      ) async {
+    try {
+      final pdf = pw.Document();
+      final fonts = await _loadPdfFonts();
+      final fontRegular = fonts.regular;
+      final fontBold = fonts.bold;
+      pw.TextStyle st({double sz = 10, bool bold = false, PdfColor? color}) =>
+          pw.TextStyle(font: bold ? fontBold : fontRegular, fontSize: sz, color: color);
+
+      const ageOrder = ['50-54', '55-59', '60-64', '65-69', '70-74', '75-79', '80-84', '85-89', '90+'];
+      const bmiOrder = ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45+'];
+
+      final ageMap = <String, AgeGroupRiskData>{for (final e in report.ageGroupData) e.ageGroup: e};
+      final bmiMap = <String, BMICategoryRiskData>{for (final e in report.bmiCategoryData) e.bmiCategory: e};
+
+      final normalizedAge = ageOrder
+          .map((age) => ageMap[age] ?? AgeGroupRiskData(
+        ageGroup: age,
+        totalCount: 0,
+        lowRiskCount: 0,
+        highRiskCount: 0,
+        highRiskPercentage: 0,
+        averageScore: 0,
+      ))
+          .toList();
+
+      final normalizedBmi = bmiOrder
+          .map((bmi) => bmiMap[bmi] ?? BMICategoryRiskData(
+        bmiCategory: bmi,
+        totalCount: 0,
+        lowRiskCount: 0,
+        highRiskCount: 0,
+        naCount: 0,
+        lowRiskPercentage: 0,
+        highRiskPercentage: 0,
+        naPercentage: 0,
+      ))
+          .toList();
+
+      final factorData = [...report.riskFactors]..sort((a, b) => a.questionNumber.compareTo(b.questionNumber));
+      final scoreData = [...report.scoreDistribution]..sort((a, b) => a.score.compareTo(b.score));
+
+      final maxRiskDist = math.max(1, math.max(report.overview.lowRiskCount, report.overview.highRiskCount)) + 1;
+      final maxAge = normalizedAge.fold<int>(1, (m, e) => math.max(m, math.max(e.lowRiskCount, e.highRiskCount))) + 1;
+      final maxBmi = normalizedBmi.fold<int>(1, (m, e) => math.max(m, math.max(e.lowRiskCount, e.highRiskCount))) + 1;
+      final maxFactor = factorData.fold<int>(1, (m, e) => math.max(m, e.yesCount));
+      final maxScore = scoreData.fold<int>(1, (m, e) => math.max(m, e.count)) + 1;
+
+      final now = DateTime.now();
+
+      pdf.addPage(
+        pw.MultiPage(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(40),
+          theme: pw.ThemeData.withFont(base: fontRegular, bold: fontBold),
+          build: (pw.Context ctx) => [
+            pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+              pw.Text('Reporte de Osteoporosis', style: st(sz: 22, bold: true, color: PdfColors.blue800)),
+              pw.SizedBox(height: 4),
+              pw.Text('Riesgo de fractura', style: st(sz: 13, color: PdfColors.grey700)),
+              pw.SizedBox(height: 4),
+              pw.Text(
+                  'Generado el ${now.day}/${now.month}/${now.year}  |  Total: ${surveys.length} encuestas',
+                  style: st(sz: 11, color: PdfColors.grey600)),
+              pw.Divider(thickness: 2, color: PdfColors.blue800),
+            ]),
+            pw.SizedBox(height: 16),
+
+            pw.Container(
+              padding: const pw.EdgeInsets.all(12),
+              decoration: pw.BoxDecoration(color: PdfColors.blue50, borderRadius: pw.BorderRadius.circular(8)),
+              child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+                pw.Text('Resumen de conteos', style: st(sz: 13, bold: true, color: PdfColors.blue900)),
+                pw.SizedBox(height: 8),
+                pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
+                  _buildStatItemF('Pacientes', report.overview.totalPatients.toString(), fontRegular, fontBold),
+                  _buildStatItemF('Evaluables', report.overview.respondentsCount.toString(), fontRegular, fontBold),
+                  _buildStatItemF('Riesgo bajo', report.overview.lowRiskCount.toString(), fontRegular, fontBold),
+                  _buildStatItemF('Riesgo alto', report.overview.highRiskCount.toString(), fontRegular, fontBold),
+                  _buildStatItemF('Sin clasificar', report.overview.naCount.toString(), fontRegular, fontBold),
+                ]),
+              ]),
+            ),
+            pw.SizedBox(height: 18),
+
+            pw.Text('1. Distribucion de riesgo (conteos)', style: st(sz: 14, bold: true)),
+            pw.SizedBox(height: 6),
+            pw.Table(border: pw.TableBorder.all(color: PdfColors.grey400), children: [
+              pw.TableRow(decoration: const pw.BoxDecoration(color: PdfColors.grey200), children: [
+                _buildTableHeaderF('Categoria', fontBold),
+                _buildTableHeaderF('Cantidad', fontBold),
+              ]),
+              pw.TableRow(children: [
+                pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text('Riesgo bajo', style: st())),
+                pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(report.overview.lowRiskCount.toString(), style: st())),
+              ]),
+              pw.TableRow(children: [
+                pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text('Riesgo alto', style: st())),
+                pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(report.overview.highRiskCount.toString(), style: st())),
+              ]),
+            ]),
+            pw.SizedBox(height: 8),
+            pw.SizedBox(
+              height: 170,
+              child: pw.Chart(
+                grid: pw.CartesianGrid(
+                  xAxis: pw.FixedAxis.fromStrings(const ['Riesgo bajo', 'Riesgo alto'], ticks: true),
+                  yAxis: pw.FixedAxis([0, maxRiskDist.toDouble()], divisions: true),
+                ),
+                datasets: [
+                  pw.BarDataSet(
+                    color: PdfColors.blue500,
+                    borderColor: PdfColors.blue800,
+                    width: 22,
+                    data: [
+                      pw.PointChartValue(0, report.overview.lowRiskCount.toDouble()),
+                      pw.PointChartValue(1, report.overview.highRiskCount.toDouble()),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            pw.SizedBox(height: 16),
+
+            pw.Text('2. Riesgo por grupo de edad (conteos)', style: st(sz: 14, bold: true)),
+            pw.SizedBox(height: 6),
+            pw.Table(border: pw.TableBorder.all(color: PdfColors.grey400), children: [
+              pw.TableRow(decoration: const pw.BoxDecoration(color: PdfColors.grey200), children: [
+                _buildTableHeaderF('Rango de edad', fontBold),
+                _buildTableHeaderF('Riesgo bajo', fontBold),
+                _buildTableHeaderF('Riesgo alto', fontBold),
+              ]),
+              ...normalizedAge.map((e) => pw.TableRow(children: [
+                pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text(e.ageGroup, style: st(sz: 9))),
+                pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text(e.lowRiskCount.toString(), style: st(sz: 9))),
+                pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text(e.highRiskCount.toString(), style: st(sz: 9))),
+              ])),
+            ]),
+            pw.SizedBox(height: 8),
+            pw.SizedBox(
+              height: 180,
+              child: pw.Chart(
+                grid: pw.CartesianGrid(
+                  xAxis: pw.FixedAxis.fromStrings(ageOrder, ticks: true),
+                  yAxis: pw.FixedAxis([0, maxAge.toDouble()], divisions: true),
+                ),
+                datasets: [
+                  pw.BarDataSet(
+                    color: PdfColors.green500,
+                    borderColor: PdfColors.green800,
+                    width: 6,
+                    offset: -4,
+                    data: normalizedAge
+                        .asMap()
+                        .entries
+                        .map((e) => pw.PointChartValue(e.key.toDouble(), e.value.lowRiskCount.toDouble()))
+                        .toList(),
+                  ),
+                  pw.BarDataSet(
+                    color: PdfColors.red500,
+                    borderColor: PdfColors.red800,
+                    width: 6,
+                    offset: 4,
+                    data: normalizedAge
+                        .asMap()
+                        .entries
+                        .map((e) => pw.PointChartValue(e.key.toDouble(), e.value.highRiskCount.toDouble()))
+                        .toList(),
+                  ),
+                ],
+              ),
+            ),
+            pw.SizedBox(height: 16),
+
+            pw.Text('3. Riesgo por categoria de IMC (conteos)', style: st(sz: 14, bold: true)),
+            pw.SizedBox(height: 6),
+            pw.Table(border: pw.TableBorder.all(color: PdfColors.grey400), children: [
+              pw.TableRow(decoration: const pw.BoxDecoration(color: PdfColors.grey200), children: [
+                _buildTableHeaderF('Rango IMC', fontBold),
+                _buildTableHeaderF('Riesgo bajo', fontBold),
+                _buildTableHeaderF('Riesgo alto', fontBold),
+              ]),
+              ...normalizedBmi.map((e) => pw.TableRow(children: [
+                pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text(e.bmiCategory, style: st(sz: 9))),
+                pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text(e.lowRiskCount.toString(), style: st(sz: 9))),
+                pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text(e.highRiskCount.toString(), style: st(sz: 9))),
+              ])),
+            ]),
+            pw.SizedBox(height: 8),
+            pw.SizedBox(
+              height: 180,
+              child: pw.Chart(
+                grid: pw.CartesianGrid(
+                  xAxis: pw.FixedAxis.fromStrings(bmiOrder, ticks: true),
+                  yAxis: pw.FixedAxis([0, maxBmi.toDouble()], divisions: true),
+                ),
+                datasets: [
+                  pw.BarDataSet(
+                    color: PdfColors.green500,
+                    borderColor: PdfColors.green800,
+                    width: 8,
+                    offset: -4,
+                    data: normalizedBmi
+                        .asMap()
+                        .entries
+                        .map((e) => pw.PointChartValue(e.key.toDouble(), e.value.lowRiskCount.toDouble()))
+                        .toList(),
+                  ),
+                  pw.BarDataSet(
+                    color: PdfColors.red500,
+                    borderColor: PdfColors.red800,
+                    width: 8,
+                    offset: 4,
+                    data: normalizedBmi
+                        .asMap()
+                        .entries
+                        .map((e) => pw.PointChartValue(e.key.toDouble(), e.value.highRiskCount.toDouble()))
+                        .toList(),
+                  ),
+                ],
+              ),
+            ),
+            pw.SizedBox(height: 16),
+
+            pw.Text('4. Factores de riesgo (conteo de respuestas "si")', style: st(sz: 14, bold: true)),
+            pw.SizedBox(height: 6),
+            ...factorData.map((f) {
+              final ratio = maxFactor == 0 ? 0.0 : (f.yesCount / maxFactor);
+              return pw.Padding(
+                padding: const pw.EdgeInsets.only(bottom: 6),
+                child: pw.Row(children: [
+                  pw.SizedBox(width: 18, child: pw.Text('P${f.questionNumber}', style: st(sz: 9, bold: true))),
+                  pw.Expanded(
+                    child: pw.Container(
+                      height: 12,
+                      decoration: pw.BoxDecoration(color: PdfColors.grey300, borderRadius: pw.BorderRadius.circular(2)),
+                      child: pw.Row(children: [
+                        pw.Container(
+                          width: ratio * 320,
+                          height: 12,
+                          decoration: pw.BoxDecoration(color: PdfColors.red500, borderRadius: pw.BorderRadius.circular(2)),
+                        ),
+                      ]),
+                    ),
+                  ),
+                  pw.SizedBox(width: 8),
+                  pw.SizedBox(width: 20, child: pw.Text(f.yesCount.toString(), style: st(sz: 9, bold: true))),
+                ]),
+              );
+            }),
+            pw.SizedBox(height: 16),
+
+            pw.Text('5. Distribucion de puntajes (conteos)', style: st(sz: 14, bold: true)),
+            pw.SizedBox(height: 6),
+            pw.Table(border: pw.TableBorder.all(color: PdfColors.grey400), children: [
+              pw.TableRow(decoration: const pw.BoxDecoration(color: PdfColors.grey200), children: [
+                _buildTableHeaderF('Puntaje', fontBold),
+                _buildTableHeaderF('Cantidad', fontBold),
+              ]),
+              ...scoreData.map((e) => pw.TableRow(children: [
+                pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text(e.score.toString(), style: st(sz: 9))),
+                pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text(e.count.toString(), style: st(sz: 9))),
+              ])),
+            ]),
+            pw.SizedBox(height: 8),
+            pw.SizedBox(
+              height: 170,
+              child: pw.Chart(
+                grid: pw.CartesianGrid(
+                  xAxis: pw.FixedAxis.fromStrings(scoreData.map((e) => e.score.toString()).toList(), ticks: true),
+                  yAxis: pw.FixedAxis([0, maxScore.toDouble()], divisions: true),
+                ),
+                datasets: [
+                  pw.BarDataSet(
+                    color: PdfColors.blue500,
+                    borderColor: PdfColors.blue800,
+                    width: 14,
+                    data: scoreData
+                        .asMap()
+                        .entries
+                        .map((e) => pw.PointChartValue(e.key.toDouble(), e.value.count.toDouble()))
+                        .toList(),
+                  ),
+                ],
+              ),
+            ),
+            pw.SizedBox(height: 16),
+
+            pw.Container(
+              padding: const pw.EdgeInsets.all(10),
+              decoration: const pw.BoxDecoration(color: PdfColors.grey100),
+              child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+                pw.Text('Nota Importante:', style: st(sz: 10, bold: true)),
+                pw.SizedBox(height: 4),
+                pw.Text(
+                    'Este reporte es generado automaticamente con fines estadisticos. '
+                        'Los resultados deben ser interpretados por personal de salud calificado.',
+                    style: st(sz: 9)),
+              ]),
+            ),
+          ],
+        ),
+      );
+
+      final pdfBytes = await pdf.save();
+      final fileName = 'reporte_Osteoporosis_${DateTime.now().millisecondsSinceEpoch}.pdf';
+
+      if (kIsWeb) {
+        await Printing.sharePdf(bytes: pdfBytes, filename: fileName);
+      } else {
+        final dir = await getTemporaryDirectory();
+        final file = File('${dir.path}/$fileName');
+        await file.writeAsBytes(pdfBytes);
+        await SharePlus.instance.share(
+          ShareParams(files: [XFile(file.path)], text: 'Reporte PDF Osteoporosis'),
+        );
+      }
+
+      if (context.mounted) {
+        showCenteredToast(
+          context,
+          title: 'Reporte generado',
+          subtitle: 'PDF Osteoporosis descargado exitosamente',
+          icon: material.Icons.check_circle,
+          iconColor: const Color(0xFF10B981),
+          location: ToastLocation.bottomCenter,
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        showCenteredToast(
+          context,
+          title: 'Error al generar PDF',
+          subtitle: 'No se pudo crear el reporte: $e',
+          icon: material.Icons.error,
+          iconColor: const Color(0xFFEF4444),
+          location: ToastLocation.bottomCenter,
+        );
+      }
+    }
+  }
+
   Future<void> _generatePDFReport(
       BuildContext context,
       List<Map<String, dynamic>> surveys,
@@ -1896,8 +2283,9 @@ Future<void> _generateSf36PDFReport(
                 ? 'International Consultation on Incontinence Questionnaire - Short Form'
               : 'Encuesta';
 
-    final fontRegular = await PdfGoogleFonts.notoSansRegular();
-    final fontBold = await PdfGoogleFonts.notoSansBold();
+    final fonts = await _loadPdfFonts();
+    final fontRegular = fonts.regular;
+    final fontBold = fonts.bold;
 
     pw.TextStyle pdfStyle({double fontSize = 10, bool bold = false, PdfColor? color}) =>
         pw.TextStyle(font: bold ? fontBold : fontRegular, fontSize: fontSize, color: color);
@@ -3130,6 +3518,365 @@ class _SeverityPieChart extends StatelessWidget {
       return 'severe';
     }
     return 'normal';
+  }
+}
+
+class _OsteoporosisReportSection extends StatelessWidget {
+  final OsteoporosisCompleteReport report;
+
+  const _OsteoporosisReportSection({required this.report});
+
+  @override
+  Widget build(BuildContext context) {
+    final overview = report.overview;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const Text('Medidas de Tendencia Central',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+      const Gap(12),
+      LayoutBuilder(builder: (context, constraints) {
+        final cardW = (constraints.maxWidth - 12) / 2;
+        final statH = (cardW * 0.48).clamp(72.0, 110.0);
+        final infoH = (cardW * 0.32).clamp(56.0, 80.0);
+        return Column(children: [
+          GridView.count(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            childAspectRatio: cardW / statH,
+            children: [
+              _StatCard(
+                  title: 'Total de pacientes',
+                  value: overview.totalPatients.toString(),
+                  icon: material.Icons.groups,
+                  color: const Color(0xFF3B82F6)),
+              _StatCard(
+                  title: 'Pacientes evaluables',
+                  value: overview.respondentsCount.toString(),
+                  icon: material.Icons.fact_check,
+                  color: const Color(0xFF10B981)),
+              _StatCard(
+                  title: 'Riesgo bajo',
+                  value: overview.lowRiskCount.toString(),
+                  icon: material.Icons.trending_down,
+                  color: const Color(0xFF16A34A)),
+              _StatCard(
+                  title: 'Riesgo alto',
+                  value: overview.highRiskCount.toString(),
+                  icon: material.Icons.trending_up,
+                  color: const Color(0xFFDC2626)),
+            ],
+          ),
+          const Gap(12),
+          GridView.count(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            childAspectRatio: cardW / infoH,
+            children: [
+              _InfoCard(title: 'Sin clasificación (N/A)', value: overview.naCount.toString()),
+              _InfoCard(title: 'Rangos de edad', value: report.ageGroupData.length.toString()),
+              _InfoCard(title: 'Rangos de IMC', value: report.bmiCategoryData.length.toString()),
+              _InfoCard(title: 'Factores evaluados', value: report.riskFactors.length.toString()),
+            ],
+          ),
+        ]);
+      }),
+      const Gap(24),
+      const Text('Distribución de Resultados',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+      const Gap(16),
+      SurfaceCard(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('1. Distribución de riesgo (barras agrupadas)').semiBold().large(),
+            const Gap(4),
+            Text('Conteo de pacientes por nivel de riesgo',
+                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.mutedForeground)),
+            const Gap(16),
+            SizedBox(height: 260, child: _OsteoRiskDistributionGroupedChart(overview: report.overview)),
+            const Gap(12),
+            const Row(
+              children: [
+                _LegendItem(color: Color(0xFF16A34A), label: 'Riesgo bajo'),
+                Gap(12),
+                _LegendItem(color: Color(0xFFDC2626), label: 'Riesgo alto'),
+              ],
+            ),
+          ]),
+        ),
+      ),
+      const Gap(24),
+      SurfaceCard(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('2. Riesgo por grupo de edad (barras agrupadas)').semiBold().large(),
+            const Gap(4),
+            Text('Se muestran todos los rangos de edad, incluso con 0 casos',
+                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.mutedForeground)),
+            const Gap(16),
+            SizedBox(height: 320, child: _OsteoAgeGroupedChart(data: report.ageGroupData)),
+            const Gap(12),
+            const Row(
+              children: [
+                _LegendItem(color: Color(0xFF16A34A), label: 'Riesgo bajo'),
+                Gap(12),
+                _LegendItem(color: Color(0xFFDC2626), label: 'Riesgo alto'),
+              ],
+            ),
+          ]),
+        ),
+      ),
+      const Gap(24),
+      SurfaceCard(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('3. Riesgo por categoría de IMC (barras agrupadas)').semiBold().large(),
+            const Gap(4),
+            Text('Se muestran todas las categorías de IMC, incluso con 0 casos',
+                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.mutedForeground)),
+            const Gap(16),
+            SizedBox(height: 320, child: _OsteoBmiGroupedChart(data: report.bmiCategoryData)),
+            const Gap(12),
+            const Row(
+              children: [
+                _LegendItem(color: Color(0xFF16A34A), label: 'Riesgo bajo'),
+                Gap(12),
+                _LegendItem(color: Color(0xFFDC2626), label: 'Riesgo alto'),
+              ],
+            ),
+          ]),
+        ),
+      ),
+      const Gap(24),
+      SurfaceCard(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('4. Factores de riesgo (barras horizontales)').semiBold().large(),
+            const Gap(4),
+            Text('Conteo de respuestas "si" por pregunta',
+                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.mutedForeground)),
+            const Gap(16),
+            _OsteoRiskFactorsCountChart(data: report.riskFactors),
+          ]),
+        ),
+      ),
+      const Gap(24),
+      SurfaceCard(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('5. Distribución de puntajes (barras)').semiBold().large(),
+            const Gap(4),
+            Text('Conteo de pacientes por puntaje total',
+                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.mutedForeground)),
+            const Gap(16),
+            SizedBox(height: 280, child: _OsteoScoreCountChart(data: report.scoreDistribution)),
+          ]),
+        ),
+      ),
+    ]);
+  }
+}
+
+class _OsteoRiskDistributionGroupedChart extends StatelessWidget {
+  final OsteoporosisReportMetrics overview;
+
+  const _OsteoRiskDistributionGroupedChart({required this.overview});
+
+  @override
+  Widget build(BuildContext context) {
+    final maxY = math.max(1, math.max(overview.lowRiskCount, overview.highRiskCount)) + 1;
+    return BarChart(BarChartData(
+      maxY: maxY.toDouble(),
+      barGroups: [
+        BarChartGroupData(x: 0, barsSpace: 10, barRods: [
+          BarChartRodData(toY: overview.lowRiskCount.toDouble(), color: const Color(0xFF16A34A), width: 20),
+          BarChartRodData(toY: overview.highRiskCount.toDouble(), color: const Color(0xFFDC2626), width: 20),
+        ]),
+      ],
+      titlesData: FlTitlesData(
+        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 36)),
+        bottomTitles: AxisTitles(sideTitles: SideTitles(
+          showTitles: true,
+          reservedSize: 34,
+          getTitlesWidget: (value, meta) => const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: Text('Pacientes'),
+          ),
+        )),
+        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+      ),
+      borderData: FlBorderData(show: false),
+      gridData: FlGridData(show: true, drawVerticalLine: false),
+    ));
+  }
+}
+
+class _OsteoAgeGroupedChart extends StatelessWidget {
+  final List<AgeGroupRiskData> data;
+
+  const _OsteoAgeGroupedChart({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    const ageOrder = ['50-54', '55-59', '60-64', '65-69', '70-74', '75-79', '80-84', '85-89', '90+'];
+    final byAge = <String, AgeGroupRiskData>{for (final item in data) item.ageGroup: item};
+    final normalized = ageOrder
+        .map((age) => byAge[age] ?? AgeGroupRiskData(
+              ageGroup: age,
+              totalCount: 0,
+              lowRiskCount: 0,
+              highRiskCount: 0,
+              highRiskPercentage: 0,
+              averageScore: 0,
+            ))
+        .toList();
+    final maxY = normalized.fold<int>(1, (m, e) => math.max(m, math.max(e.lowRiskCount, e.highRiskCount))) + 1;
+
+    return BarChart(BarChartData(
+      maxY: maxY.toDouble(),
+      barGroups: List.generate(normalized.length, (i) {
+        final item = normalized[i];
+        return BarChartGroupData(x: i, barsSpace: 6, barRods: [
+          BarChartRodData(toY: item.lowRiskCount.toDouble(), color: const Color(0xFF16A34A), width: 8),
+          BarChartRodData(toY: item.highRiskCount.toDouble(), color: const Color(0xFFDC2626), width: 8),
+        ]);
+      }),
+      titlesData: FlTitlesData(
+        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 36)),
+        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 34, getTitlesWidget: (value, meta) {
+          final i = value.toInt();
+          if (i < 0 || i >= normalized.length) return const SizedBox.shrink();
+          return Padding(padding: const EdgeInsets.only(top: 6), child: Text(normalized[i].ageGroup, style: const TextStyle(fontSize: 9)));
+        })),
+        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+      ),
+      borderData: FlBorderData(show: false),
+      gridData: FlGridData(show: true, drawVerticalLine: false),
+    ));
+  }
+}
+
+class _OsteoBmiGroupedChart extends StatelessWidget {
+  final List<BMICategoryRiskData> data;
+
+  const _OsteoBmiGroupedChart({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    const bmiOrder = ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45+'];
+    final byBmi = <String, BMICategoryRiskData>{for (final item in data) item.bmiCategory: item};
+    final normalized = bmiOrder
+        .map((bmi) => byBmi[bmi] ?? BMICategoryRiskData(
+              bmiCategory: bmi,
+              totalCount: 0,
+              lowRiskCount: 0,
+              highRiskCount: 0,
+              naCount: 0,
+              lowRiskPercentage: 0,
+              highRiskPercentage: 0,
+              naPercentage: 0,
+            ))
+        .toList();
+    final maxY = normalized.fold<int>(1, (m, e) => math.max(m, math.max(e.lowRiskCount, e.highRiskCount))) + 1;
+
+    return BarChart(BarChartData(
+      maxY: maxY.toDouble(),
+      barGroups: List.generate(normalized.length, (i) {
+        final item = normalized[i];
+        return BarChartGroupData(x: i, barsSpace: 6, barRods: [
+          BarChartRodData(toY: item.lowRiskCount.toDouble(), color: const Color(0xFF16A34A), width: 8),
+          BarChartRodData(toY: item.highRiskCount.toDouble(), color: const Color(0xFFDC2626), width: 8),
+        ]);
+      }),
+      titlesData: FlTitlesData(
+        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 36)),
+        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 34, getTitlesWidget: (value, meta) {
+          final i = value.toInt();
+          if (i < 0 || i >= normalized.length) return const SizedBox.shrink();
+          return Padding(padding: const EdgeInsets.only(top: 6), child: Text(normalized[i].bmiCategory, style: const TextStyle(fontSize: 9)));
+        })),
+        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+      ),
+      borderData: FlBorderData(show: false),
+      gridData: FlGridData(show: true, drawVerticalLine: false),
+    ));
+  }
+}
+
+class _OsteoRiskFactorsCountChart extends StatelessWidget {
+  final List<RiskFactorData> data;
+
+  const _OsteoRiskFactorsCountChart({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final sorted = [...data]..sort((a, b) => a.questionNumber.compareTo(b.questionNumber));
+    final maxCount = sorted.fold<int>(1, (m, e) => math.max(m, e.yesCount));
+
+    return Column(
+      children: sorted.map((item) {
+        final widthFactor = item.yesCount / maxCount;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Row(children: [
+            SizedBox(width: 36, child: Text('P${item.questionNumber}', style: const TextStyle(fontSize: 11))),
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: Stack(children: [
+                  Container(height: 18, color: const Color(0xFFE5E7EB)),
+                  FractionallySizedBox(widthFactor: widthFactor, child: Container(height: 18, color: const Color(0xFFDC2626))),
+                ]),
+              ),
+            ),
+            const Gap(8),
+            SizedBox(width: 26, child: Text(item.yesCount.toString(), textAlign: TextAlign.right, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600))),
+          ]),
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _OsteoScoreCountChart extends StatelessWidget {
+  final List<ScoreDistributionData> data;
+
+  const _OsteoScoreCountChart({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final maxY = data.fold<int>(1, (m, e) => math.max(m, e.count)) + 1;
+    return BarChart(BarChartData(
+      maxY: maxY.toDouble(),
+      barGroups: List.generate(data.length, (i) {
+        final item = data[i];
+        return BarChartGroupData(x: i, barRods: [BarChartRodData(toY: item.count.toDouble(), color: const Color(0xFF3B82F6), width: 12)]);
+      }),
+      titlesData: FlTitlesData(
+        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 36)),
+        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (value, meta) {
+          final i = value.toInt();
+          if (i < 0 || i >= data.length) return const SizedBox.shrink();
+          return Padding(padding: const EdgeInsets.only(top: 6), child: Text(data[i].score.toString(), style: const TextStyle(fontSize: 10)));
+        })),
+        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+      ),
+      borderData: FlBorderData(show: false),
+      gridData: FlGridData(show: true, drawVerticalLine: false),
+    ));
   }
 }
 

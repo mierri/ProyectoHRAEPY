@@ -227,8 +227,21 @@ class SurveyService extends ChangeNotifier {
       }
 
       final surveys = box.values.toList();
+      final patientsBox = await Hive.openBox<PatientModel>('patients');
 
       return surveys.map((survey) {
+        // Buscar datos del paciente para traer weight, height, birth_date, gender
+        final patient = patientsBox.values.firstWhere(
+          (p) => p.patientId == survey.patientId,
+          orElse: () => PatientModel(
+            patientId: survey.patientId ?? 0,
+            name: '',
+            gender: 'M',
+            birthDate: DateTime(1950),
+            synced: false,
+          ),
+        );
+
         return {
           'survey_id': survey.surveyId,
           'patient_id': survey.patientId,
@@ -239,6 +252,13 @@ class SurveyService extends ChangeNotifier {
             'question_id': r.questionId,
             'answer_value': r.answerValue,
           }).toList(),
+          // Agregar datos del paciente
+          'weight': patient.weight,
+          'height': patient.height,
+          'birth_date': patient.birthDate.toIso8601String().split('T')[0],
+          'gender': patient.gender,
+          if (survey.risk_level != null) 'risk_level': survey.risk_level,
+          if (survey.score != null) 'score': survey.score,
         };
       }).toList();
     } catch (e) {
@@ -271,6 +291,8 @@ class SurveyService extends ChangeNotifier {
         'patient_id': survey.patientId,
         'survey_type': survey.surveyType,
         'synced': true,
+        if (survey.risk_level != null) 'risk_level': survey.risk_level,
+        if (survey.score != null) 'score': survey.score,
       };
 
       try {
@@ -326,11 +348,24 @@ class SurveyService extends ChangeNotifier {
       
       final data = await supabase
           .from('surveys')
-          .select('*, responses(*)')
+          .select('*, responses(*), patients(weight, height, birth_date, gender)')
           .order('created_at', ascending: false);
 
-      // El survey_type ahora se incluye en los datos desde Supabase
-      return List<Map<String, dynamic>>.from(data);
+      // Mapear los datos para aplanar la estructura de patient
+      return List<Map<String, dynamic>>.from(data).map((survey) {
+        final mapped = Map<String, dynamic>.from(survey);
+
+        // Si viene con datos del paciente anidado, aplanarlos
+        if (survey['patients'] != null && survey['patients'] is Map) {
+          final patient = survey['patients'] as Map<String, dynamic>;
+          mapped['weight'] = patient['weight'];
+          mapped['height'] = patient['height'];
+          mapped['birth_date'] = patient['birth_date'];
+          mapped['gender'] = patient['gender'];
+        }
+
+        return mapped;
+      }).toList();
     } catch (e) {
       print('Error al obtener encuestas de Supabase: $e');
       return [];
@@ -385,5 +420,25 @@ class SurveyService extends ChangeNotifier {
     }
 
     return syncedCount;
+  }
+
+  /// Sincroniza un paciente con Supabase
+  Future<bool> syncPatientToSupabase(PatientModel patient) async {
+    try {
+      final supabase = SupabaseConfig.client;
+      await supabase
+          .from('patients')
+          .upsert(patient.toJson())
+          .select()
+          .single();
+
+      patient.synced = true;
+      await patient.save();
+      print('Paciente ${patient.patientId} sincronizado exitosamente');
+      return true;
+    } catch (e) {
+      print('Error al sincronizar paciente con Supabase: $e');
+      return false;
+    }
   }
 }

@@ -10,6 +10,8 @@ import 'package:ssapp/models/survey_model.dart';
 import 'package:ssapp/Services/survey_service.dart';
 import 'package:ssapp/models/osteoporosis_risk_model.dart';
 import 'package:ssapp/Services/osteoporosis_risk_service.dart';
+import 'package:ssapp/models/patient_model.dart';
+import 'package:ssapp/config/supabase_config.dart';
 
 import '../models/osteoporosis_questions.dart';
 
@@ -19,26 +21,23 @@ class SurveyController extends ChangeNotifier {
   final int patientId;
   final String surveyType; // 'bdi', 'bai', 'gds', 'lawton', 'katz', 'iciqsf', or 'osteoporosis'
   final SurveyService surveyService;
+  final double? initialWeight; // For osteoporosis
+  final double? initialHeight; // For osteoporosis
 
-   int _currentQuestionIndex = 0;
-   final Map<int, int> _responses = {};
-   int? _selectedOptionIndex;
-   bool _isSaving = false;
+    int _currentQuestionIndex = 0;
+    final Map<int, int> _responses = {};
+    int? _selectedOptionIndex;
+    bool _isSaving = false;
 
-   final double? weight;
-   final double? height;
-   final double? imc;
+    RiskResult? _osteoporosisRiskResult;
 
-   RiskResult? _osteoporosisRiskResult;
-
-  SurveyController({
-    required this.patientId,
-    required this.surveyType,
-    required this.surveyService,
-    this.weight,
-    this.height,
-    this.imc,
-  });
+   SurveyController({
+     required this.patientId,
+     required this.surveyType,
+     required this.surveyService,
+     this.initialWeight,
+     this.initialHeight,
+   });
 
    // Getters
    int get currentQuestionIndex => _currentQuestionIndex;
@@ -226,48 +225,7 @@ class SurveyController extends ChangeNotifier {
       return 'Presenta síntomas graves de depresión.';
     }
   }
-   /// Get interpretation based on score
-   String getInterpretation() {
-     final score = calculateTotalScore();
-     if (surveyType == 'bai') {
-       // BAI interpretation
-       if (score <= 7) return 'Los síntomas de ansiedad son mínimos o inexistentes.';
-       if (score <= 15) return 'Presenta síntomas leves de ansiedad.';
-       if (score <= 25) return 'Presenta síntomas moderados de ansiedad.';
-       return 'Presenta síntomas severos de ansiedad.';
-     } else if (surveyType == 'gds') {
-       if (score <= 4) return 'Resultado dentro de la normalidad.';
-       return 'Presenta síntomas depresivos.';
-     } else if (surveyType == 'lawton') {
-       if (score == questions.length) {
-         return 'Independencia total para las actividades instrumentales evaluadas.';
-       }
-       return 'Presenta deterioro funcional en una o más actividades instrumentales.';
-     } else if (surveyType == 'osteoporosis') {
-       // Osteoporosis interpretation with risk calculation
-       if (_osteoporosisRiskResult == null) {
-         return 'No se pudo calcular el riesgo de fractura.';
-       }
 
-       final risk = _osteoporosisRiskResult!;
-
-       if (!risk.isApplicable) {
-         return 'No hay datos clínicos suficientes para esta combinación de edad, IMC y sexo. Se recomienda consultar con un especialista.';
-       }
-
-       if (risk.isHighRisk) {
-         return 'Según la tabla clínica: RIESGO ALTO de fractura osteoporótica. IMC: ${risk.bmi.toStringAsFixed(2)}, Puntuación: ${risk.score}/6. Se recomienda valoración médica especializada y posible tratamiento preventivo.';
-       } else {
-         return 'Según la tabla clínica: RIESGO BAJO de fractura osteoporótica. IMC: ${risk.bmi.toStringAsFixed(2)}, Puntuación: ${risk.score}/6. Mantener actividad física regular, adecuada ingesta de calcio y vitamina D.';
-       }
-     } else {
-       // BDI interpretation
-       if (score <= 13) return 'Los síntomas depresivos son mínimos o inexistentes.';
-       if (score <= 19) return 'Presenta síntomas leves de depresión.';
-       if (score <= 28) return 'Presenta síntomas moderados de depresión.';
-       return 'Presenta síntomas graves de depresión.';
-     }
-   }
 
   /// Get severity level
   String getSeverityLevel() {
@@ -303,49 +261,6 @@ class SurveyController extends ChangeNotifier {
     }
   }
 
-   /// Calculate osteoporosis risk based on survey answers, age, weight, and height
-   void calculateOsteoporosisRisk({required int patientAge, required String patientGender}) {
-     if (surveyType != 'osteoporosis') {
-       return;
-     }
-
-     try {
-       // Validate required data
-       if (weight == null || height == null) {
-         throw ArgumentError('Peso y talla son requeridos para calcular el riesgo');
-       }
-
-       // Convert responses to boolean list (Yes=1, No=0 → true/false)
-       final answers = <bool>[];
-       for (int i = 1; i <= 7; i++) {
-         final response = _responses[i];
-         answers.add(response == 1);
-       }
-
-       // Convert gender to Sex enum
-       final sex = (patientGender.toUpperCase() == 'M' ||
-                    patientGender.toLowerCase() == 'masculino')
-           ? Sex.male
-           : Sex.female;
-
-       // Create patient data
-       final patientData = PatientData(
-         age: patientAge,
-         weightKg: weight!,
-         heightMeters: height!,
-         sex: sex,
-         answers: answers,
-       );
-
-       // Calculate risk
-       _osteoporosisRiskResult = OsteoporosisRiskService.calculateRisk(patientData);
-       notifyListeners();
-     } catch (e) {
-       print('Error calculating osteoporosis risk: $e');
-       _osteoporosisRiskResult = null;
-     }
-   }
-
    /// Save survey to Hive and sync with Supabase
   Future<SurveySaveResult> saveSurvey() async {
     if (_isSaving) {
@@ -373,22 +288,145 @@ class SurveyController extends ChangeNotifier {
         );
       }).toList();
 
-      // Validate all questions answered
-      if (responseModels.length != questions.length) {
-        throw Exception('Faltan respuestas. Por favor, responda todas las preguntas.');
-      }
+       // Validate all questions answered
+       if (responseModels.length != questions.length) {
+         throw Exception('Faltan respuestas. Por favor, responda todas las preguntas.');
+       }
 
-      // Create survey
-      final survey = SurveyModel(
-        surveyId: DateTime.now().millisecondsSinceEpoch,
-        surveyType: surveyTypeId,
-        patientId: patientId,
-        responses: responseModels,
-        synced: false,
-        weight: surveyType == 'osteoporosis' ? weight : null,
-        height: surveyType == 'osteoporosis' ? height : null,
-        imc: surveyType == 'osteoporosis' ? imc : null,
-      );
+       // Calculate total score
+       final totalScore = calculateTotalScore();
+
+       // For osteoporosis, calculate risk level
+       String? riskLevel;
+       int? scoreForDb;
+       double? osteoWeight;
+       double? osteoHeight;
+       if (surveyType == 'osteoporosis') {
+         scoreForDb = totalScore;
+         try {
+           // Use initialWeight and initialHeight if provided, otherwise get from patient
+           double? weight = initialWeight;
+           double? height = initialHeight;
+
+           // Store for returning in result
+           osteoWeight = weight;
+           osteoHeight = height;
+
+           if (weight != null && height != null) {
+             // Get patient data from Hive for age and gender
+             try {
+               final patientsBox = await Hive.openBox<PatientModel>('patients');
+               final patients = patientsBox.values.where((p) => p.patientId == patientId).toList();
+
+                if (patients.isNotEmpty) {
+                  final patient = patients.first;
+
+                  // Save weight and height to patient if not already set
+                  if (patient.weight == null) {
+                    patient.weight = weight;
+                  }
+                  if (patient.height == null) {
+                    patient.height = height;
+                  }
+                  
+                  // Calculate and save IMC
+                  if (weight != null && height != null && height > 0) {
+                    final imc = OsteoporosisRiskService.calculateBMI(weight, height);
+                    patient.imc = imc;
+                  }
+                  
+                  await patient.save();
+
+                 // Calculate age from birthDate
+                 final now = DateTime.now();
+                 final age = now.year - patient.birthDate.year;
+
+                 // Get sex (convert 'M'/'F' from model)
+                 final sexEnum = (patient.gender == 'M') ? Sex.male : Sex.female;
+
+                 // Convert responses to bool answers (true = 1, false = 0)
+                 final answersList = <bool>[];
+                 for (int q = 1; q <= 7; q++) {
+                   answersList.add((_responses[q] ?? 0) == 1);
+                 }
+
+                 final patientData = PatientData(
+                   age: age,
+                   weightKg: weight,
+                   heightMeters: height,
+                   sex: sexEnum,
+                   answers: answersList,
+                 );
+                 final result = OsteoporosisRiskService.calculateRisk(patientData);
+                 _osteoporosisRiskResult = result;
+                 // Convert enum name to database format: notApplicable -> not_applicable
+                 riskLevel = result.riskLevel.name == 'notApplicable' ? 'not_applicable' : result.riskLevel.name;
+               } else {
+                 print('Paciente con ID $patientId no encontrado en Hive. Buscando en Supabase...');
+                 // Si no está en Hive, buscar en Supabase
+                 try {
+                   final supabase = SupabaseConfig.client;
+                   final response = await supabase
+                       .from('patients')
+                       .select()
+                       .eq('patient_id', patientId)
+                       .maybeSingle();
+
+                   if (response != null) {
+                     final patientData = PatientModel.fromJson(response);
+
+                     // Calculate age from birthDate
+                     final now = DateTime.now();
+                     final age = now.year - patientData.birthDate.year;
+
+                     // Get sex (convert 'M'/'F' from model)
+                     final sexEnum = (patientData.gender == 'M') ? Sex.male : Sex.female;
+
+                     // Convert responses to bool answers (true = 1, false = 0)
+                     final answersList = <bool>[];
+                     for (int q = 1; q <= 7; q++) {
+                       answersList.add((_responses[q] ?? 0) == 1);
+                     }
+
+                     final osteopatientData = PatientData(
+                       age: age,
+                       weightKg: weight,
+                       heightMeters: height,
+                       sex: sexEnum,
+                       answers: answersList,
+                     );
+                     final result = OsteoporosisRiskService.calculateRisk(osteopatientData);
+                     _osteoporosisRiskResult = result;
+                     riskLevel = result.riskLevel.name == 'notApplicable' ? 'not_applicable' : result.riskLevel.name;
+                   } else {
+                     print('Paciente no encontrado en Supabase tampoco');
+                   }
+                 } catch (supabaseError) {
+                   print('Error buscando en Supabase: $supabaseError');
+                 }
+               }
+             } catch (e) {
+               print('Error al acceder a Hive: $e');
+             }
+           } else {
+             print('Peso y talla no disponibles. Peso: $weight, Talla: $height');
+           }
+         } catch (e, stackTrace) {
+           print('Error calculating osteoporosis risk: $e');
+           print('Stack trace: $stackTrace');
+         }
+       }
+
+       // Create survey
+       final survey = SurveyModel(
+         surveyId: DateTime.now().millisecondsSinceEpoch,
+         surveyType: surveyTypeId,
+         patientId: patientId,
+         responses: responseModels,
+         synced: false,
+         risk_level: surveyType == 'osteoporosis' ? riskLevel : null,
+         score: surveyType == 'osteoporosis' ? scoreForDb : null,
+       );
 
       // Save locally in Hive
       Box<SurveyModel> box;
@@ -415,20 +453,37 @@ class SurveyController extends ChangeNotifier {
           survey.synced = true;
           await survey.save();
         }
-      } catch (e) {
-        print('Error al sincronizar: $e');
-        wasSynced = false;
-      }
+       } catch (e) {
+         print('Error al sincronizar: $e');
+         wasSynced = false;
+       }
 
-       final totalScore = calculateTotalScore();
-       return SurveySaveResult(
-         success: true,
-         wasSynced: wasSynced,
-         totalScore: totalScore,
-         interpretation: getInterpretation(),
-         severityLevel: getSeverityLevel(),
-         riskResult: _osteoporosisRiskResult,
-       );
+       // For osteoporosis, also sync patient data to Supabase
+       if (surveyType == 'osteoporosis') {
+         try {
+           final patientsBox = await Hive.openBox<PatientModel>('patients');
+           final patients = patientsBox.values.where((p) => p.patientId == patientId).toList();
+
+           if (patients.isNotEmpty) {
+             final patient = patients.first;
+             // Sync patient to Supabase to save weight/height
+             await surveyService.syncPatientToSupabase(patient);
+           }
+         } catch (e) {
+           print('Error al sincronizar paciente: $e');
+         }
+       }
+
+        return SurveySaveResult(
+          success: true,
+          wasSynced: wasSynced,
+          totalScore: totalScore,
+          interpretation: getInterpretation(),
+          severityLevel: getSeverityLevel(),
+          riskResult: _osteoporosisRiskResult,
+          weight: surveyType == 'osteoporosis' ? osteoWeight : null,
+          height: surveyType == 'osteoporosis' ? osteoHeight : null,
+        );
     } catch (e, stackTrace) {
       print('Error al guardar encuesta: $e');
       print('Stack trace: $stackTrace');
@@ -459,6 +514,8 @@ class SurveySaveResult {
   final String? interpretation;
   final String? severityLevel;
   final RiskResult? riskResult;
+  final double? weight; // Para osteoporosis
+  final double? height; // Para osteoporosis
 
   SurveySaveResult({
     required this.success,
@@ -468,5 +525,7 @@ class SurveySaveResult {
     this.interpretation,
     this.severityLevel,
     this.riskResult,
+    this.weight,
+    this.height,
   });
 }

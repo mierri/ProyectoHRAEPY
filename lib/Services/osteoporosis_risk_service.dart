@@ -3,6 +3,29 @@ import 'package:ssapp/models/osteoporosis_risk_model.dart';
 /// Service for calculating osteoporosis fracture risk scores
 /// Based on clinical lookup table with age, BMI, sex, and questionnaire score
 class OsteoporosisRiskService {
+      /// Valida que no haya traslape entre los rangos de bajo y alto riesgo en la riskTable
+      /// Lanza un error si encuentra traslape
+      static void validateNoOverlap() {
+        riskTable.forEach((ageGroup, bmiMap) {
+          bmiMap.forEach((bmiCat, sexMap) {
+            sexMap.forEach((sex, range) {
+              if (range.br != null && range.ar != null) {
+                final brParts = range.br!.split('-');
+                final arParts = range.ar!.split('-');
+                int brMin = int.parse(brParts[0]);
+                int brMax = brParts.length == 2 ? int.parse(brParts[1]) : brMin;
+                int arMin = int.parse(arParts[0]);
+                int arMax = arParts.length == 2 ? int.parse(arParts[1]) : arMin;
+                // Si hay traslape
+                if (!(brMax < arMin || arMax < brMin)) {
+                  throw StateError('Traslape en riskTable: edad $ageGroup, IMC $bmiCat, sexo $sex, br: \'${range.br}\', ar: \'${range.ar}\'');
+                }
+              }
+            });
+          });
+        });
+      }
+
   /// The risk lookup table structure:
   /// Map&lt;AgeGroup, Map&lt;BMICategory, Map&lt;Sex, RiskRange&gt;&gt;&gt;
   static final Map<String, Map<String, Map<String, RiskRange>>> riskTable = {
@@ -352,79 +375,81 @@ class OsteoporosisRiskService {
     return false;
   }
 
-  /// Get sex code ("M" or "H") from Sex enum
+  /// Get sex code ("H" for Hombre/Male or "M" for Mujer/Female) from Sex enum
   static String _getSexCode(Sex sex) {
-    return sex == Sex.male ? "M" : "H";
+    return sex == Sex.male ? "H" : "M";
   }
 
-  /// Calculate osteoporosis fracture risk
-  /// 
-  /// Returns [RiskResult] with:
-  /// - BMI calculation
-  /// - Normalized score (0-6)
-  /// - Risk level based on lookup table
-  /// - Whether result is applicable
-  static RiskResult calculateRisk(PatientData patient) {
-    // Calculate BMI
-    final bmi = calculateBMI(patient.weightKg, patient.heightMeters);
+   /// Calculate osteoporosis fracture risk
+   /// 
+   /// Returns [RiskResult] with:
+   /// - BMI calculation
+   /// - Normalized score (0-6)
+   /// - Risk level based on lookup table
+   /// - NUNCA retorna not applicable - siempre hay un resultado
+   static RiskResult calculateRisk(PatientData patient) {
+     // Calculate BMI
+     final bmi = calculateBMI(patient.weightKg, patient.heightMeters);
 
-    // Calculate and normalize score
-    final rawScore = calculateScore(patient.answers);
-    final normalizedScore = normalizeScore(rawScore);
+     // Calculate and normalize score
+     final rawScore = calculateScore(patient.answers);
+     final normalizedScore = normalizeScore(rawScore);
 
-    // Get age group and BMI category
-    final ageGroup = getAgeGroup(patient.age);
-    final bmiCategory = getBMICategory(bmi);
-    final sexCode = _getSexCode(patient.sex);
+     // Get age group and BMI category
+     final ageGroup = getAgeGroup(patient.age);
+     final bmiCategory = getBMICategory(bmi);
+     final sexCode = _getSexCode(patient.sex);
 
-    // Look up in risk table
-    final ageData = riskTable[ageGroup];
-    if (ageData == null) {
-      throw StateError('Age group $ageGroup not found in risk table');
-    }
+     // Look up in risk table
+     final ageData = riskTable[ageGroup];
+     if (ageData == null) {
+       throw StateError('Age group $ageGroup not found in risk table');
+     }
 
-    final bmiData = ageData[bmiCategory];
-    if (bmiData == null) {
-      throw StateError('BMI category $bmiCategory not found for age $ageGroup');
-    }
+     final bmiData = ageData[bmiCategory];
+     if (bmiData == null) {
+       throw StateError('BMI category $bmiCategory not found for age $ageGroup');
+     }
 
-    final riskRange = bmiData[sexCode];
-    if (riskRange == null) {
-      throw StateError('Sex $sexCode not found for age $ageGroup, BMI $bmiCategory');
-    }
+     final riskRange = bmiData[sexCode];
+     if (riskRange == null) {
+       throw StateError('Sex $sexCode not found for age $ageGroup, BMI $bmiCategory');
+     }
 
-    // Evaluate risk
-    RiskLevel riskLevel = RiskLevel.notApplicable;
-    bool isApplicable = true;
+     // Evaluate risk - SIEMPRE hay un resultado
+     RiskLevel riskLevel;
+     // Primero verificar AR (alto riesgo)
+     if (riskRange.ar != null && isScoreInRange(normalizedScore, riskRange.ar!)) {
+       riskLevel = RiskLevel.high;
+     }
+     // Luego verificar BR (bajo riesgo)
+     else if (riskRange.br != null && isScoreInRange(normalizedScore, riskRange.br!)) {
+       riskLevel = RiskLevel.low;
+     }
+     // Si AR es null pero BR existe, asignar bajo riesgo
+     else if (riskRange.ar == null && riskRange.br != null) {
+       riskLevel = RiskLevel.low;
+     }
+     // Si BR es null pero AR existe, asignar alto riesgo
+     else if (riskRange.br == null && riskRange.ar != null) {
+       riskLevel = RiskLevel.high;
+     }
+     // Fallback (nunca debería ocurrir)
+     else {
+       riskLevel = RiskLevel.low;
+     }
 
-    if (riskRange.ar == null) {
-      // AR is null means NA (Not Applicable)
-      isApplicable = false;
-      riskLevel = RiskLevel.notApplicable;
-    } else if (riskRange.br != null && isScoreInRange(normalizedScore, riskRange.br!)) {
-      // Score matches BR (Low Risk)
-      riskLevel = RiskLevel.low;
-      isApplicable = true;
-    } else if (isScoreInRange(normalizedScore, riskRange.ar!)) {
-      // Score matches AR (High Risk)
-      riskLevel = RiskLevel.high;
-      isApplicable = true;
-    } else {
-      // Score doesn't match any range (shouldn't happen with valid data)
-      isApplicable = false;
-      riskLevel = RiskLevel.notApplicable;
-    }
-
-    return RiskResult(
-      bmi: bmi,
-      score: normalizedScore,
-      riskLevel: riskLevel,
-      isHighRisk: riskLevel == RiskLevel.high,
-      isApplicable: isApplicable,
-      ageGroup: ageGroup,
-      bmiCategory: bmiCategory,
-    );
-  }
+     // NUNCA retorna not applicable - siempre hay un resultado
+     return RiskResult(
+       bmi: bmi,
+       score: normalizedScore,
+       riskLevel: riskLevel,
+       isHighRisk: riskLevel == RiskLevel.high,
+       isApplicable: riskLevel != RiskLevel.notApplicable,
+       ageGroup: ageGroup,
+       bmiCategory: bmiCategory,
+     );
+   }
 }
 
 

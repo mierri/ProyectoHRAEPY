@@ -9,6 +9,8 @@ import 'package:ssapp/Services/survey_service.dart';
 import 'package:ssapp/utils/theme.dart';
 import 'package:ssapp/utils/toast_helper.dart';
 
+import '../models/iciq_sf_questions.dart';
+
 class SurveyScreen extends StatefulWidget {
   final int patientId;
   final String surveyType; // 'bdi', 'bai', 'gds', 'lawton', 'katz', 'iciqsf' or 'osteoporosis' - solo para UI
@@ -41,20 +43,26 @@ class _SurveyScreenState extends State<SurveyScreen> {
       final surveyService = context.read<SurveyService>();
       double? weight;
       double? height;
-      double? imc;
       if (widget.surveyType == 'osteoporosis') {
         final params = GoRouterState.of(context).uri.queryParameters;
-        weight = double.tryParse(params['weight'] ?? '');
-        height = double.tryParse(params['height'] ?? '');
-        imc = double.tryParse(params['imc'] ?? '');
+        final weightStr = params['weight'];
+        final heightStr = params['height'];
+
+        if (weightStr != null && weightStr.isNotEmpty) {
+          weight = double.tryParse(weightStr);
+        }
+        if (heightStr != null && heightStr.isNotEmpty) {
+          height = double.tryParse(heightStr);
+        }
+
+        print('DEBUG: Extracted weight=$weight, height=$height from params');
       }
       _controller = SurveyController(
         patientId: widget.patientId,
         surveyType: widget.surveyType,
         surveyService: surveyService,
-        weight: weight,
-        height: height,
-        imc: imc,
+        initialWeight: weight,
+        initialHeight: height,
       );
       _controller.addListener(_onControllerUpdate);
       _isControllerInitialized = true;
@@ -154,25 +162,6 @@ class _SurveyScreenState extends State<SurveyScreen> {
       );
     }
 
-    // For osteoporosis, calculate risk before saving
-    if (widget.surveyType == 'osteoporosis') {
-      try {
-        final patientService = context.read<PatientService>();
-        final patient = patientService.patients.firstWhere(
-          (p) => p.patientId == widget.patientId,
-          orElse: () => throw Exception('Paciente no encontrado'),
-        );
-
-        // Calculate risk with patient age and gender
-        _controller.calculateOsteoporosisRisk(
-          patientAge: patient.age,
-          patientGender: patient.gender,
-        );
-      } catch (e) {
-        print('Error getting patient data for risk calculation: $e');
-      }
-    }
-
     final result = await _controller.saveSurvey();
 
     if (mounted) {
@@ -196,7 +185,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
     }
 
     if (mounted && result.totalScore != null) {
-      _showCompletionDialog(result.wasSynced, result.totalScore!, result.interpretation!, result.severityLevel!, result.riskResult);
+      _showCompletionDialog(result.wasSynced, result.totalScore!, result.interpretation!, result.severityLevel!, result.riskResult, result.weight, result.height);
     }
   }
 
@@ -251,7 +240,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
     _controller.previousQuestion();
   }
 
-  void _showCompletionDialog(bool wasSynced, int totalScore, String interpretation, String severityLevel, dynamic riskResult) {
+  void _showCompletionDialog(bool wasSynced, int totalScore, String interpretation, String severityLevel, dynamic riskResult, double? weight, double? height) {
 
     showDialog(
       context: context,
@@ -367,7 +356,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
                         child: PrimaryButton(
                           onPressed: () {
                             Navigator.of(context).pop();
-                            _showResultDialog(totalScore, interpretation, severityLevel, riskResult);
+                            _showResultDialog(totalScore, interpretation, severityLevel, riskResult, weight, height);
                           },
                           child: const Text('Sí'),
                         ),
@@ -383,7 +372,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
     );
   }
 
-  void _showResultDialog(int totalScore, String interpretation, String severityLevel, dynamic riskResult) {
+  void _showResultDialog(int totalScore, String interpretation, String severityLevel, dynamic riskResult, double? weight, double? height) {
     final Color levelColor;
 
     if (widget.surveyType == 'bai') {
@@ -540,94 +529,124 @@ class _SurveyScreenState extends State<SurveyScreen> {
                                 ),
                               ),
                             ),
-                            // For osteoporosis, show additional risk info
-                            if (widget.surveyType == 'osteoporosis' && riskResult != null) ...[
-                              const Gap(16),
-                              Container(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                decoration: BoxDecoration(
-                                  border: Border(
-                                    top: BorderSide(
-                                      color: levelColor.withValues(alpha: 0.3),
-                                    ),
-                                  ),
-                                ),
-                                child: Column(
-                                  children: [
-                                    const Gap(8),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                      children: [
-                                        Column(
-                                          children: [
-                                            Text(
-                                              'IMC',
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                color: LightModeColors.lightOnSurfaceVariant,
-                                              ),
-                                            ),
-                                            const Gap(4),
-                                            Text(
-                                              riskResult.bmi.toStringAsFixed(2),
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.bold,
-                                                color: levelColor,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        Column(
-                                          children: [
-                                            Text(
-                                              'Grupo de Edad',
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                color: LightModeColors.lightOnSurfaceVariant,
-                                              ),
-                                            ),
-                                            const Gap(4),
-                                            Text(
-                                              riskResult.ageGroup,
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.bold,
-                                                color: levelColor,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        Column(
-                                          children: [
-                                            Text(
-                                              'Categoría IMC',
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                color: LightModeColors.lightOnSurfaceVariant,
-                                              ),
-                                            ),
-                                            const Gap(4),
-                                            Text(
-                                              riskResult.bmiCategory,
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.bold,
-                                                color: levelColor,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
                           ],
                         ),
                       ),
                     ),
+                    // For osteoporosis, show additional anthropometric data OUTSIDE the score card
+                    if (widget.surveyType == 'osteoporosis' && riskResult != null && (weight != null || height != null)) ...[
+                      const Gap(20),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: levelColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: levelColor,
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Datos Antropométricos',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: levelColor,
+                              ),
+                            ),
+                            const Gap(12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                Column(
+                                  children: [
+                                    Text(
+                                      'Peso',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: LightModeColors.lightOnSurfaceVariant,
+                                      ),
+                                    ),
+                                    const Gap(6),
+                                    Text(
+                                      weight != null ? '${weight.toStringAsFixed(2)} kg' : 'N/A',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: levelColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Column(
+                                  children: [
+                                    Text(
+                                      'Altura',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: LightModeColors.lightOnSurfaceVariant,
+                                      ),
+                                    ),
+                                    const Gap(6),
+                                    Text(
+                                      height != null ? '${height.toStringAsFixed(2)} m' : 'N/A',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: levelColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Column(
+                                  children: [
+                                    Text(
+                                      'IMC',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: LightModeColors.lightOnSurfaceVariant,
+                                      ),
+                                    ),
+                                    const Gap(6),
+                                    Text(
+                                      riskResult.bmi.toStringAsFixed(2),
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: levelColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Column(
+                                  children: [
+                                    Text(
+                                      'Grupo Edad',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: LightModeColors.lightOnSurfaceVariant,
+                                      ),
+                                    ),
+                                    const Gap(6),
+                                    Text(
+                                      riskResult.ageGroup,
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: levelColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     const Gap(20),
                     // Description
                     Container(
@@ -851,63 +870,33 @@ class _SurveyScreenState extends State<SurveyScreen> {
                       final index = entry.key;
                       final option = entry.value;
                       final isSelected = _controller.selectedOptionIndex == index;
-                      const faceIcons = [
-                        Symbols.sentiment_very_satisfied,
-                        Symbols.sentiment_satisfied,
-                        Symbols.sentiment_dissatisfied,
-                        Symbols.sentiment_very_dissatisfied,
-                      ];
-                      const faceColors = [
-                        Color(0xFF16A34A), // green
-                        Color(0xFF65A30D), // lime
-                        Color(0xFFF59E0B), // amber
-                        Color(0xFFDC2626), // red
-                      ];
-                      final faceIcon = index < faceIcons.length ? faceIcons[index] : Symbols.sentiment_neutral;
-                      final faceColor = index < faceColors.length ? faceColors[index] : const Color(0xFF6B7280);
-                   const Text(
-                     'Seleccione la opción que mejor describa cómo se ha sentido:',
-                     style: TextStyle(
-                       fontSize: 16,
-                       fontWeight: FontWeight.w500,
-                     ),
-                   ),
-                   const Gap(24),
-                   ...question.options.asMap().entries.map((entry) {
-                     final index = entry.key;
-                     final option = entry.value;
-                     final isSelected = _controller.selectedOptionIndex == index;
+                      IconData faceIcon;
+                      Color faceColor;
 
-                     // For osteoporosis: determine icon and color based on answer meaning
-                     IconData faceIcon;
-                     Color faceColor;
-
-                     if (widget.surveyType == 'osteoporosis') {
-                       // Osteoporosis: Yes (score 1) = sad (red), No (score 0) = happy (green)
-                       if (option.score == 1) {
-                         faceIcon = Symbols.sentiment_very_dissatisfied;  // Sí/Yes = sad
-                         faceColor = const Color(0xFFDC2626);             // Red
-                       } else {
-                         faceIcon = Symbols.sentiment_very_satisfied;     // No/No = happy
-                         faceColor = const Color(0xFF16A34A);             // Green
-                       }
-                     } else {
-                       // Original logic for other surveys
-                       const faceIcons = [
-                         Symbols.sentiment_very_satisfied,
-                         Symbols.sentiment_satisfied,
-                         Symbols.sentiment_dissatisfied,
-                         Symbols.sentiment_very_dissatisfied,
-                       ];
-                       const faceColors = [
-                         Color(0xFF16A34A), // green
-                         Color(0xFF65A30D), // lime
-                         Color(0xFFF59E0B), // amber
-                         Color(0xFFDC2626), // red
-                       ];
-                       faceIcon = index < faceIcons.length ? faceIcons[index] : Symbols.sentiment_neutral;
-                       faceColor = index < faceColors.length ? faceColors[index] : const Color(0xFF6B7280);
-                     }
+                      if (widget.surveyType == 'osteoporosis') {
+                        if (option.score == 1) {
+                          faceIcon = Symbols.sentiment_very_dissatisfied;
+                          faceColor = const Color(0xFFDC2626);
+                        } else {
+                          faceIcon = Symbols.sentiment_very_satisfied;
+                          faceColor = const Color(0xFF16A34A);
+                        }
+                      } else {
+                        const faceIcons = [
+                          Symbols.sentiment_very_satisfied,
+                          Symbols.sentiment_satisfied,
+                          Symbols.sentiment_dissatisfied,
+                          Symbols.sentiment_very_dissatisfied,
+                        ];
+                        const faceColors = [
+                          Color(0xFF16A34A),
+                          Color(0xFF65A30D),
+                          Color(0xFFF59E0B),
+                          Color(0xFFDC2626),
+                        ];
+                        faceIcon = index < faceIcons.length ? faceIcons[index] : Symbols.sentiment_neutral;
+                        faceColor = index < faceColors.length ? faceColors[index] : const Color(0xFF6B7280);
+                      }
 
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
@@ -924,7 +913,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
                           ),
                         ),
                       );
-                    })
+                   }),
                   const Gap(24),
                   // Pagination
                   _SurveyPagination(

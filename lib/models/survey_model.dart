@@ -14,13 +14,11 @@ class SurveyModel extends HiveObject{
   int? patientId;
   @HiveField(4)
   int surveyType;
-  // Campos antropométricos solo para osteoporosis
+  // Campos adicionales para osteoporosis (risk_level y score)
   @HiveField(5)
-  double? weight;
+  String? risk_level;
   @HiveField(6)
-  double? height;
-  @HiveField(7)
-  double? imc;
+  int? score;
 
   SurveyModel({
     required this.surveyId,
@@ -28,9 +26,8 @@ class SurveyModel extends HiveObject{
     required this.surveyType,
     this.patientId,
     this.synced = false,
-    this.weight,
-    this.height,
-    this.imc,
+    this.risk_level,
+    this.score,
   });
 
   // Métodos para sincronización con backend
@@ -39,9 +36,8 @@ class SurveyModel extends HiveObject{
     'patient_id': patientId,
     'synced': synced,
     'survey_type': surveyType,
-    if (weight != null) 'weight': weight,
-    if (height != null) 'height': height,
-    if (imc != null) 'imc': imc,
+    if (risk_level != null) 'risk_level': risk_level,
+    if (score != null) 'score': score,
   };
 
   factory SurveyModel.fromJson(Map<String, dynamic> json, {int? surveyType}) => SurveyModel(
@@ -50,8 +46,7 @@ class SurveyModel extends HiveObject{
     surveyType: surveyType ?? 1, // Default BDI
     responses: [], // Las respuestas se cargan por separado
     synced: json['synced'] ?? true,
-    weight: (json['weight'] as num?)?.toDouble(),
-    height: (json['height'] as num?)?.toDouble(),
-    imc: (json['imc'] as num?)?.toDouble(),
+    risk_level: json['risk_level'] as String?,
+    score: json['score'] as int?,
   );
 }

@@ -219,6 +219,12 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
           weight = double.tryParse(_pesoController.text.trim());
           height = double.tryParse(_tallaController.text.trim());
           imc = double.tryParse(_imcController.text.trim());
+          // Guardar en el modelo y sincronizar
+          patient.weight = weight;
+          patient.height = height;
+          patient.imc = imc;
+          await patient.save();
+          await patientService.syncPatientToSupabase(patient);
         }
 
         if (mounted) {
