@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:ssapp/models/bdi_questions.dart';
 import 'package:ssapp/models/gds_questions.dart';
+import 'package:ssapp/models/iciq_sf_questions.dart';
 import 'package:ssapp/models/katz_questions.dart';
 import 'package:ssapp/models/lawton_questions.dart';
 import 'package:ssapp/models/response_model.dart';
@@ -16,7 +17,7 @@ import '../models/osteoporosis_questions.dart';
 /// Handles responses, navigation, saving, and score calculations
 class SurveyController extends ChangeNotifier {
   final int patientId;
-  final String surveyType; // 'bdi', 'bai', 'gds', 'lawton', 'katz', or 'osteoporosis'
+  final String surveyType; // 'bdi', 'bai', 'gds', 'lawton', 'katz', 'iciqsf', or 'osteoporosis'
   final SurveyService surveyService;
 
    int _currentQuestionIndex = 0;
@@ -56,13 +57,15 @@ class SurveyController extends ChangeNotifier {
         return 8;
       case 'katz':
         return 10;
+      case 'iciqsf':
+        return 11;
       case 'osteoporosis':
         return 9;
       case 'bdi':
       default:
         return 1;
     }
-  } // 1=BDI, 2=BAI, 7=GDS-15, 8=Lawton, 9=Osteoporosis, 10=Katz
+  } // 1=BDI, 2=BAI, 7=GDS-15, 8=Lawton, 9=Osteoporosis, 10=Katz, 11=ICIQ-SF
 
   List<SurveyQuestion> get questions {
     if (surveyType == 'bai') {
@@ -76,6 +79,9 @@ class SurveyController extends ChangeNotifier {
     }
     if (surveyType == 'katz') {
       return KatzQuestions.questions;
+    }
+    if (surveyType == 'iciqsf') {
+      return IciqSfQuestions.questions;
     }
     if (surveyType == 'osteoporosis') {
       return OsteoporosisQuestions.questions;
@@ -93,6 +99,24 @@ class SurveyController extends ChangeNotifier {
   void selectOption(int questionNumber, int score, int optionIndex) {
     _responses[questionNumber] = score;
     _selectedOptionIndex = optionIndex;
+    notifyListeners();
+  }
+
+  /// Set a raw response value (used by special multi-select questions)
+  void setRawResponse(int questionNumber, int value) {
+    _responses[questionNumber] = value;
+    if (currentQuestion.number == questionNumber) {
+      _updateSelectedOption();
+    }
+    notifyListeners();
+  }
+
+  /// Remove a response (used when multi-select question has no selected options)
+  void clearResponse(int questionNumber) {
+    _responses.remove(questionNumber);
+    if (currentQuestion.number == questionNumber) {
+      _updateSelectedOption();
+    }
     notifyListeners();
   }
 
@@ -145,6 +169,9 @@ class SurveyController extends ChangeNotifier {
 
   /// Calculate total score
   int calculateTotalScore() {
+    if (surveyType == 'iciqsf') {
+      return IciqSfQuestions.calculateScore(_responses);
+    }
     return _responses.values.fold(0, (sum, score) => sum + score);
   }
 
@@ -156,6 +183,49 @@ class SurveyController extends ChangeNotifier {
     return result.toMap();
   }
 
+  Map<String, dynamic> getIciqSfOutput() {
+    if (surveyType != 'iciqsf') {
+      throw StateError('getIciqSfOutput solo aplica para surveyType = iciqsf');
+    }
+    final result = IciqSfQuestions.evaluate(_responses);
+    return result.toMap();
+  }
+
+  /// Get interpretation based on score
+  String getInterpretation() {
+    final score = calculateTotalScore();
+    if (surveyType == 'bai') {
+      // BAI interpretation
+      if (score <= 7) return 'Los síntomas de ansiedad son mínimos o inexistentes.';
+      if (score <= 15) return 'Presenta síntomas leves de ansiedad.';
+      if (score <= 25) return 'Presenta síntomas moderados de ansiedad.';
+      return 'Presenta síntomas severos de ansiedad.';
+    } else if (surveyType == 'gds') {
+      if (score <= 4) return 'Resultado dentro de la normalidad.';
+      return 'Presenta síntomas depresivos.';
+    } else if (surveyType == 'lawton') {
+      if (score == questions.length) {
+        return 'Independencia total para las actividades instrumentales evaluadas.';
+      }
+      return 'Presenta deterioro funcional en una o más actividades instrumentales.';
+    } else if (surveyType == 'katz') {
+      return KatzQuestions.evaluate(_responses).interpretacion;
+    } else if (surveyType == 'iciqsf') {
+      return IciqSfQuestions.evaluate(_responses).interpretacion;
+    } else if (surveyType == 'osteoporosis') {
+      // Osteoporosis interpretation: instruct to cross with age, BMI, and score
+      if (score >= 7) {
+        return 'El puntaje máximo para comparación es 6. Cruce el puntaje, edad e IMC en la tabla correspondiente.';
+      }
+      return 'Cruce el puntaje, edad e IMC en la tabla correspondiente para determinar el riesgo.';
+    } else {
+      // BDI interpretation
+      if (score <= 13) return 'Los síntomas depresivos son mínimos o inexistentes.';
+      if (score <= 19) return 'Presenta síntomas leves de depresión.';
+      if (score <= 28) return 'Presenta síntomas moderados de depresión.';
+      return 'Presenta síntomas graves de depresión.';
+    }
+  }
    /// Get interpretation based on score
    String getInterpretation() {
      final score = calculateTotalScore();
@@ -217,6 +287,10 @@ class SurveyController extends ChangeNotifier {
     } else if (surveyType == 'katz') {
       final result = KatzQuestions.evaluate(_responses);
       return 'Katz ${result.clasificacionKatz}';
+    } else if (surveyType == 'iciqsf') {
+      final result = IciqSfQuestions.evaluate(_responses);
+      if (result.score == 0) return 'Sin incontinencia';
+      return 'Impacto ${result.severidad}';
     } else if (surveyType == 'osteoporosis') {
       // Osteoporosis: just return the score (max 6)
       return 'Puntaje: ${score > 6 ? 6 : score}';

@@ -129,6 +129,8 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
         return const Color(0xFF14B8A6);
       case 'katz':
         return const Color(0xFF0D9488);
+      case 'iciqsf':
+        return const Color(0xFF2563EB);
       case 'whoqol':
         return const Color(0xFF7C3AED);
       case 'sf36':
@@ -258,6 +260,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
     final isGds = surveyType == 'gds';
     final isLawton = surveyType == 'lawton';
     final isKatz = surveyType == 'katz';
+    final isIciqSf = surveyType == 'iciqsf';
     final isWhoqol = surveyType == 'whoqol';
     final isSf36 = surveyType == 'sf36';
     final isAssist = surveyType == 'assist';
@@ -282,6 +285,9 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
     } else if (isKatz) {
       surveyTitle = 'Indice de Katz (ABVD)';
       surveyInstructions = 'Este instrumento evalua independencia en actividades basicas de la vida diaria. Cada item puntua 1 si existe independencia total o con minima ayuda, y 0 si existe dependencia.';
+    } else if (isIciqSf) {
+      surveyTitle = 'ICIQ-SF';
+      surveyInstructions = 'Este cuestionario evalua frecuencia, cantidad e impacto de la perdida de orina. La pregunta 4 registra situaciones de perdida para orientacion clinica y no suma al puntaje total.';
     } else if (isWhoqol) {
       surveyTitle = 'Cuestionario de Calidad de Vida (WHOQOL-BREF)';
       surveyInstructions = 'Este cuestionario le pregunta cómo se ha sentido acerca de su calidad de vida, su salud y otros aspectos de su vida durante las dos últimas semanas. Por favor, responda todas las preguntas. Si no está seguro/a de qué respuesta dar a una pregunta, escoja la que le parezca más apropiada.';
@@ -466,6 +472,27 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                         label: 'Resultado y clasificacion',
                         description: 'Puntaje 0–6 y clasificacion Katz A–H segun patron de dependencia.',
                         color: const Color(0xFF115E59),
+                      ),
+                    ] else if (isIciqSf) ...[
+                      _ScaleItem(
+                        icon: Symbols.calculate,
+                        label: 'Puntaje total (0–21)',
+                        description: 'Se calcula como P1 + P2 + P3. La pregunta 4 no suma.',
+                        color: const Color(0xFF2563EB),
+                      ),
+                      const Gap(8),
+                      _ScaleItem(
+                        icon: Symbols.rule,
+                        label: 'Interpretacion',
+                        description: '0: Sin incontinencia | >0: Presencia de incontinencia con severidad.',
+                        color: const Color(0xFF1D4ED8),
+                      ),
+                      const Gap(8),
+                      _ScaleItem(
+                        icon: Symbols.list_alt,
+                        label: 'Pregunta 4 (multiple)',
+                        description: 'Permite seleccionar varias situaciones para orientar el tipo clinico.',
+                        color: const Color(0xFF1E40AF),
                       ),
                     ] else if (isWhoqol) ...[
                       _ScaleItem(
@@ -956,6 +983,8 @@ class ConsentInfoCard extends StatelessWidget {
         return 'Este cuestionario evalúa la independencia en actividades instrumentales de la vida diaria mediante la Escala de Lawton (AIVD). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
       case 'katz':
         return 'Este cuestionario evalua la independencia en actividades basicas de la vida diaria mediante el Indice de Katz (ABVD). Genera puntaje total de 0 a 6 y clasificacion alfabetica A-H segun patron de dependencia. Los datos recopilados seran utilizados exclusivamente para propositos clinicos y de investigacion del Departamento de Psicologia del HRAEPY.';
+      case 'iciqsf':
+        return 'Este cuestionario evalua severidad e impacto de la incontinencia urinaria mediante ICIQ-SF. Incluye una seccion de orientacion clinica sobre situaciones de perdida de orina. Los datos recopilados seran utilizados exclusivamente para propositos clinicos y de investigacion del Departamento de Psicologia del HRAEPY.';
       case 'osteoporosis':
         return 'Este cuestionario detecta el riesgo de fracturas por osteoporosis. Los datos de peso, talla e IMC se solicitan y se almacenan en la base de datos junto con la encuesta. Los resultados deben cruzarse con la edad, IMC y puntaje obtenido.';
       case 'moca':
@@ -984,6 +1013,8 @@ class ConsentInfoCard extends StatelessWidget {
         return const Color(0xFF14B8A6);
       case 'katz':
         return const Color(0xFF0D9488);
+      case 'iciqsf':
+        return const Color(0xFF2563EB);
       case 'whoqol':
         return const Color(0xFF7C3AED);
       case 'sf36':

@@ -18,7 +18,7 @@ class SurveysListScreen extends StatefulWidget {
 
 class _SurveysListScreenState extends State<SurveysListScreen> {
   bool _isLoading = true;
-  String _filterType = 'all';   // 'all' | 'bdi' | 'bai' | 'gds' | 'lawton' | 'katz' | 'moca' | 'whoqol' | 'sf36' | 'assist'
+  String _filterType = 'all';   // 'all' | 'bdi' | 'bai' | 'gds' | 'lawton' | 'katz' | 'iciqsf' | 'moca' | 'whoqol' | 'sf36' | 'assist'
   String _filterStatus = 'all'; // 'all' | 'synced' | 'pending'
 
   @override
@@ -40,7 +40,7 @@ class _SurveysListScreenState extends State<SurveysListScreen> {
 
   List<Map<String, dynamic>> _filteredSurveys(List<Map<String, dynamic>> all) {
     var result = all;
-    const _typeIdMap = {'bdi': 1, 'bai': 2, 'whoqol': 3, 'moca': 4, 'sf36': 5, 'assist': 6, 'gds': 7, 'lawton': 8, 'osteoporosis': 9, 'katz': 10};
+    const _typeIdMap = {'bdi': 1, 'bai': 2, 'whoqol': 3, 'moca': 4, 'sf36': 5, 'assist': 6, 'gds': 7, 'lawton': 8, 'osteoporosis': 9, 'katz': 10, 'iciqsf': 11};
     if (_typeIdMap.containsKey(_filterType)) {
       final typeId = _typeIdMap[_filterType]!;
       result = result.where((s) => (s['survey_type'] ?? 1) == typeId).toList();
@@ -196,6 +196,7 @@ class _FiltersSection extends StatelessWidget {
         _FilterOption(value: 'gds', label: 'GDS-15'),
         _FilterOption(value: 'lawton', label: 'Lawton AIVD'),
           _FilterOption(value: 'katz', label: 'Katz ABVD'),
+        _FilterOption(value: 'iciqsf', label: 'ICIQ-SF'),
         _FilterOption(value: 'moca', label: 'MoCA'),
         _FilterOption(value: 'whoqol', label: 'WHOQOL-BREF'),
         _FilterOption(value: 'sf36', label: 'SF-36'),
@@ -392,6 +393,7 @@ class _SurveyCard extends StatelessWidget {
       case 8: return const Color(0xFF14B8A6); // Lawton AIVD - teal
       case 9: return const Color(0xFF145374); // Osteoporosis
         case 10: return const Color(0xFF0D9488); // Katz ABVD
+      case 11: return const Color(0xFF2563EB); // ICIQ-SF
       default: return LightModeColors.lightPrimary;
     }
   }
@@ -408,6 +410,7 @@ class _SurveyCard extends StatelessWidget {
       case 8: return 'Lawton AIVD';
       case 9: return 'Osteoporosis';
         case 10: return 'Katz ABVD';
+      case 11: return 'ICIQ-SF';
       default: return 'Encuesta';
     }
   }
@@ -421,6 +424,7 @@ class _SurveyCard extends StatelessWidget {
       case 8: return 8;  // Lawton
       case 9: return 7;  // Osteoporosis
         case 10: return 6; // Katz
+      case 11: return 4; // ICIQ-SF
       default: return 21; // BDI / BAI
     }
   }
@@ -428,6 +432,14 @@ class _SurveyCard extends StatelessWidget {
   int get _score {
     final responses = survey['responses'] as List?;
     if (responses == null || responses.isEmpty) return 0;
+    final type = survey['survey_type'] as int? ?? 1;
+    if (type == 11) {
+      return responses.fold<int>(0, (s, r) {
+        final qId = r['question_id'] as int? ?? 0;
+        if (qId == 4) return s;
+        return s + (r['answer_value'] as int? ?? 0);
+      });
+    }
     return responses.fold<int>(0, (s, r) => s + (r['answer_value'] as int? ?? 0));
   }
 
@@ -451,6 +463,12 @@ class _SurveyCard extends StatelessWidget {
     if (type == 8) return score == 8 ? 'Independencia total' : 'Deterioro funcional';
     if (type == 9) return 'Puntaje: $score'; // Osteoporosis - just show score
     if (type == 10) return score == 6 ? 'Independencia total' : 'Dependencia en algun grado';
+    if (type == 11) {
+      if (score == 0) return 'Sin incontinencia';
+      if (score <= 5) return 'Leve';
+      if (score <= 12) return 'Moderada';
+      return 'Severa';
+    }
     return '';
   }
 
@@ -474,6 +492,12 @@ class _SurveyCard extends StatelessWidget {
     if (type == 8) return score == 8 ? LightModeColors.lightTertiary : const Color(0xFFF59E0B);
     if (type == 9) return const Color(0xFF145374);
     if (type == 10) return score == 6 ? LightModeColors.lightTertiary : const Color(0xFFF59E0B);
+    if (type == 11) {
+      if (score == 0) return LightModeColors.lightTertiary;
+      if (score <= 5) return const Color(0xFFFBBF24);
+      if (score <= 12) return const Color(0xFFF97316);
+      return LightModeColors.lightError;
+    }
 
     return LightModeColors.lightPrimary;
   }

@@ -164,6 +164,16 @@ class ReportsController {
   static int calculateSurveyScore(Map<String, dynamic> survey) {
     final responses = survey['responses'] as List?;
     if (responses == null || responses.isEmpty) return 0;
+
+    final surveyType = survey['survey_type'] as int? ?? 1;
+    if (surveyType == 11) {
+      return responses.fold<int>(0, (s, r) {
+        final qId = r['question_id'] as int? ?? 0;
+        if (qId == 4) return s;
+        return s + (r['answer_value'] as int? ?? 0);
+      });
+    }
+
     return responses.fold<int>(0, (s, r) => s + (r['answer_value'] as int? ?? 0));
   }
 
@@ -237,6 +247,7 @@ class ReportsController {
   static String gdsLevel(int score) => _gdsLevel(score);
   static String lawtonLevel(int score) => _lawtonLevel(score);
   static String katzLevel(int score) => _katzLevel(score);
+  static String iciqsfLevel(int score) => _iciqsfLevel(score);
   static String assistLevel(int score) => _assistLevel(score);
 
   static String _bdiLevel(int score) {
@@ -272,6 +283,13 @@ class ReportsController {
   static String _katzLevel(int score) {
     if (score == 6) return 'Independencia total';
     return 'Dependencia en algun grado';
+  }
+
+  static String _iciqsfLevel(int score) {
+    if (score == 0) return 'Sin incontinencia';
+    if (score <= 5) return 'Leve';
+    if (score <= 12) return 'Moderada';
+    return 'Severa';
   }
 
   // Whoqol
@@ -439,6 +457,19 @@ class ReportsController {
     }
     return 'La media sugiere DEPENDENCIA EN ALGUN GRADO en actividades basicas de la vida diaria. '
         'Se recomienda valoracion funcional y plan de apoyo.';
+  }
+
+  static String iciqsfInterpretation(double mean) {
+    if (mean == 0) {
+      return 'La media indica AUSENCIA DE INCONTINENCIA URINARIA segun ICIQ-SF.';
+    }
+    if (mean <= 5) {
+      return 'La media indica incontinencia urinaria con impacto LEVE en calidad de vida.';
+    }
+    if (mean <= 12) {
+      return 'La media indica incontinencia urinaria con impacto MODERADO en calidad de vida.';
+    }
+    return 'La media indica incontinencia urinaria con impacto SEVERO en calidad de vida.';
   }
 
   static String whoqolDomainInterpretation(WhoqolDomainStats dom) {

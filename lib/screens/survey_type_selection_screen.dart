@@ -9,6 +9,7 @@ enum SurveyType {
   gds,
   lawton,
   katz,
+  iciqsf,
   osteoporosis,
   whoqol,
   moca,
@@ -29,6 +30,8 @@ extension SurveyTypeExtension on SurveyType {
         return 'Lawton';
       case SurveyType.katz:
         return 'Katz';
+      case SurveyType.iciqsf:
+        return 'ICIQ-SF';
       case SurveyType.osteoporosis:
         return 'Osteoporosis';
       case SurveyType.moca:
@@ -54,6 +57,8 @@ extension SurveyTypeExtension on SurveyType {
         return 'Lawton Instrumental Activities of Daily Living';
       case SurveyType.katz:
         return 'Katz Index of Independence in Activities of Daily Living';
+      case SurveyType.iciqsf:
+        return 'International Consultation on Incontinence Questionnaire - Short Form';
       case SurveyType.osteoporosis:
         return 'Osteoporosis Fracture Risk Questionnaire';
       case SurveyType.moca:
@@ -79,6 +84,8 @@ extension SurveyTypeExtension on SurveyType {
         return 'Escala de Actividades Instrumentales de la Vida Diaria';
       case SurveyType.katz:
         return 'Indice de Katz de Actividades Basicas de la Vida Diaria';
+      case SurveyType.iciqsf:
+        return 'Cuestionario Internacional sobre Incontinencia Urinaria';
       case SurveyType.osteoporosis:
         return 'Cuestionario de Riesgo de Fractura por Osteoporosis';
       case SurveyType.moca:
@@ -104,6 +111,8 @@ extension SurveyTypeExtension on SurveyType {
         return material.Icons.home_work_outlined;
       case SurveyType.katz:
         return material.Icons.accessibility_new_outlined;
+      case SurveyType.iciqsf:
+        return material.Icons.water_drop_outlined;
       case SurveyType.osteoporosis:
         return material.Icons.medical_services_outlined; // Use a visible icon (bone icon if available)
       case SurveyType.moca:
@@ -129,6 +138,8 @@ extension SurveyTypeExtension on SurveyType {
         return const Color(0xFF14B8A6);
       case SurveyType.katz:
         return const Color(0xFF0D9488);
+      case SurveyType.iciqsf:
+        return const Color(0xFF2563EB);
       case SurveyType.osteoporosis:
         return const Color(0xFF145374); // Azul petróleo
       case SurveyType.moca:
