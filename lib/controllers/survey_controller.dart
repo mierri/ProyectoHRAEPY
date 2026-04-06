@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
+import 'package:ssapp/Services/surveys/survey_catalog.dart';
+import 'package:ssapp/Services/surveys/survey_rules.dart';
 import 'package:ssapp/models/bdi_questions.dart';
-import 'package:ssapp/models/gds_questions.dart';
 import 'package:ssapp/models/iciq_sf_questions.dart';
 import 'package:ssapp/models/katz_questions.dart';
-import 'package:ssapp/models/lawton_questions.dart';
 import 'package:ssapp/models/response_model.dart';
 import 'package:ssapp/models/survey_model.dart';
 import 'package:ssapp/Services/survey_service.dart';
@@ -12,8 +11,7 @@ import 'package:ssapp/models/osteoporosis_risk_model.dart';
 import 'package:ssapp/Services/osteoporosis_risk_service.dart';
 import 'package:ssapp/models/patient_model.dart';
 import 'package:ssapp/config/supabase_config.dart';
-
-import '../models/osteoporosis_questions.dart';
+import 'package:hive/hive.dart';
 
 /// Controller for BDI/BAI survey logic
 /// Handles responses, navigation, saving, and score calculations
@@ -47,45 +45,11 @@ class SurveyController extends ChangeNotifier {
    RiskResult? get osteoporosisRiskResult => _osteoporosisRiskResult;
 
   int get surveyTypeId {
-    switch (surveyType) {
-      case 'bai':
-        return 2;
-      case 'gds':
-        return 7;
-      case 'lawton':
-        return 8;
-      case 'katz':
-        return 10;
-      case 'iciqsf':
-        return 11;
-      case 'osteoporosis':
-        return 9;
-      case 'bdi':
-      default:
-        return 1;
-    }
+    return SurveyCatalog.idForType(surveyType);
   } // 1=BDI, 2=BAI, 7=GDS-15, 8=Lawton, 9=Osteoporosis, 10=Katz, 11=ICIQ-SF
 
   List<SurveyQuestion> get questions {
-    if (surveyType == 'bai') {
-      return BAIQuestions.questions;
-    }
-    if (surveyType == 'gds') {
-      return GDSQuestions.questions;
-    }
-    if (surveyType == 'lawton') {
-      return LawtonQuestions.questions;
-    }
-    if (surveyType == 'katz') {
-      return KatzQuestions.questions;
-    }
-    if (surveyType == 'iciqsf') {
-      return IciqSfQuestions.questions;
-    }
-    if (surveyType == 'osteoporosis') {
-      return OsteoporosisQuestions.questions;
-    }
-    return BDIQuestions.questions;
+    return SurveyCatalog.questionsForType(surveyType);
   }
   
   SurveyQuestion get currentQuestion => questions[_currentQuestionIndex];
@@ -168,10 +132,7 @@ class SurveyController extends ChangeNotifier {
 
   /// Calculate total score
   int calculateTotalScore() {
-    if (surveyType == 'iciqsf') {
-      return IciqSfQuestions.calculateScore(_responses);
-    }
-    return _responses.values.fold(0, (sum, score) => sum + score);
+    return SurveyRules.totalScoreFromResponses(surveyType, _responses);
   }
 
   Map<String, dynamic> getKatzOutput() {
@@ -192,73 +153,13 @@ class SurveyController extends ChangeNotifier {
 
   /// Get interpretation based on score
   String getInterpretation() {
-    final score = calculateTotalScore();
-    if (surveyType == 'bai') {
-      // BAI interpretation
-      if (score <= 7) return 'Los síntomas de ansiedad son mínimos o inexistentes.';
-      if (score <= 15) return 'Presenta síntomas leves de ansiedad.';
-      if (score <= 25) return 'Presenta síntomas moderados de ansiedad.';
-      return 'Presenta síntomas severos de ansiedad.';
-    } else if (surveyType == 'gds') {
-      if (score <= 4) return 'Resultado dentro de la normalidad.';
-      return 'Presenta síntomas depresivos.';
-    } else if (surveyType == 'lawton') {
-      if (score == questions.length) {
-        return 'Independencia total para las actividades instrumentales evaluadas.';
-      }
-      return 'Presenta deterioro funcional en una o más actividades instrumentales.';
-    } else if (surveyType == 'katz') {
-      return KatzQuestions.evaluate(_responses).interpretacion;
-    } else if (surveyType == 'iciqsf') {
-      return IciqSfQuestions.evaluate(_responses).interpretacion;
-    } else if (surveyType == 'osteoporosis') {
-      // Osteoporosis interpretation: instruct to cross with age, BMI, and score
-      if (score >= 7) {
-        return 'El puntaje máximo para comparación es 6. Cruce el puntaje, edad e IMC en la tabla correspondiente.';
-      }
-      return 'Cruce el puntaje, edad e IMC en la tabla correspondiente para determinar el riesgo.';
-    } else {
-      // BDI interpretation
-      if (score <= 13) return 'Los síntomas depresivos son mínimos o inexistentes.';
-      if (score <= 19) return 'Presenta síntomas leves de depresión.';
-      if (score <= 28) return 'Presenta síntomas moderados de depresión.';
-      return 'Presenta síntomas graves de depresión.';
-    }
+    return SurveyRules.interpretation(surveyType, _responses, questions);
   }
 
 
   /// Get severity level
   String getSeverityLevel() {
-    final score = calculateTotalScore();
-    if (surveyType == 'bai') {
-      // BAI levels
-      if (score <= 7) return 'Ansiedad Mínima';
-      if (score <= 15) return 'Ansiedad Leve';
-      if (score <= 25) return 'Ansiedad Moderada';
-      return 'Ansiedad Severa';
-    } else if (surveyType == 'gds') {
-      if (score <= 4) return 'Normal';
-      return 'Síntomas depresivos';
-    } else if (surveyType == 'lawton') {
-      if (score == questions.length) return 'Independencia total';
-      return 'Deterioro funcional';
-    } else if (surveyType == 'katz') {
-      final result = KatzQuestions.evaluate(_responses);
-      return 'Katz ${result.clasificacionKatz}';
-    } else if (surveyType == 'iciqsf') {
-      final result = IciqSfQuestions.evaluate(_responses);
-      if (result.score == 0) return 'Sin incontinencia';
-      return 'Impacto ${result.severidad}';
-    } else if (surveyType == 'osteoporosis') {
-      // Osteoporosis: just return the score (max 6)
-      return 'Puntaje: ${score > 6 ? 6 : score}';
-    } else {
-      // BDI levels
-      if (score <= 13) return 'Depresión Mínima';
-      if (score <= 19) return 'Depresión Leve';
-      if (score <= 28) return 'Depresión Moderada';
-      return 'Depresión Grave';
-    }
+    return SurveyRules.severityLevel(surveyType, _responses, questions);
   }
 
    /// Save survey to Hive and sync with Supabase
@@ -328,20 +229,20 @@ class SurveyController extends ChangeNotifier {
                   if (patient.height == null) {
                     patient.height = height;
                   }
-                  
+
                   // Calculate and save IMC
                   if (weight != null && height != null && height > 0) {
                     final imc = OsteoporosisRiskService.calculateBMI(weight, height);
                     patient.imc = imc;
                   }
-                  
+
                   await patient.save();
 
-                 // Calculate age from birthDate
-                 final now = DateTime.now();
-                 final age = now.year - patient.birthDate.year;
+                  // Calculate age from birthDate
+                  final now = DateTime.now();
+                  final age = (now.year - patient.birthDate.year) as int;
 
-                 // Get sex (convert 'M'/'F' from model)
+                  // Get sex (convert 'M'/'F' from model)
                  final sexEnum = (patient.gender == 'M') ? Sex.male : Sex.female;
 
                  // Convert responses to bool answers (true = 1, false = 0)
@@ -377,7 +278,7 @@ class SurveyController extends ChangeNotifier {
 
                      // Calculate age from birthDate
                      final now = DateTime.now();
-                     final age = now.year - patientData.birthDate.year;
+                     final age = (now.year - patientData.birthDate.year) as int;
 
                      // Get sex (convert 'M'/'F' from model)
                      final sexEnum = (patientData.gender == 'M') ? Sex.male : Sex.female;
@@ -428,35 +329,8 @@ class SurveyController extends ChangeNotifier {
          score: surveyType == 'osteoporosis' ? scoreForDb : null,
        );
 
-      // Save locally in Hive
-      Box<SurveyModel> box;
-      try {
-        box = await Hive.openBox<SurveyModel>('surveys');
-      } catch (e) {
-        await Hive.deleteBoxFromDisk('surveys');
-        box = await Hive.openBox<SurveyModel>('surveys');
-      }
-
-      await box.add(survey);
-
-      // Try to sync with Supabase
-      bool wasSynced = false;
-      try {
-        wasSynced = await surveyService
-            .syncSurveyToSupabase(survey)
-            .timeout(
-              const Duration(seconds: 10),
-              onTimeout: () => false,
-            );
-
-        if (wasSynced) {
-          survey.synced = true;
-          await survey.save();
-        }
-       } catch (e) {
-         print('Error al sincronizar: $e');
-         wasSynced = false;
-       }
+       final saveResult = await surveyService.saveSurvey(survey);
+       final wasSynced = saveResult.wasSynced;
 
        // For osteoporosis, also sync patient data to Supabase
        if (surveyType == 'osteoporosis') {

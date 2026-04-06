@@ -780,27 +780,10 @@ class _PatientDetailsDialog extends StatelessWidget {
                           final isComplete = responses != null && responses.isNotEmpty;
                           final score = isComplete ? surveyService.calculateSurveyScore(survey) : 0;
                           final surveyType = survey['survey_type'] as int? ?? 1;
-                          String getSurveyTypeName(int type) {
-                            switch (type) {
-                              case 1: return 'BDI-II';
-                              case 2: return 'BAI';
-                              case 3: return 'WHOQOL-BREF';
-                              case 4: return 'MoCA';
-                              case 5: return 'SF-36';
-                              case 6: return 'ASSIST';
-                              case 7: return 'GDS-15';
-                              case 8: return 'Lawton';
-                              case 9: return 'Osteoporosis';
-                              case 10: return 'Katz';
-
-                              default: return 'Encuesta';
-                            }
-                          }
-
                           final createdAt = DateTime.parse(survey['created_at']);
                           final isSynced = survey['synced'] == true;
 
-                          final surveyTypeName = getSurveyTypeName(surveyType);
+                          final surveyTypeName = surveyService.getSurveyTypeName(surveyType);
 
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 12),

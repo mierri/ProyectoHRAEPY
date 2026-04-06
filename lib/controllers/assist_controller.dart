@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
 import 'package:ssapp/models/assist_questions.dart';
 import 'package:ssapp/models/response_model.dart';
 import 'package:ssapp/models/survey_model.dart';
@@ -279,33 +278,8 @@ class AssistController extends ChangeNotifier {
         synced: false,
       );
 
-      Box<SurveyModel> box;
-      try {
-        box = await Hive.openBox<SurveyModel>('surveys');
-      } catch (e) {
-        await Hive.deleteBoxFromDisk('surveys');
-        box = await Hive.openBox<SurveyModel>('surveys');
-      }
-
-      await box.add(survey);
-
-      var wasSynced = false;
-      try {
-        wasSynced = await surveyService
-            .syncSurveyToSupabase(survey)
-            .timeout(
-              const Duration(seconds: 10),
-              onTimeout: () => false,
-            );
-
-        if (wasSynced) {
-          survey.synced = true;
-          await survey.save();
-        }
-      } catch (e) {
-        print('Error al sincronizar ASSIST: $e');
-        wasSynced = false;
-      }
+      final saveResult = await surveyService.saveSurvey(survey);
+      final wasSynced = saveResult.wasSynced;
 
       return AssistSaveResult(
         success: true,

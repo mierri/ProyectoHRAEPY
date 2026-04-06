@@ -1,12 +1,15 @@
 
 import 'package:hive/hive.dart';
-import 'package:ssapp/Services/survey_service.dart';
+import 'package:ssapp/Services/surveys/survey_repository.dart';
 import 'package:ssapp/models/response_model.dart';
 import 'package:ssapp/models/survey_model.dart';
 
 class SurveyProvider {
   late Box<SurveyModel> box;
-  final SurveyService _service = SurveyService();
+  final SurveyRepositoryContract _repository;
+
+  SurveyProvider({SurveyRepositoryContract? repository})
+    : _repository = repository ?? SurveyRepository();
 
   Future<bool> initBox() async {
     box = await Hive.openBox<SurveyModel>('surveyBox');
@@ -14,7 +17,7 @@ class SurveyProvider {
   }
   Future<bool> addSurvey(SurveyModel survey) async {
     await box.add(survey);
-    bool synced = await _service.syncSurveyToSupabase(survey);
+    bool synced = await _repository.syncSurveyToSupabase(survey);
     survey.synced = synced;
     await survey.save();
     return true;
@@ -40,7 +43,7 @@ class SurveyProvider {
 
   Future<bool> updateSurvey(int index, SurveyModel survey) async {
     await box.putAt(index, survey);
-    bool synced = await _service.syncSurveyToSupabase(survey);
+    bool synced = await _repository.syncSurveyToSupabase(survey);
     survey.synced = synced;
     await survey.save();
     return true;
@@ -51,7 +54,7 @@ class SurveyProvider {
     for (var entry in surveys.entries) {
       SurveyModel survey = entry.value;
       if (!survey.synced) {
-        bool synced = await _service.syncSurveyToSupabase(survey);
+        bool synced = await _repository.syncSurveyToSupabase(survey);
         if (synced) {
           survey.synced = true;
           await survey.save();
@@ -62,7 +65,7 @@ class SurveyProvider {
 
   Future<void> syncFromSupabase() async {
     try {
-      List<Map<String, dynamic>> remoteSurveys = await _service.getAllSurveysFromSupabase();
+      List<Map<String, dynamic>> remoteSurveys = await _repository.getAllSurveysFromSupabase();
       
       // Actualizar o agregar encuestas del servidor
       for (var surveyData in remoteSurveys) {

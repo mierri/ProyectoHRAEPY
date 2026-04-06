@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
 import 'package:ssapp/models/sf36_questions.dart';
 import 'package:ssapp/models/response_model.dart';
 import 'package:ssapp/models/survey_model.dart';
@@ -264,32 +263,11 @@ class SF36Controller extends ChangeNotifier {
         synced: false,
       );
 
-      // Save locally in Hive
-      Box<SurveyModel> box;
-      try {
-        box = await Hive.openBox<SurveyModel>('surveys');
-      } catch (e) {
-        await Hive.deleteBoxFromDisk('surveys');
-        box = await Hive.openBox<SurveyModel>('surveys');
-      }
-
-      await box.add(survey);
-
-      // Try to sync with Supabase
       bool wasSynced = false;
       try {
         if (surveyService != null) {
-          wasSynced = await surveyService!
-              .syncSurveyToSupabase(survey)
-              .timeout(
-                const Duration(seconds: 10),
-                onTimeout: () => false,
-              );
-
-          if (wasSynced) {
-            survey.synced = true;
-            await survey.save();
-          }
+          final saveResult = await surveyService!.saveSurvey(survey);
+          wasSynced = saveResult.wasSynced;
         }
       } catch (e) {
         print('Error al sincronizar: $e');

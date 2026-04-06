@@ -390,24 +390,6 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
     final score = surveyService.calculateSurveyScore(_survey!);
     final surveyType = _survey!['survey_type'] as int? ?? 1;
 
-    // Map surveyType to names
-    String getSurveyTypeName(int type) {
-      switch (type) {
-        case 1: return 'BDI-II';
-        case 2: return 'BAI';
-        case 3: return 'WHOQOL-BREF';
-        case 4: return 'MoCA';
-        case 5: return 'SF-36';
-        case 6: return 'ASSIST V3.0';
-        case 7: return 'GDS-15';
-        case 8: return 'Lawton AIVD';
-        case 9: return 'Osteoporosis';
-        case 10: return 'Katz ABVD';
-        case 11: return 'ICIQ-SF';
-        default: return 'Encuesta';
-      }
-    }
-
     String getSurveyFullName(int type) {
       switch (type) {
         case 1: return 'Inventario de Depresión de Beck II';
@@ -425,7 +407,7 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
       }
     }
 
-    final surveyTypeName = getSurveyTypeName(surveyType);
+    final surveyTypeName = surveyService.getSurveyTypeName(surveyType);
     final surveyFullName = getSurveyFullName(surveyType);
     final baseLevel = _getScoreLevel(score, surveyType);
     final katzClassification =

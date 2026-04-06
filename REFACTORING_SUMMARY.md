@@ -183,6 +183,15 @@ class _WhoqolScreenState extends State<WhoqolScreen> {
 - 📝 Guía de implementación paso a paso
 - ✨ Mejores prácticas
 - 📚 Ejemplos completos
+
+#### ✅ DOCUMENTACION_ENCUESTAS.md
+**Archivo**: `DOCUMENTACION_ENCUESTAS.md`
+
+**Contenido**:
+- 📦 Separación de responsabilidades del subsistema de encuestas
+- 🧭 Flujo de datos entre UI, controladores, servicio, repositorio y reglas
+- 🧩 Uso recomendado de `SurveyCatalog`, `SurveyRules`, `SurveyRepository` y `SurveyService`
+- 🔧 Guía para extender nuevas encuestas sin volver a acoplar la lógica
 - 🧪 Guía de testing
 
 **Secciones principales**:
