@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:ssapp/Services/surveys/survey_rules.dart';
 import 'package:ssapp/models/whoqol_questions.dart';
 
 class BasicStats {
@@ -162,19 +163,7 @@ class ReportsController {
   // bdi / bai
 
   static int calculateSurveyScore(Map<String, dynamic> survey) {
-    final responses = survey['responses'] as List?;
-    if (responses == null || responses.isEmpty) return 0;
-
-    final surveyType = survey['survey_type'] as int? ?? 1;
-    if (surveyType == 11) {
-      return responses.fold<int>(0, (s, r) {
-        final qId = r['question_id'] as int? ?? 0;
-        if (qId == 4) return s;
-        return s + (r['answer_value'] as int? ?? 0);
-      });
-    }
-
-    return responses.fold<int>(0, (s, r) => s + (r['answer_value'] as int? ?? 0));
+    return SurveyRules.calculateScore(survey);
   }
 
   static BasicStats computeBasicStats(List<int> scores) {
