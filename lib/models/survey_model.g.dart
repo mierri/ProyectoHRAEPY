@@ -22,13 +22,15 @@ class SurveyModelAdapter extends TypeAdapter<SurveyModel> {
       surveyType: fields[4] as int,
       patientId: fields[3] as int?,
       synced: fields[1] as bool,
+      risk_level: fields[5] as String?,
+      score: fields[6] as int?,
     );
   }
 
   @override
   void write(BinaryWriter writer, SurveyModel obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(7)
       ..writeByte(0)
       ..write(obj.surveyId)
       ..writeByte(1)
@@ -38,7 +40,11 @@ class SurveyModelAdapter extends TypeAdapter<SurveyModel> {
       ..writeByte(3)
       ..write(obj.patientId)
       ..writeByte(4)
-      ..write(obj.surveyType);
+      ..write(obj.surveyType)
+      ..writeByte(5)
+      ..write(obj.risk_level)
+      ..writeByte(6)
+      ..write(obj.score);
   }
 
   @override

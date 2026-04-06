@@ -5,10 +5,11 @@ import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/controllers/survey_controller.dart';
 import 'package:ssapp/models/bdi_questions.dart';
-import 'package:ssapp/models/iciq_sf_questions.dart';
 import 'package:ssapp/Services/survey_service.dart';
 import 'package:ssapp/utils/theme.dart';
 import 'package:ssapp/utils/toast_helper.dart';
+
+import '../models/iciq_sf_questions.dart';
 
 class SurveyScreen extends StatefulWidget {
   final int patientId;
@@ -27,17 +28,45 @@ class SurveyScreen extends StatefulWidget {
 class _SurveyScreenState extends State<SurveyScreen> {
   late SurveyController _controller;
   final Set<int> _iciqSelectedIndices = <int>{};
+  bool _isControllerInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    final surveyService = context.read<SurveyService>();
-    _controller = SurveyController(
-      patientId: widget.patientId,
-      surveyType: widget.surveyType,
-      surveyService: surveyService,
-    );
-    _controller.addListener(_onControllerUpdate);
+    // Do not access context here
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isControllerInitialized) {
+      final surveyService = context.read<SurveyService>();
+      double? weight;
+      double? height;
+      if (widget.surveyType == 'osteoporosis') {
+        final params = GoRouterState.of(context).uri.queryParameters;
+        final weightStr = params['weight'];
+        final heightStr = params['height'];
+
+        if (weightStr != null && weightStr.isNotEmpty) {
+          weight = double.tryParse(weightStr);
+        }
+        if (heightStr != null && heightStr.isNotEmpty) {
+          height = double.tryParse(heightStr);
+        }
+
+        print('DEBUG: Extracted weight=$weight, height=$height from params');
+      }
+      _controller = SurveyController(
+        patientId: widget.patientId,
+        surveyType: widget.surveyType,
+        surveyService: surveyService,
+        initialWeight: weight,
+        initialHeight: height,
+      );
+      _controller.addListener(_onControllerUpdate);
+      _isControllerInitialized = true;
+    }
   }
 
   @override
@@ -88,6 +117,19 @@ class _SurveyScreenState extends State<SurveyScreen> {
   }
 
   Future<void> _saveSurvey() async {
+    if (!_isControllerInitialized) {
+      if (mounted) {
+        showCenteredToast(
+          context,
+          title: 'Error',
+          subtitle: 'El controlador de la encuesta no está listo. Intenta de nuevo.',
+          icon: material.Icons.error_outline,
+          iconColor: LightModeColors.lightError,
+          location: ToastLocation.topCenter,
+        );
+      }
+      return;
+    }
     if (_controller.isSaving) return;
 
     if (mounted) {
@@ -143,7 +185,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
     }
 
     if (mounted && result.totalScore != null) {
-      _showCompletionDialog(result.wasSynced, result.totalScore!, result.interpretation!, result.severityLevel!);
+      _showCompletionDialog(result.wasSynced, result.totalScore!, result.interpretation!, result.severityLevel!, result.riskResult, result.weight, result.height);
     }
   }
 
@@ -198,7 +240,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
     _controller.previousQuestion();
   }
 
-  void _showCompletionDialog(bool wasSynced, int totalScore, String interpretation, String severityLevel) {
+  void _showCompletionDialog(bool wasSynced, int totalScore, String interpretation, String severityLevel, dynamic riskResult, double? weight, double? height) {
 
     showDialog(
       context: context,
@@ -314,7 +356,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
                         child: PrimaryButton(
                           onPressed: () {
                             Navigator.of(context).pop();
-                            _showResultDialog(totalScore, interpretation, severityLevel);
+                            _showResultDialog(totalScore, interpretation, severityLevel, riskResult, weight, height);
                           },
                           child: const Text('Sí'),
                         ),
@@ -330,7 +372,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
     );
   }
 
-  void _showResultDialog(int totalScore, String interpretation, String severityLevel) {
+  void _showResultDialog(int totalScore, String interpretation, String severityLevel, dynamic riskResult, double? weight, double? height) {
     final Color levelColor;
 
     if (widget.surveyType == 'bai') {
@@ -363,14 +405,11 @@ class _SurveyScreenState extends State<SurveyScreen> {
         levelColor = const Color(0xFFF59E0B);
       }
     } else if (widget.surveyType == 'osteoporosis') {
-      if (totalScore <= 5) {
-        levelColor = LightModeColors.lightTertiary;
-      } else if (totalScore <= 8) {
-        levelColor = const Color(0xFFFFA726);
-      } else if (totalScore <= 11) {
-        levelColor = const Color(0xFFFF7043);
+      // Osteoporosis: use risk result to determine color
+      if (riskResult != null && riskResult.isApplicable) {
+        levelColor = riskResult.isHighRisk ? LightModeColors.lightError : LightModeColors.lightTertiary;
       } else {
-        levelColor = LightModeColors.lightError;
+        levelColor = const Color(0xFF0EA5E9);
       }
     } else if (widget.surveyType == 'iciqsf') {
       if (totalScore == 0) {
@@ -494,6 +533,120 @@ class _SurveyScreenState extends State<SurveyScreen> {
                         ),
                       ),
                     ),
+                    // For osteoporosis, show additional anthropometric data OUTSIDE the score card
+                    if (widget.surveyType == 'osteoporosis' && riskResult != null && (weight != null || height != null)) ...[
+                      const Gap(20),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: levelColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: levelColor,
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Datos Antropométricos',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: levelColor,
+                              ),
+                            ),
+                            const Gap(12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                Column(
+                                  children: [
+                                    Text(
+                                      'Peso',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: LightModeColors.lightOnSurfaceVariant,
+                                      ),
+                                    ),
+                                    const Gap(6),
+                                    Text(
+                                      weight != null ? '${weight.toStringAsFixed(2)} kg' : 'N/A',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: levelColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Column(
+                                  children: [
+                                    Text(
+                                      'Altura',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: LightModeColors.lightOnSurfaceVariant,
+                                      ),
+                                    ),
+                                    const Gap(6),
+                                    Text(
+                                      height != null ? '${height.toStringAsFixed(2)} m' : 'N/A',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: levelColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Column(
+                                  children: [
+                                    Text(
+                                      'IMC',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: LightModeColors.lightOnSurfaceVariant,
+                                      ),
+                                    ),
+                                    const Gap(6),
+                                    Text(
+                                      riskResult.bmi.toStringAsFixed(2),
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: levelColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Column(
+                                  children: [
+                                    Text(
+                                      'Grupo Edad',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: LightModeColors.lightOnSurfaceVariant,
+                                      ),
+                                    ),
+                                    const Gap(6),
+                                    Text(
+                                      riskResult.ageGroup,
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: levelColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     const Gap(20),
                     // Description
                     Container(
@@ -554,7 +707,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
             ),
           ),
         ),
-      ),
+      )
     );
   }
 
@@ -717,20 +870,33 @@ class _SurveyScreenState extends State<SurveyScreen> {
                       final index = entry.key;
                       final option = entry.value;
                       final isSelected = _controller.selectedOptionIndex == index;
-                      const faceIcons = [
-                        Symbols.sentiment_very_satisfied,
-                        Symbols.sentiment_satisfied,
-                        Symbols.sentiment_dissatisfied,
-                        Symbols.sentiment_very_dissatisfied,
-                      ];
-                      const faceColors = [
-                        Color(0xFF16A34A), // green
-                        Color(0xFF65A30D), // lime
-                        Color(0xFFF59E0B), // amber
-                        Color(0xFFDC2626), // red
-                      ];
-                      final faceIcon = index < faceIcons.length ? faceIcons[index] : Symbols.sentiment_neutral;
-                      final faceColor = index < faceColors.length ? faceColors[index] : const Color(0xFF6B7280);
+                      IconData faceIcon;
+                      Color faceColor;
+
+                      if (widget.surveyType == 'osteoporosis') {
+                        if (option.score == 1) {
+                          faceIcon = Symbols.sentiment_very_dissatisfied;
+                          faceColor = const Color(0xFFDC2626);
+                        } else {
+                          faceIcon = Symbols.sentiment_very_satisfied;
+                          faceColor = const Color(0xFF16A34A);
+                        }
+                      } else {
+                        const faceIcons = [
+                          Symbols.sentiment_very_satisfied,
+                          Symbols.sentiment_satisfied,
+                          Symbols.sentiment_dissatisfied,
+                          Symbols.sentiment_very_dissatisfied,
+                        ];
+                        const faceColors = [
+                          Color(0xFF16A34A),
+                          Color(0xFF65A30D),
+                          Color(0xFFF59E0B),
+                          Color(0xFFDC2626),
+                        ];
+                        faceIcon = index < faceIcons.length ? faceIcons[index] : Symbols.sentiment_neutral;
+                        faceColor = index < faceColors.length ? faceColors[index] : const Color(0xFF6B7280);
+                      }
 
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
@@ -747,7 +913,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
                           ),
                         ),
                       );
-                    }),
+                   }),
                   const Gap(24),
                   // Pagination
                   _SurveyPagination(
@@ -1140,4 +1306,5 @@ class _OptionCardState extends State<_OptionCard> with SingleTickerProviderState
     );
   }
 }
+
 

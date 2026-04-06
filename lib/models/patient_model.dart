@@ -13,6 +13,12 @@ class PatientModel extends HiveObject {
   DateTime birthDate;
   @HiveField(4)
   bool synced;
+  @HiveField(5)
+  double? weight; // Peso en kg (para osteoporosis)
+  @HiveField(6)
+  double? height; // Altura en metros (para osteoporosis)
+  @HiveField(7)
+  double? imc; // IMC calculado
 
 
   PatientModel({
@@ -21,6 +27,9 @@ class PatientModel extends HiveObject {
     required this.gender,
     required this.birthDate,
     this.synced = false,
+    this.weight,
+    this.height,
+    this.imc,
   });
 
   static String _genderForDb(String value) {
@@ -63,6 +72,9 @@ class PatientModel extends HiveObject {
     'name': name,
     'gender': _genderForDb(gender),
     'birth_date': birthDate.toIso8601String(),
+    if (weight != null) 'weight': weight,
+    if (height != null) 'height': height,
+    if (imc != null) 'imc': imc,
   };
 
   factory PatientModel.fromJson(Map<String, dynamic> json) => PatientModel(
@@ -71,6 +83,9 @@ class PatientModel extends HiveObject {
     gender: _genderFromDb(json['gender']),
     birthDate: DateTime.parse(json['birth_date']),
     synced: json['synced'] ?? true, // true porque viene del backend
+    weight: (json['weight'] as num?)?.toDouble(),
+    height: (json['height'] as num?)?.toDouble(),
+    imc: (json['imc'] as num?)?.toDouble(),
   );
 
   // Calcular edad

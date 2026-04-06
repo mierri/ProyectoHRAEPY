@@ -13,7 +13,12 @@ class SurveyModel extends HiveObject{
   @HiveField(3)
   int? patientId;
   @HiveField(4)
-  int surveyType; 
+  int surveyType;
+  // Campos adicionales para osteoporosis (risk_level y score)
+  @HiveField(5)
+  String? risk_level;
+  @HiveField(6)
+  int? score;
 
   SurveyModel({
     required this.surveyId,
@@ -21,6 +26,8 @@ class SurveyModel extends HiveObject{
     required this.surveyType,
     this.patientId,
     this.synced = false,
+    this.risk_level,
+    this.score,
   });
 
   // Métodos para sincronización con backend
@@ -28,7 +35,9 @@ class SurveyModel extends HiveObject{
     'survey_id': surveyId,
     'patient_id': patientId,
     'synced': synced,
-    // El tipo no se guarda en Supabase, solo localmente
+    'survey_type': surveyType,
+    if (risk_level != null) 'risk_level': risk_level,
+    if (score != null) 'score': score,
   };
 
   factory SurveyModel.fromJson(Map<String, dynamic> json, {int? surveyType}) => SurveyModel(
@@ -37,5 +46,7 @@ class SurveyModel extends HiveObject{
     surveyType: surveyType ?? 1, // Default BDI
     responses: [], // Las respuestas se cargan por separado
     synced: json['synced'] ?? true,
+    risk_level: json['risk_level'] as String?,
+    score: json['score'] as int?,
   );
 }

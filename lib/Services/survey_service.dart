@@ -4,6 +4,7 @@ import 'package:ssapp/Services/surveys/save_survey_use_case.dart';
 import 'package:ssapp/Services/surveys/survey_repository.dart';
 import 'package:ssapp/Services/surveys/survey_rules.dart';
 import 'package:ssapp/models/survey_model.dart';
+import 'package:ssapp/models/patient_model.dart';
 
 class SurveyService extends ChangeNotifier {
   final SurveyRepositoryContract _repository;
@@ -96,5 +97,10 @@ class SurveyService extends ChangeNotifier {
     final syncedCount = await _repository.syncPendingSurveys();
     await loadSurveys();
     return syncedCount;
+  }
+
+  /// Sincroniza un paciente con Supabase
+  Future<bool> syncPatientToSupabase(PatientModel patient) async {
+    return _repository.syncPatientToSupabase(patient);
   }
 }

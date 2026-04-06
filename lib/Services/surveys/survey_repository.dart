@@ -11,6 +11,7 @@ abstract class SurveyRepositoryContract {
   Future<bool> syncSurveyToSupabase(SurveyModel survey);
   Future<List<Map<String, dynamic>>> getAllSurveysFromSupabase();
   Future<int> syncPendingSurveys();
+  Future<bool> syncPatientToSupabase(PatientModel patient);
 }
 
 class SurveyRepository implements SurveyRepositoryContract {
@@ -285,5 +286,25 @@ class SurveyRepository implements SurveyRepositoryContract {
     }
 
     return syncedCount;
+  }
+
+  @override
+  Future<bool> syncPatientToSupabase(PatientModel patient) async {
+    try {
+      final supabase = SupabaseConfig.client;
+      await supabase
+          .from('patients')
+          .upsert(patient.toJson())
+          .select()
+          .single();
+
+      patient.synced = true;
+      await patient.save();
+      print('Paciente ${patient.patientId} sincronizado exitosamente');
+      return true;
+    } catch (e) {
+      print('Error al sincronizar paciente con Supabase: $e');
+      return false;
+    }
   }
 }
