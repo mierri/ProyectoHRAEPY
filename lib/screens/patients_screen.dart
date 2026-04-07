@@ -5,10 +5,13 @@ import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/Services/patient_service.dart';
 import 'package:ssapp/Services/survey_service.dart';
+import 'package:ssapp/Services/surveys/survey_catalog.dart';
+import 'package:ssapp/Services/surveys/survey_rules.dart';
 import 'package:ssapp/models/patient_model.dart';
 import 'package:ssapp/utils/theme.dart';
 import 'package:ssapp/utils/toast_helper.dart';
 
+// Responsabilidad: mostrar y gestionar la vista de pacientes y su historial de encuestas.
 class PatientsScreen extends StatefulWidget {
   const PatientsScreen({super.key});
 
@@ -778,12 +781,12 @@ class _PatientDetailsDialog extends StatelessWidget {
                         ...patientSurveys.map((survey) {
                           final responses = survey['responses'] as List?;
                           final isComplete = responses != null && responses.isNotEmpty;
-                          final score = isComplete ? surveyService.calculateSurveyScore(survey) : 0;
+                          final score = isComplete ? SurveyRules.calculateScore(survey) : 0;
                           final surveyType = survey['survey_type'] as int? ?? 1;
                           final createdAt = DateTime.parse(survey['created_at']);
                           final isSynced = survey['synced'] == true;
 
-                          final surveyTypeName = surveyService.getSurveyTypeName(surveyType);
+                          final surveyTypeName = SurveyCatalog.nameForId(surveyType);
 
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 12),

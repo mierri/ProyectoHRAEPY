@@ -1,17 +1,21 @@
-import 'package:ssapp/provider/patient_provider.dart';
-import 'package:ssapp/provider/survey_provider.dart';
 import 'package:ssapp/Services/connectivity_service.dart';
+import 'package:ssapp/Services/contracts/syncable.dart';
+import 'package:ssapp/Services/patient_service.dart';
+import 'package:ssapp/Services/surveys/survey_repository.dart';
 
-/// Servicio centralizado para gestionar sincronización de datos
+// Responsabilidad: ser el unico punto de entrada para sincronizacion de pacientes y encuestas.
 class SyncService {
-  final PatientProvider patientProvider;
-  final SurveyProvider surveyProvider;
+  final PatientService patientService;
+  final SurveyRepository surveyRepository;
+  final ISyncable _patientSyncable;
+  final ISyncable _surveySyncable;
   final ConnectivityService _connectivityService = ConnectivityService();
 
   SyncService({
-    required this.patientProvider,
-    required this.surveyProvider,
-  });
+    required this.patientService,
+    required this.surveyRepository,
+  })  : _patientSyncable = patientService,
+        _surveySyncable = surveyRepository;
 
   /// Sincroniza todos los datos (pacientes y encuestas)
   /// Devuelve true si todo se sincronizó correctamente
@@ -27,23 +31,15 @@ class SyncService {
       );
     }
 
-    int patientsSynced = 0;
-    int surveysSynced = 0;
+    final patientsSynced = await patientService.countPendingPatients();
+    final surveysSynced = await _countPendingSurveys();
     bool patientsSuccess = true;
     bool surveysSuccess = true;
 
     // Sincronizar pacientes pendientes
     try {
-      await patientProvider.syncPendingPatients();
-      // Contar pacientes no sincronizados antes
-      final unsyncedPatients = patientProvider
-          .getAllPatientsAsList()
-          .where((p) => !p.synced)
-          .length;
-      patientsSynced = unsyncedPatients;
-      
-      // Descargar pacientes del servidor
-      await patientProvider.syncFromSupabase();
+      await _patientSyncable.syncPendingToServer();
+      await _patientSyncable.downloadFromServer();
     } catch (e) {
       print('Error al sincronizar pacientes: $e');
       patientsSuccess = false;
@@ -51,17 +47,8 @@ class SyncService {
 
     // Sincronizar encuestas pendientes
     try {
-      // Contar encuestas no sincronizadas antes
-      final unsyncedSurveys = surveyProvider
-          .getAllSurveysAsList()
-          .where((s) => !s.synced)
-          .length;
-      surveysSynced = unsyncedSurveys;
-      
-      await surveyProvider.syncPendingSurveys();
-      
-      // Descargar encuestas del servidor
-      await surveyProvider.syncFromSupabase();
+      await _surveySyncable.syncPendingToServer();
+      await _surveySyncable.downloadFromServer();
     } catch (e) {
       print('Error al sincronizar encuestas: $e');
       surveysSuccess = false;
@@ -101,24 +88,11 @@ class SyncService {
       );
     }
 
-    int patientsSynced = 0;
-    int surveysSynced = 0;
+    final patientsSynced = await patientService.countPendingPatients();
+    final surveysSynced = await _countPendingSurveys();
 
-    // Contar y sincronizar pacientes pendientes
-    final unsyncedPatients = patientProvider
-        .getAllPatientsAsList()
-        .where((p) => !p.synced)
-        .length;
-    patientsSynced = unsyncedPatients;
-    await patientProvider.syncPendingPatients();
-
-    // Contar y sincronizar encuestas pendientes
-    final unsyncedSurveys = surveyProvider
-        .getAllSurveysAsList()
-        .where((s) => !s.synced)
-        .length;
-    surveysSynced = unsyncedSurveys;
-    await surveyProvider.syncPendingSurveys();
+    await _patientSyncable.syncPendingToServer();
+    await _surveySyncable.syncPendingToServer();
 
     return SyncResult(
       success: true,
@@ -141,8 +115,8 @@ class SyncService {
       );
     }
 
-    await patientProvider.syncFromSupabase();
-    await surveyProvider.syncFromSupabase();
+    await _patientSyncable.downloadFromServer();
+    await _surveySyncable.downloadFromServer();
 
     return SyncResult(
       success: true,
@@ -153,22 +127,33 @@ class SyncService {
   }
 
   /// Obtiene estadísticas de sincronización
-  SyncStats getStats() {
-    final patients = patientProvider.getAllPatientsAsList();
-    final surveys = surveyProvider.getAllSurveysAsList();
+  Future<SyncStats> getStats() async {
+    final patients = patientService.patients;
+    final unsyncedSurveys = await _countPendingSurveys();
+    final totalSurveys = await _countTotalSurveys();
 
     return SyncStats(
       totalPatients: patients.length,
       unsyncedPatients: patients.where((p) => !p.synced).length,
-      totalSurveys: surveys.length,
-      unsyncedSurveys: surveys.where((s) => !s.synced).length,
+      totalSurveys: totalSurveys,
+      unsyncedSurveys: unsyncedSurveys,
     );
   }
 
   /// Verifica si hay datos pendientes de sincronizar
-  bool hasPendingSync() {
-    final stats = getStats();
+  Future<bool> hasPendingSync() async {
+    final stats = await getStats();
     return stats.unsyncedPatients > 0 || stats.unsyncedSurveys > 0;
+  }
+
+  Future<int> _countPendingSurveys() async {
+    final surveys = await surveyRepository.loadSurveys();
+    return surveys.where((s) => s['synced'] != true).length;
+  }
+
+  Future<int> _countTotalSurveys() async {
+    final surveys = await surveyRepository.loadSurveys();
+    return surveys.length;
   }
 }
 

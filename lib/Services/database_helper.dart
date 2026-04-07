@@ -1,18 +1,23 @@
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:ssapp/Services/patient_service.dart';
 import 'package:ssapp/models/patient_model.dart';
 import 'package:ssapp/models/response_model.dart';
 import 'package:ssapp/models/survey_model.dart';
 import 'package:ssapp/provider/patient_provider.dart';
 import 'package:ssapp/provider/survey_provider.dart';
 import 'package:ssapp/Services/sync_service.dart';
+import 'package:ssapp/Services/surveys/survey_repository.dart';
 
 /// Helper para inicializar la base de datos local (Hive) y providers
+// Responsabilidad: inicializar Hive y utilidades auxiliares de datos/sincronizacion.
 class DatabaseHelper {
   static bool _initialized = false;
   
   static PatientProvider? _patientProvider;
   static SurveyProvider? _surveyProvider;
   static SyncService? _syncService;
+  static PatientService? _patientService;
+  static SurveyRepository? _surveyRepository;
 
   /// Inicializa Hive y registra todos los adaptadores
   static Future<void> initializeHive() async {
@@ -43,9 +48,11 @@ class DatabaseHelper {
     await _surveyProvider!.initBox();
 
     // Inicializar SyncService
+    _patientService = PatientService();
+    _surveyRepository = SurveyRepository();
     _syncService = SyncService(
-      patientProvider: _patientProvider!,
-      surveyProvider: _surveyProvider!,
+      patientService: _patientService!,
+      surveyRepository: _surveyRepository!,
     );
   }
 
@@ -98,16 +105,18 @@ class DatabaseHelper {
     }
     
     _syncService = null;
+    _patientService = null;
+    _surveyRepository = null;
   }
 
   /// Verifica si hay datos pendientes de sincronizar
-  static bool get hasPendingSync {
+  static Future<bool> get hasPendingSync async {
     if (_syncService == null) return false;
     return _syncService!.hasPendingSync();
   }
 
   /// Obtiene estadísticas de sincronización
-  static SyncStats? get syncStats {
+  static Future<SyncStats?> get syncStats async {
     if (_syncService == null) return null;
     return _syncService!.getStats();
   }

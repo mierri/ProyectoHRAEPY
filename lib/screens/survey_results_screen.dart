@@ -5,12 +5,15 @@ import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/Services/patient_service.dart';
 import 'package:ssapp/Services/survey_service.dart';
+import 'package:ssapp/Services/surveys/survey_catalog.dart';
+import 'package:ssapp/Services/surveys/survey_rules.dart';
 import 'package:ssapp/models/assist_questions.dart';
 import 'package:ssapp/models/iciq_sf_questions.dart';
 import 'package:ssapp/models/katz_questions.dart';
 import 'package:ssapp/utils/theme.dart';
 import 'package:ssapp/utils/toast_helper.dart';
 
+// Responsabilidad: presentar resultados de una encuesta ya guardada.
 class SurveyResultsScreen extends StatefulWidget {
   final int surveyId;
 
@@ -387,7 +390,7 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
     final patientService = context.watch<PatientService>();
 
     final responses = _survey!['responses'] as List?;
-    final score = surveyService.calculateSurveyScore(_survey!);
+    final score = SurveyRules.calculateScore(_survey!);
     final surveyType = _survey!['survey_type'] as int? ?? 1;
 
     String getSurveyFullName(int type) {
@@ -407,7 +410,7 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
       }
     }
 
-    final surveyTypeName = surveyService.getSurveyTypeName(surveyType);
+    final surveyTypeName = SurveyCatalog.nameForId(surveyType);
     final surveyFullName = getSurveyFullName(surveyType);
     final baseLevel = _getScoreLevel(score, surveyType);
     final katzClassification =

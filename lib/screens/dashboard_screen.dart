@@ -3,13 +3,16 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/Services/patient_service.dart';
+import 'package:ssapp/Services/sync_service.dart';
 import 'package:ssapp/Services/survey_service.dart';
+import 'package:ssapp/Services/surveys/survey_repository.dart';
 import 'package:ssapp/utils/theme.dart';
 import 'package:ssapp/utils/toast_helper.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 
 import '../components/welcome_card.dart';
 
+// Responsabilidad: renderizar el dashboard principal y disparar sincronización automática al iniciar.
 // ─── Breakpoints ─────────────────────────────────────────────────────────────
 class _BP {
   static const double tablet  = 600;
@@ -38,9 +41,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (!mounted) return;
     try {
       final patientService = context.read<PatientService>();
-      final surveyService  = context.read<SurveyService>();
-      final syncedPatients = await patientService.syncPendingPatients();
-      final syncedSurveys  = await surveyService.syncPendingSurveys();
+      final syncService = SyncService(
+        patientService: patientService,
+        surveyRepository: SurveyRepository(),
+      );
+      final result = await syncService.syncPendingOnly();
+      final syncedPatients = result.patientsSynced;
+      final syncedSurveys = result.surveysSynced;
       if ((syncedPatients > 0 || syncedSurveys > 0) && mounted) {
         showCenteredToast(
           context,

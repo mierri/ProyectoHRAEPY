@@ -1,6 +1,8 @@
 import 'package:hive/hive.dart';
+import 'package:ssapp/utils/gender_mapper.dart';
 part 'patient_model.g.dart';
 
+// Responsabilidad: representar datos del paciente y conversiones de persistencia sin logica de negocio de dominio.
 @HiveType(typeId: 2)
 class PatientModel extends HiveObject {
   @HiveField(0)
@@ -32,45 +34,11 @@ class PatientModel extends HiveObject {
     this.imc,
   });
 
-  static String _genderForDb(String value) {
-    switch (value) {
-      case 'M':
-      case 'Masculino':
-        return 'Masculino';
-      case 'F':
-      case 'Femenino':
-        return 'Femenino';
-      case 'O':
-      case 'Otro':
-        return 'Otro';
-      case 'N':
-      case 'Prefiero no decir':
-        return 'Prefiero no decir';
-      default:
-        return value;
-    }
-  }
-
-  static String _genderFromDb(String value) {
-    switch (value) {
-      case 'Masculino':
-        return 'M';
-      case 'Femenino':
-        return 'F';
-      case 'Otro':
-        return 'O';
-      case 'Prefiero no decir':
-        return 'N';
-      default:
-        return value;
-    }
-  }
-
   // Métodos para sincronización con backend
   Map<String, dynamic> toJson() => {
     'patient_id': patientId,
     'name': name,
-    'gender': _genderForDb(gender),
+    'gender': GenderMapper.toDb(gender),
     'birth_date': birthDate.toIso8601String(),
     if (weight != null) 'weight': weight,
     if (height != null) 'height': height,
@@ -80,7 +48,7 @@ class PatientModel extends HiveObject {
   factory PatientModel.fromJson(Map<String, dynamic> json) => PatientModel(
     patientId: json['patient_id'],
     name: json['name'],
-    gender: _genderFromDb(json['gender']),
+    gender: GenderMapper.fromDb(json['gender']),
     birthDate: DateTime.parse(json['birth_date']),
     synced: json['synced'] ?? true, // true porque viene del backend
     weight: (json['weight'] as num?)?.toDouble(),
@@ -88,7 +56,7 @@ class PatientModel extends HiveObject {
     imc: (json['imc'] as num?)?.toDouble(),
   );
 
-  // Calcular edad
+  // Se mantiene en el modelo porque es un valor derivado puro de birthDate, sin efectos secundarios ni dependencias externas.
   int get age {
     final now = DateTime.now();
     int age = now.year - birthDate.year;

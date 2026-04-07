@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:ssapp/controllers/base_survey_controller.dart';
 import 'package:ssapp/models/response_model.dart';
 import 'package:ssapp/models/survey_model.dart';
 import 'package:ssapp/models/whoqol_questions.dart';
 import 'package:ssapp/Services/survey_service.dart';
 
+// Responsabilidad: gestionar estado y guardado de la encuesta WHOQOL-BREF.
 /// Controller for WHOQOL-BREF survey logic
 /// Handles responses, navigation, saving, and calculations
-class WhoqolController extends ChangeNotifier {
+class WhoqolController extends BaseSurveyController {
   final int patientId;
   final SurveyService surveyService;
 
   int _currentIndex = 0;
   final Map<int, int> _responses = {};
   int? _selectedOptionIndex;
-  bool _isSaving = false;
 
   WhoqolController({
     required this.patientId,
@@ -24,7 +25,6 @@ class WhoqolController extends ChangeNotifier {
   int get currentIndex => _currentIndex;
   Map<int, int> get responses => Map.unmodifiable(_responses);
   int? get selectedOptionIndex => _selectedOptionIndex;
-  bool get isSaving => _isSaving;
   
   List<WhoqolQuestion> get questions => WhoqolQuestions.questions;
   WhoqolQuestion get currentQuestion => questions[_currentIndex];
@@ -81,67 +81,49 @@ class WhoqolController extends ChangeNotifier {
   }
 
   /// Save survey to Hive and sync with Supabase
+  @override
   Future<SurveySaveResult> saveSurvey() async {
-    if (_isSaving) {
-      return SurveySaveResult(
+    return executeWithSavingState<SurveySaveResult>(
+      alreadySavingResult: SurveySaveResult(
         success: false,
         wasSynced: false,
         error: 'Ya se está guardando la encuesta',
-      );
-    }
+      ),
+      action: () async {
+        if (patientId == 0) {
+          throw Exception('ID de paciente inválido. Por favor, reinicie el proceso.');
+        }
 
-    _isSaving = true;
-    notifyListeners();
+        final List<ResponseModel> responseModels = buildResponseModels(_responses);
 
-    try {
-      // Validate patient ID
-      if (patientId == 0) {
-        throw Exception('ID de paciente inválido. Por favor, reinicie el proceso.');
-      }
+        if (responseModels.length != 26) {
+          throw Exception('Faltan respuestas. Por favor, responda todas las preguntas.');
+        }
 
-      // Convert responses to ResponseModel list
-      final List<ResponseModel> responseModels = _responses.entries.map((entry) {
-        return ResponseModel(
-          questionId: entry.key,
-          answerValue: entry.value,
+        final survey = SurveyModel(
+          surveyId: DateTime.now().millisecondsSinceEpoch,
+          surveyType: 3,
+          patientId: patientId,
+          responses: responseModels,
+          synced: false,
         );
-      }).toList();
 
-      // Validate all questions answered
-      if (responseModels.length != 26) {
-        throw Exception('Faltan respuestas. Por favor, responda todas las preguntas.');
-      }
-
-      // Create survey with surveyType = 3 for WHOQOL
-      final survey = SurveyModel(
-        surveyId: DateTime.now().millisecondsSinceEpoch,
-        surveyType: 3, // 3 = WHOQOL-BREF
-        patientId: patientId,
-        responses: responseModels,
-        synced: false,
-      );
-
-      final saveResult = await surveyService.saveSurvey(survey);
-      final wasSynced = saveResult.wasSynced;
-
-      return SurveySaveResult(
-        success: true,
-        wasSynced: wasSynced,
-        results: calculateResults(),
-      );
-    } catch (e, stackTrace) {
-      print('Error al guardar encuesta WHOQOL: $e');
-      print('Stack trace: $stackTrace');
-
-      return SurveySaveResult(
-        success: false,
-        wasSynced: false,
-        error: e.toString(),
-      );
-    } finally {
-      _isSaving = false;
-      notifyListeners();
-    }
+        final saveResult = await surveyService.saveSurvey(survey);
+        return SurveySaveResult(
+          success: true,
+          wasSynced: saveResult.wasSynced,
+          results: calculateResults(),
+        );
+      },
+      onError: (error, stackTrace) {
+        return SurveySaveResult(
+          success: false,
+          wasSynced: false,
+          error: error.toString(),
+        );
+      },
+      operation: 'guardar encuesta WHOQOL',
+    );
   }
 
   /// Calculate WHOQOL-BREF results

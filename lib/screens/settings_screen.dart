@@ -4,10 +4,12 @@ import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/Services/patient_service.dart';
-import 'package:ssapp/Services/survey_service.dart';
+import 'package:ssapp/Services/sync_service.dart';
+import 'package:ssapp/Services/surveys/survey_repository.dart';
 import 'package:ssapp/utils/theme.dart';
 import 'package:ssapp/utils/toast_helper.dart';
 
+// Responsabilidad: mostrar opciones de configuración y acciones operativas del sistema.
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -25,13 +27,13 @@ class SettingsScreen extends StatelessWidget {
 
     try {
       final patientService = context.read<PatientService>();
-      final surveyService = context.read<SurveyService>();
-
-      // Sincronizar pacientes pendientes
-      final syncedPatients = await patientService.syncPendingPatients();
-
-      // Sincronizar encuestas pendientes
-      final syncedSurveys = await surveyService.syncPendingSurveys();
+      final syncService = SyncService(
+        patientService: patientService,
+        surveyRepository: SurveyRepository(),
+      );
+      final result = await syncService.syncPendingOnly();
+      final syncedPatients = result.patientsSynced;
+      final syncedSurveys = result.surveysSynced;
 
       if (context.mounted) {
         Navigator.of(context).pop(); // Cerrar loading

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:ssapp/controllers/base_survey_controller.dart';
 import 'package:ssapp/models/sf36_questions.dart';
 import 'package:ssapp/models/response_model.dart';
 import 'package:ssapp/models/survey_model.dart';
 import 'package:ssapp/Services/survey_service.dart';
 
-class SF36Controller extends ChangeNotifier {
+// Responsabilidad: gestionar estado, cálculo y guardado de la encuesta SF-36.
+class SF36Controller extends BaseSurveyController {
   final int patientId;
   final SurveyService? surveyService;
 
@@ -13,7 +15,6 @@ class SF36Controller extends ChangeNotifier {
   final Map<int, int> _rawResponses = {}; // numero de pregunta -> índice de opción seleccionada (0 baseddd)
   int? _selectedOptionIndex;
   bool _showingResults = false;
-  bool _isSaving = false;
 
   // variable para almacenar la respuesta del ítem 7, que afecta el cálculo del ítem 8
   int? _item7Response;
@@ -28,7 +29,6 @@ class SF36Controller extends ChangeNotifier {
   Map<int, int> get rawResponses => Map.unmodifiable(_rawResponses);
   int? get selectedOptionIndex => _selectedOptionIndex;
   bool get showingResults => _showingResults;
-  bool get isSaving => _isSaving;
 
   List<SF36Question> get questions => SF36Questions.questions;
   SF36Question get currentQuestion => questions[_currentIndex];
@@ -223,74 +223,60 @@ class SF36Controller extends ChangeNotifier {
   }
 
   /// Save survey to Hive and sync with Supabase
+  @override
   Future<SF36SaveResult> saveSurvey() async {
-    if (_isSaving) {
-      return SF36SaveResult(
+    return executeWithSavingState<SF36SaveResult>(
+      alreadySavingResult: SF36SaveResult(
         success: false,
         wasSynced: false,
         error: 'Ya se está guardando la encuesta',
-      );
-    }
-
-    _isSaving = true;
-    notifyListeners();
-
-    try {
-      // Validate patient ID
-      if (patientId == 0) {
-        throw Exception('ID de paciente inválido. Por favor, reinicie el proceso.');
-      }
-
-      // Convert responses to ResponseModel list
-      final List<ResponseModel> responseModels = _responses.entries.map((entry) {
-        return ResponseModel(
-          questionId: entry.key,
-          answerValue: entry.value.toInt(),
-        );
-      }).toList();
-
-      // Validate all questions answered
-      if (responseModels.length != questions.length) {
-        throw Exception('Faltan respuestas. Por favor, responda todas las preguntas.');
-      }
-
-      // Create survey with surveyType = 5 for SF-36
-      final survey = SurveyModel(
-        surveyId: DateTime.now().millisecondsSinceEpoch,
-        surveyType: 5, // 5 = SF-36
-        patientId: patientId,
-        responses: responseModels,
-        synced: false,
-      );
-
-      bool wasSynced = false;
-      try {
-        if (surveyService != null) {
-          final saveResult = await surveyService!.saveSurvey(survey);
-          wasSynced = saveResult.wasSynced;
+      ),
+      action: () async {
+        if (patientId == 0) {
+          throw Exception('ID de paciente inválido. Por favor, reinicie el proceso.');
         }
-      } catch (e) {
-        print('Error al sincronizar: $e');
-        wasSynced = false;
-      }
 
-      return SF36SaveResult(
-        success: true,
-        wasSynced: wasSynced,
-      );
-    } catch (e, stackTrace) {
-      print('Error al guardar encuesta SF-36: $e');
-      print('Stack trace: $stackTrace');
+        final intResponses = _responses.map(
+          (questionId, value) => MapEntry(questionId, value.toInt()),
+        );
+        final List<ResponseModel> responseModels = buildResponseModels(intResponses);
 
-      return SF36SaveResult(
-        success: false,
-        wasSynced: false,
-        error: e.toString(),
-      );
-    } finally {
-      _isSaving = false;
-      notifyListeners();
-    }
+        if (responseModels.length != questions.length) {
+          throw Exception('Faltan respuestas. Por favor, responda todas las preguntas.');
+        }
+
+        final survey = SurveyModel(
+          surveyId: DateTime.now().millisecondsSinceEpoch,
+          surveyType: 5,
+          patientId: patientId,
+          responses: responseModels,
+          synced: false,
+        );
+
+        bool wasSynced = false;
+        if (surveyService != null) {
+          try {
+            final saveResult = await surveyService!.saveSurvey(survey);
+            wasSynced = saveResult.wasSynced;
+          } catch (error) {
+            logControllerError('sincronizar encuesta SF-36', error, StackTrace.current);
+          }
+        }
+
+        return SF36SaveResult(
+          success: true,
+          wasSynced: wasSynced,
+        );
+      },
+      onError: (error, stackTrace) {
+        return SF36SaveResult(
+          success: false,
+          wasSynced: false,
+          error: error.toString(),
+        );
+      },
+      operation: 'guardar encuesta SF-36',
+    );
   }
 
   void resetSurvey() {

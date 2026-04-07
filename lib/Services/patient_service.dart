@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
+import 'package:ssapp/Services/contracts/syncable.dart';
 import 'package:ssapp/config/supabase_config.dart';
 import 'package:ssapp/models/patient_model.dart';
 
-class PatientService extends ChangeNotifier {
+// Responsabilidad: gestionar CRUD y carga de pacientes locales/remotos.
+class PatientService extends ChangeNotifier implements ISyncable {
   List<PatientModel> _patients = [];
   
   List<PatientModel> get patients => _patients;
@@ -37,16 +39,6 @@ class PatientService extends ChangeNotifier {
       await box.add(patient);
       _patients.add(patient);
       notifyListeners();
-
-      // Intentar sincronizar con Supabase (si hay internet)
-      final success = await syncPatientToSupabase(patient);
-      if (success) {
-        patient.synced = true;
-        await patient.save(); // Actualizar en Hive
-        notifyListeners();
-      } else {
-        print('Paciente guardado localmente, pendiente de sincronización');
-      }
 
       return patient;
     } catch (e) {
@@ -232,6 +224,11 @@ class PatientService extends ChangeNotifier {
   }
 
   Future<int> syncPendingPatients() async {
+    return syncPendingToServer();
+  }
+
+  @override
+  Future<int> syncPendingToServer() async {
     int syncedCount = 0;
 
     try {
@@ -275,5 +272,37 @@ class PatientService extends ChangeNotifier {
     }
 
     return syncedCount;
+  }
+
+  @override
+  Future<void> downloadFromServer() async {
+    try {
+      final remotePatients = await getAllPatientsFromSupabase();
+      final box = await Hive.openBox<PatientModel>('patients');
+
+      for (final remotePatient in remotePatients) {
+        final localPatient = box.values
+            .where((p) => p.patientId == remotePatient.patientId)
+            .firstOrNull;
+
+        if (localPatient == null) {
+          remotePatient.synced = true;
+          await box.add(remotePatient);
+        }
+      }
+
+      _patients = box.values.toList()
+        ..sort((a, b) => b.patientId.compareTo(a.patientId));
+      notifyListeners();
+    } catch (e) {
+      print('Error al descargar pacientes desde servidor: $e');
+    }
+  }
+
+  Future<int> countPendingPatients() async {
+    if (_patients.isEmpty) {
+      _patients = await _getLocalPatients();
+    }
+    return _patients.where((p) => !p.synced).length;
   }
 }

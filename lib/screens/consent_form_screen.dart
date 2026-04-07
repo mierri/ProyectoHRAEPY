@@ -3,10 +3,13 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/Services/patient_service.dart';
+import 'package:ssapp/config/survey_type_config.dart';
+import 'package:ssapp/controllers/consent_form_controller.dart';
 import 'package:ssapp/models/patient_model.dart';
 import 'package:provider/provider.dart';
 import 'package:ssapp/utils/theme.dart';
 
+// Responsabilidad: renderizar el formulario de consentimiento y delegar su logica al controller.
 class ConsentFormScreen extends StatefulWidget {
   final String? surveyType;
 
@@ -17,80 +20,38 @@ class ConsentFormScreen extends StatefulWidget {
 }
 
 class _ConsentFormScreenState extends State<ConsentFormScreen> {
-          void _autoCalculateIMC() {
-            if (widget.surveyType == 'osteoporosis') {
-              final peso = num.tryParse(_pesoController.text.trim());
-              final talla = num.tryParse(_tallaController.text.trim());
-              if (peso != null && talla != null && talla > 0) {
-                final imc = peso / (talla * talla);
-                _imcController.text = imc.toStringAsFixed(2);
-              }
-            }
-          }
+  late final ConsentFormController _controller;
+
   // Osteoporosis fields
   final _pesoController = TextEditingController();
   final _tallaController = TextEditingController();
   final _imcController = TextEditingController();
-  String? _osteoporosisWarning;
-
-  bool get _isOsteoporosisSurvey => widget.surveyType == 'osteoporosis';
-  int? get _patientAge {
-    if (_selectedPatient != null) return _selectedPatient!.age;
-    if (_dateOfBirth != null) {
-      final now = DateTime.now();
-      int age = now.year - _dateOfBirth!.year;
-      if (now.month < _dateOfBirth!.month || (now.month == _dateOfBirth!.month && now.day < _dateOfBirth!.day)) {
-        age--;
-      }
-      return age;
-    }
-    return null;
-  }
   final _nameController = TextEditingController();
-  DateTime? _dateOfBirth;
-  String _gender = 'M'; // Masculino
-  bool _consentGiven = false;
-  bool _isLoading = false;
-  PatientModel? _selectedPatient;
-  List<PatientModel> _availablePatients = [];
-  bool _isLoadingPatients = false;
+
+  void _onControllerChanged() {
+    if (!mounted) return;
+    setState(() {
+      _imcController.text = _controller.imcText;
+    });
+  }
 
   @override
   void initState() {
     super.initState();
-    _loadAvailablePatients();
+    _controller = ConsentFormController(surveyType: widget.surveyType);
+    _controller.addListener(_onControllerChanged);
+    _controller.loadAvailablePatients(context.read<PatientService>());
   }
 
   @override
   void dispose() {
+    _controller.removeListener(_onControllerChanged);
+    _controller.dispose();
     _nameController.dispose();
     _pesoController.dispose();
     _tallaController.dispose();
     _imcController.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadAvailablePatients() async {
-    setState(() => _isLoadingPatients = true);
-    try {
-      final patientService = context.read<PatientService>();
-      setState(() {
-        _availablePatients = patientService.patients;
-      });
-    } catch (e) {
-      print('Error loading patients: $e');
-    } finally {
-      setState(() => _isLoadingPatients = false);
-    }
-  }
-
-  void _selectPatient(PatientModel patient) {
-    setState(() {
-      _selectedPatient = patient;
-      _nameController.text = patient.name;
-      _dateOfBirth = patient.birthDate;
-      _gender = patient.gender;
-    });
   }
 
 
@@ -117,142 +78,34 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
     );
   }
 
-  Color _getSurveyColor() {
-    switch (widget.surveyType) {
-      case 'bai':
-        return LightModeColors.lightTertiary;
-      case 'moca':
-        return LightModeColors.lightSecondary;
-      case 'gds':
-        return const Color(0xFF0EA5E9);
-      case 'lawton':
-        return const Color(0xFF14B8A6);
-      case 'katz':
-        return const Color(0xFF0D9488);
-      case 'iciqsf':
-        return const Color(0xFF2563EB);
-      case 'whoqol':
-        return const Color(0xFF7C3AED);
-      case 'sf36':
-        return const Color(0xFF06B6D4);
-      case 'assist':
-        return LightModeColors.lightSecondary;
-      case 'osteoporosis':
-        return const Color(0xFF145374); // Azul petróleo
-      case 'bdi':
-      default:
-        return LightModeColors.lightPrimary;
-    }
-  }
-
   Future<void> _submit() async {
-                            // Osteoporosis: restrict to age >= 50
-                            if (_isOsteoporosisSurvey) {
-                              final age = _patientAge;
-                              if (age != null && age < 50) {
-                                setState(() { _osteoporosisWarning = 'Solo disponible para pacientes de 50 años o más.'; });
-                                _showError('Solo disponible para pacientes de 50 años o más.');
-                                return;
-                              }
-                            }
-            // Osteoporosis: validate numeric fields
-            if (widget.surveyType == 'osteoporosis') {
-              final peso = _pesoController.text.trim();
-              final talla = _tallaController.text.trim();
-              final imc = _imcController.text.trim();
-              if (peso.isEmpty || talla.isEmpty || imc.isEmpty) {
-                setState(() { _osteoporosisWarning = 'Por favor complete peso, talla e IMC.'; });
-                _showError('Por favor complete peso, talla e IMC.');
-                return;
-              }
-              final pesoNum = num.tryParse(peso);
-              final tallaNum = num.tryParse(talla);
-              final imcNum = num.tryParse(imc);
-              if (pesoNum == null || tallaNum == null || imcNum == null) {
-                setState(() { _osteoporosisWarning = 'Peso, talla e IMC deben ser valores numéricos.'; });
-                _showError('Peso, talla e IMC deben ser valores numéricos.');
-                return;
-              }
-              setState(() { _osteoporosisWarning = null; });
-            }
-    if (_nameController.text.trim().isEmpty) {
-      _showError('Por favor ingrese el nombre completo o seleccione un paciente');
-      return;
-    }
-    if (_dateOfBirth == null) {
-      _showError('Por favor seleccione la fecha de nacimiento');
-      return;
-    }
-    if (!_consentGiven) {
-      _showError('Debe aceptar el consentimiento informado para continuar');
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
     try {
       final patientService = context.read<PatientService>();
-
-      // Si ya existe el paciente seleccionado, usarlo; si no, crear uno nuevo
-      PatientModel? patient;
-      if (_selectedPatient != null) {
-        patient = _selectedPatient;
-      } else {
-        patient = await patientService.createPatient(
-          name: _nameController.text.trim(),
-          birthDate: _dateOfBirth!,
-          gender: _gender,
-        );
-      }
+      final patientId = await _controller.submit(patientService);
 
       if (!mounted) return;
 
-      if (patient != null) {
-        final resolvedSurveyType = widget.surveyType ?? 'bdi';
-        final patientId = patient.patientId;
-
-        // Solo para osteoporosis, guardar peso, talla e imc en Hive y Supabase
-        double? weight;
-        double? height;
-        double? imc;
-        if (resolvedSurveyType == 'osteoporosis') {
-          weight = double.tryParse(_pesoController.text.trim());
-          height = double.tryParse(_tallaController.text.trim());
-          imc = double.tryParse(_imcController.text.trim());
-          // Guardar en el modelo y sincronizar
-          patient.weight = weight;
-          patient.height = height;
-          patient.imc = imc;
-          await patient.save();
-          await patientService.syncPatientToSupabase(patient);
-        }
-
-        if (mounted) {
-          final shouldContinue = await _showInstructionsDialog(
-            context,
-            surveyType: resolvedSurveyType,
-            surveyColor: _getSurveyColor(),
+      final shouldContinue = await _showInstructionsDialog(
+        context,
+        surveyType: _controller.resolvedSurveyType,
+        surveyColor: SurveyTypeConfig.colorFor(_controller.resolvedSurveyType),
+      );
+      if (shouldContinue && mounted) {
+        if (_controller.resolvedSurveyType == 'osteoporosis') {
+          context.push(
+            '/survey/$patientId?surveyType=${_controller.resolvedSurveyType}&weight=${_controller.weight ?? ''}&height=${_controller.height ?? ''}&imc=${_controller.imc ?? ''}',
           );
-          if (shouldContinue && mounted) {
-            // Pasar los datos por GoRouter
-            if (resolvedSurveyType == 'osteoporosis') {
-              context.push('/survey/$patientId?surveyType=$resolvedSurveyType&weight=${weight ?? ''}&height=${height ?? ''}&imc=${imc ?? ''}');
-            } else {
-              context.push('/survey/$patientId?surveyType=$resolvedSurveyType');
-            }
-          }
+        } else {
+          context.push('/survey/$patientId?surveyType=${_controller.resolvedSurveyType}');
         }
-      } else {
-        _showError('No se pudo crear el registro del paciente. Por favor intente nuevamente.');
       }
     } catch (e) {
-      if (mounted) {
-        _showError('Ocurrió un error: ${e.toString()}');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (!mounted) return;
+      final rawMessage = e.toString();
+      final message = rawMessage.startsWith('Exception: ')
+          ? rawMessage.replaceFirst('Exception: ', '')
+          : 'Ocurrió un error: $rawMessage';
+      _showError(message);
     }
   }
 
@@ -261,52 +114,18 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
         required String surveyType,
         required Color surveyColor,
       }) async {
-    final isBai = surveyType == 'bai';
-    final isMoca = surveyType == 'moca';
-    final isGds = surveyType == 'gds';
-    final isLawton = surveyType == 'lawton';
-    final isKatz = surveyType == 'katz';
-    final isIciqSf = surveyType == 'iciqsf';
-    final isWhoqol = surveyType == 'whoqol';
-    final isSf36 = surveyType == 'sf36';
-    final isAssist = surveyType == 'assist';
-
-    String surveyTitle;
-    String surveyInstructions;
-    if (isBai) {
-      surveyTitle = 'Inventario de Ansiedad de Beck (BAI)';
-      surveyInstructions = 'A continuación encontrará una lista de síntomas. Por favor, indique cuánto le ha molestado cada síntoma durante la última semana, incluyendo hoy.';
-    } else if (isMoca) {
-      surveyTitle = 'Evaluación Cognitiva Montreal (MoCA)';
-      surveyInstructions = 'A continuación se le presentarán una serie de tareas y preguntas que evalúan diferentes áreas de su funcionamiento cognitivo. Siga las instrucciones de cada actividad con atención. No hay respuestas buenas o malas, simplemente haga su mejor esfuerzo.';
-    } else if (isGds) {
-      surveyTitle = 'Escala de Depresión Geriátrica (GDS-15)';
-      surveyInstructions = 'Este cuestionario consta de 15 preguntas, cada una con dos opciones de respuesta: Sí o No. Responda según cómo se ha sentido recientemente. No hay respuestas correctas o incorrectas.';
-    } else if (surveyType == 'osteoporosis') {
-      surveyTitle = 'Encuesta de Riesgo de Fractura por Osteoporosis';
-      surveyInstructions = 'Este cuestionario se aplica a personas de 50 años o más y permite identificar el riesgo para fractura por osteoporosis. En las preguntas siguientes, marque con una X en la columna correspondiente a la respuesta por la persona entrevistada. Cada pregunta tiene solo dos opciones de respuesta: Sí o No.';
-    } else if (isLawton) {
-      surveyTitle = 'Escala de Lawton (AIVD)';
-      surveyInstructions = 'Este cuestionario evalúa su nivel de independencia en actividades instrumentales de la vida diaria. Seleccione la opción que mejor describa su capacidad actual en cada actividad.';
-    } else if (isKatz) {
-      surveyTitle = 'Indice de Katz (ABVD)';
-      surveyInstructions = 'Este instrumento evalua independencia en actividades basicas de la vida diaria. Cada item puntua 1 si existe independencia total o con minima ayuda, y 0 si existe dependencia.';
-    } else if (isIciqSf) {
-      surveyTitle = 'ICIQ-SF';
-      surveyInstructions = 'Este cuestionario evalua frecuencia, cantidad e impacto de la perdida de orina. La pregunta 4 registra situaciones de perdida para orientacion clinica y no suma al puntaje total.';
-    } else if (isWhoqol) {
-      surveyTitle = 'Cuestionario de Calidad de Vida (WHOQOL-BREF)';
-      surveyInstructions = 'Este cuestionario le pregunta cómo se ha sentido acerca de su calidad de vida, su salud y otros aspectos de su vida durante las dos últimas semanas. Por favor, responda todas las preguntas. Si no está seguro/a de qué respuesta dar a una pregunta, escoja la que le parezca más apropiada.';
-    } else if (isSf36) {
-      surveyTitle = 'Encuesta de Salud de 36 Items (SF-36)';
-      surveyInstructions = 'Este cuestionario evalúa diferentes aspectos de su salud y bienestar. Por favor, responda cada pregunta según cómo se ha sentido o qué ha podido hacer durante las últimas cuatro semanas. No hay respuestas correctas o incorrectas, simplemente elija la opción que mejor describa su situación.';
-    } else if (isAssist) {
-      surveyTitle = 'OMS-ASSIST V3.0';
-      surveyInstructions = 'Este cuestionario detecta riesgo asociado al consumo de tabaco, alcohol y otras sustancias. Primero se registra consumo alguna vez en la vida y luego frecuencia/problemas en los últimos 3 meses para cada sustancia seleccionada. Responda con la mayor precisión posible.';
-    } else {
-      surveyTitle = 'Inventario de Depresión de Beck (BDI-II)';
-      surveyInstructions = 'Este cuestionario consta de 21 grupos de afirmaciones. Por favor, lea con cuidado cada grupo y elija la que mejor describe cómo se ha sentido durante las últimas dos semanas, incluyendo hoy.';
-    }
+    final instruction = SurveyTypeConfig.instructionFor(surveyType);
+    final variant = instruction.variant;
+    final isBai = variant == SurveyInstructionVariant.bai;
+    final isMoca = variant == SurveyInstructionVariant.moca;
+    final isGds = variant == SurveyInstructionVariant.gds;
+    final isLawton = variant == SurveyInstructionVariant.lawton;
+    final isKatz = variant == SurveyInstructionVariant.katz;
+    final isIciqSf = variant == SurveyInstructionVariant.iciqSf;
+    final isWhoqol = variant == SurveyInstructionVariant.whoqol;
+    final isSf36 = variant == SurveyInstructionVariant.sf36;
+    final isAssist = variant == SurveyInstructionVariant.assist;
+    final isOsteoporosis = variant == SurveyInstructionVariant.osteoporosis;
 
     final result = await showDialog<bool>(
       context: context,
@@ -356,7 +175,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                           children: [
                             const Text('Instrucciones').textLarge().bold(),
                             Text(
-                              surveyTitle,
+                              instruction.title,
                               style: TextStyle(fontSize: 13, color: surveyColor),
                             ),
                           ],
@@ -373,7 +192,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                       border: Border.all(color: surveyColor.withValues(alpha: 0.3)),
                     ),
                     child: Text(
-                      surveyInstructions,
+                      instruction.instructions,
                       style: const TextStyle(fontSize: 14, height: 1.5),
                     ),
                   ),
@@ -430,7 +249,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                         description: '0–4: Normal | 5–15: Síntomas depresivos.',
                         color: const Color(0xFF0369A1),
                       ),
-                    ] else if (surveyType == 'osteoporosis') ...[
+                    ] else if (isOsteoporosis) ...[
                       _ScaleItem(
                         icon: Symbols.check_circle,
                         label: 'Sí / No',
@@ -637,7 +456,8 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final osteoporosisAgeInvalid = _isOsteoporosisSurvey && _patientAge != null && _patientAge! < 50;
+    final osteoporosisAgeInvalid = _controller.osteoporosisAgeInvalid;
+    final surveyColor = SurveyTypeConfig.colorFor(widget.surveyType);
     return Scaffold(
       headers: [
         AppBar(
@@ -665,7 +485,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
 
             const Text('Seleccionar paciente existente o crear nuevo').medium(),
             const Gap(8),
-            _isLoadingPatients
+            _controller.isLoadingPatients
                 ? Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -681,7 +501,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                     height: 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: _getSurveyColor(),
+                      color: surveyColor,
                     ),
                   ),
                   const Gap(12),
@@ -690,16 +510,14 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
               ),
             )
                 : Select<PatientModel?>(
-              value: _selectedPatient,
+              value: _controller.selectedPatient,
               onChanged: (patient) {
                 if (patient != null) {
-                  _selectPatient(patient);
+                  _controller.selectPatient(patient);
+                  _nameController.text = _controller.name;
                 } else {
-                  setState(() {
-                    _selectedPatient = null;
-                    _nameController.clear();
-                    _dateOfBirth = null;
-                  });
+                  _controller.clearSelectedPatient();
+                  _nameController.clear();
                 }
               },
               itemBuilder: (context, patient) {
@@ -715,7 +533,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                       value: null,
                       child: Text('Crear nuevo paciente'),
                     ),
-                    ..._availablePatients.map((patient) {
+                    ..._controller.availablePatients.map((patient) {
                       return SelectItemButton(
                         value: patient,
                         child: Text('${patient.name} (${patient.age} años)'),
@@ -728,12 +546,13 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
             ),
             const Gap(16),
 
-            if (_selectedPatient == null) ...[
+            if (_controller.selectedPatient == null) ...[
               const Text('Nombre completo').medium(),
               const Gap(5),
               TextField(
                 controller: _nameController,
                 placeholder: const Text('Nombre completo'),
+                onChanged: _controller.onNameChanged,
               ),
               const Gap(16),
             ],
@@ -741,7 +560,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
             const Text('Fecha de Nacimiento').medium(),
             const Gap(5),
             DatePicker(
-              value: _dateOfBirth,
+              value: _controller.dateOfBirth,
               mode: PromptMode.dialog,
               placeholder: const Text('Seleccione una fecha'),
               stateBuilder: (date) {
@@ -751,9 +570,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                 return DateState.enabled;
               },
               onChanged: (value) {
-                setState(() {
-                  _dateOfBirth = value;
-                });
+                _controller.onDateOfBirthChanged(value);
               },
             ),
             const Gap(16),
@@ -767,44 +584,47 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                 _GenderOption(
                   label: 'Masculino',
                   code: 'M',
-                  isSelected: _gender == 'M',
+                  isSelected: _controller.gender == 'M',
                   icon: material.Icons.male,
-                  onTap: () => setState(() => _gender = 'M'),
+                  onTap: () => _controller.onGenderChanged('M'),
                 ),
                 _GenderOption(
                   label: 'Femenino',
                   code: 'F',
-                  isSelected: _gender == 'F',
+                  isSelected: _controller.gender == 'F',
                   icon: material.Icons.female,
-                  onTap: () => setState(() => _gender = 'F'),
+                  onTap: () => _controller.onGenderChanged('F'),
                 ),
                 _GenderOption(
                   label: 'Otro',
                   code: 'O',
-                  isSelected: _gender == 'O',
+                  isSelected: _controller.gender == 'O',
                   icon: material.Icons.transgender,
-                  onTap: () => setState(() => _gender = 'O'),
+                  onTap: () => _controller.onGenderChanged('O'),
                 ),
                 _GenderOption(
                   label: 'Prefiero no decir',
                   code: 'N',
-                  isSelected: _gender == 'N',
+                  isSelected: _controller.gender == 'N',
                   icon: material.Icons.help_outline,
-                  onTap: () => setState(() => _gender = 'N'),
+                  onTap: () => _controller.onGenderChanged('N'),
                 ),
               ],
             ),
             const Gap(16),
 
             // Osteoporosis: Peso, Talla, IMC
-            if (widget.surveyType == 'osteoporosis') ...[
+            if (_controller.isOsteoporosisSurvey) ...[
               const Text('Peso (Kg)').medium(),
               const Gap(5),
               TextField(
                 controller: _pesoController,
                 keyboardType: TextInputType.number,
                 placeholder: const Text('Ejemplo: 70'),
-                onChanged: (_) => setState(() => _autoCalculateIMC()),
+                onChanged: (value) {
+                  _controller.onWeightChanged(value);
+                  _imcController.text = _controller.imcText;
+                },
               ),
               const Gap(12),
               const Text('Talla (mts)').medium(),
@@ -813,7 +633,10 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                 controller: _tallaController,
                 keyboardType: TextInputType.number,
                 placeholder: const Text('Ejemplo: 1.65'),
-                onChanged: (_) => setState(() => _autoCalculateIMC()),
+                onChanged: (value) {
+                  _controller.onHeightChanged(value);
+                  _imcController.text = _controller.imcText;
+                },
               ),
               const Gap(12),
               const Text('IMC').medium(),
@@ -825,9 +648,9 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                 readOnly: true,
               ),
               const Gap(8),
-              if (_osteoporosisWarning != null) ...[
+              if (_controller.osteoporosisWarning != null) ...[
                 Text(
-                  _osteoporosisWarning!,
+                  _controller.osteoporosisWarning!,
                   style: const TextStyle(color: material.Colors.red, fontWeight: FontWeight.w600),
                 ),
                 const Gap(8),
@@ -835,13 +658,13 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
             ],
 
             GestureDetector(
-              onTap: () => setState(() => _consentGiven = !_consentGiven),
+              onTap: () => _controller.onConsentChanged(!_controller.consentGiven),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Checkbox(
-                    state: _consentGiven ? CheckboxState.checked : CheckboxState.unchecked,
-                    onChanged: (state) => setState(() => _consentGiven = state == CheckboxState.checked),
+                    state: _controller.consentGiven ? CheckboxState.checked : CheckboxState.unchecked,
+                    onChanged: (state) => _controller.onConsentChanged(state == CheckboxState.checked),
                   ),
                   const Gap(8),
                   Expanded(
@@ -865,17 +688,17 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
             SizedBox(
               width: double.infinity,
               child: GestureDetector(
-                onTap: (_isLoading || osteoporosisAgeInvalid) ? null : _submit,
+                onTap: (_controller.isLoading || osteoporosisAgeInvalid) ? null : _submit,
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: (_isLoading || osteoporosisAgeInvalid)
-                        ? _getSurveyColor().withValues(alpha: 0.5)
-                        : _getSurveyColor(),
+                    color: (_controller.isLoading || osteoporosisAgeInvalid)
+                        ? surveyColor.withValues(alpha: 0.5)
+                        : surveyColor,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: _isLoading
+                  child: _controller.isLoading
                       ? Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -979,65 +802,9 @@ class ConsentInfoCard extends StatelessWidget {
 
   const ConsentInfoCard({super.key, this.surveyType});
 
-  String _getSurveyDescription() {
-    switch (surveyType) {
-      case 'bai':
-        return 'Este cuestionario evalúa síntomas de ansiedad mediante el Inventario de Ansiedad de Beck (BAI). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
-      case 'gds':
-        return 'Este cuestionario evalúa síntomas depresivos en personas mayores mediante la Escala de Depresión Geriátrica de 15 items (GDS-15). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
-      case 'lawton':
-        return 'Este cuestionario evalúa la independencia en actividades instrumentales de la vida diaria mediante la Escala de Lawton (AIVD). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
-      case 'katz':
-        return 'Este cuestionario evalua la independencia en actividades basicas de la vida diaria mediante el Indice de Katz (ABVD). Genera puntaje total de 0 a 6 y clasificacion alfabetica A-H segun patron de dependencia. Los datos recopilados seran utilizados exclusivamente para propositos clinicos y de investigacion del Departamento de Psicologia del HRAEPY.';
-      case 'iciqsf':
-        return 'Este cuestionario evalua severidad e impacto de la incontinencia urinaria mediante ICIQ-SF. Incluye una seccion de orientacion clinica sobre situaciones de perdida de orina. Los datos recopilados seran utilizados exclusivamente para propositos clinicos y de investigacion del Departamento de Psicologia del HRAEPY.';
-      case 'osteoporosis':
-        return 'Este cuestionario detecta el riesgo de fracturas por osteoporosis. Los datos de peso, talla e IMC se solicitan y se almacenan en la base de datos junto con la encuesta. Los resultados deben cruzarse con la edad, IMC y puntaje obtenido.';
-      case 'moca':
-        return 'Esta evaluación cognitiva evalúa diferentes dominios cognitivos mediante la Evaluación Cognitiva Montreal (MoCA). Evalúa atención, concentración, funciones ejecutivas, memoria, lenguaje, habilidades visuoconstructivas, pensamiento conceptual, cálculo y orientación. Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
-      case 'whoqol':
-        return 'Este cuestionario evalúa la calidad de vida en cuatro dominios: salud física, salud psicológica, relaciones sociales y ambiente, mediante el instrumento WHOQOL-BREF de la Organización Mundial de la Salud. Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
-      case 'sf36':
-        return 'Este cuestionario evalúa diferentes aspectos de la salud y el bienestar mediante la Encuesta de Salud de 36 Items (SF-36). Evalúa funcionamiento físico, rol físico, dolor corporal, salud general, vitalidad, funcionamiento social, rol emocional y salud mental. Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
-      case 'assist':
-        return 'Este cuestionario evalúa riesgo asociado al consumo de tabaco, alcohol y otras sustancias mediante el instrumento OMS-ASSIST V3.0. Los resultados orientan el nivel de intervención (sin intervención, intervención breve o tratamiento intensivo). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
-      case 'bdi':
-      default:
-        return 'Este cuestionario evalúa síntomas de depresión mediante el Inventario de Depresión de Beck (BDI-II). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
-    }
-  }
-
-  Color _getSurveyColor() {
-    switch (surveyType) {
-      case 'bai':
-        return LightModeColors.lightTertiary;
-      case 'moca':
-        return LightModeColors.lightSecondary;
-      case 'gds':
-        return const Color(0xFF0EA5E9);
-      case 'lawton':
-        return const Color(0xFF14B8A6);
-      case 'katz':
-        return const Color(0xFF0D9488);
-      case 'iciqsf':
-        return const Color(0xFF2563EB);
-      case 'whoqol':
-        return const Color(0xFF7C3AED);
-      case 'sf36':
-        return const Color(0xFF06B6D4);
-      case 'assist':
-        return LightModeColors.lightSecondary;
-      case 'osteoporosis':
-        return const Color(0xFF145374); // Azul petróleo
-      case 'bdi':
-      default:
-        return LightModeColors.lightPrimary;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final color = _getSurveyColor();
+    final color = SurveyTypeConfig.colorFor(surveyType);
 
     return Card(
       child: Padding(
@@ -1056,7 +823,7 @@ class ConsentInfoCard extends StatelessWidget {
               ],
             ),
             const Gap(16),
-            Text(_getSurveyDescription()).muted(),
+            Text(SurveyTypeConfig.descriptionFor(surveyType)).muted(),
             const Gap(16),
             const Text(
               '• Su participación es completamente voluntaria\n'

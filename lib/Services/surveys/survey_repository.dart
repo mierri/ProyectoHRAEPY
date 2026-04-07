@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:hive/hive.dart';
+import 'package:ssapp/Services/contracts/syncable.dart';
 import 'package:ssapp/config/supabase_config.dart';
 import 'package:ssapp/models/patient_model.dart';
+import 'package:ssapp/models/response_model.dart';
 import 'package:ssapp/models/survey_model.dart';
 
-abstract class SurveyRepositoryContract {
+abstract class SurveyRepositoryContract implements ISyncable {
   Future<List<Map<String, dynamic>>> loadSurveys();
   Future<SurveyModel> saveSurveyLocally(SurveyModel survey);
   Future<bool> syncSurveyToSupabase(SurveyModel survey);
@@ -14,6 +16,7 @@ abstract class SurveyRepositoryContract {
   Future<bool> syncPatientToSupabase(PatientModel patient);
 }
 
+// Responsabilidad: persistir y sincronizar encuestas entre Hive y Supabase.
 class SurveyRepository implements SurveyRepositoryContract {
   static const Duration _defaultNetworkTimeout = Duration(seconds: 12);
   static const int _maxNetworkRetries = 2;
@@ -286,6 +289,48 @@ class SurveyRepository implements SurveyRepositoryContract {
     }
 
     return syncedCount;
+  }
+
+  @override
+  Future<int> syncPendingToServer() {
+    return syncPendingSurveys();
+  }
+
+  @override
+  Future<void> downloadFromServer() async {
+    try {
+      final remoteSurveys = await getAllSurveysFromSupabase();
+      final box = await Hive.openBox<SurveyModel>('surveys');
+
+      for (final surveyData in remoteSurveys) {
+        final surveyId = surveyData['survey_id'] as int?;
+        if (surveyId == null) continue;
+
+        final exists = box.values.any((s) => s.surveyId == surveyId);
+        if (exists) continue;
+
+        final responses = (surveyData['responses'] as List? ?? [])
+            .map(
+              (r) => ResponseModel(
+                questionId: r['question_id'] as int,
+                answerValue: r['answer_value'] as int,
+              ),
+            )
+            .toList();
+
+        final newSurvey = SurveyModel(
+          surveyId: surveyId,
+          surveyType: surveyData['survey_type'] as int? ?? 1,
+          patientId: surveyData['patient_id'] as int?,
+          responses: responses,
+          synced: true,
+        );
+
+        await box.add(newSurvey);
+      }
+    } catch (e) {
+      print('Error al descargar encuestas desde servidor: $e');
+    }
   }
 
   @override

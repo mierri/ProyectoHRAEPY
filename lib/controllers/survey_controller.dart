@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:ssapp/Services/surveys/survey_catalog.dart';
 import 'package:ssapp/Services/surveys/survey_rules.dart';
+import 'package:ssapp/controllers/base_survey_controller.dart';
 import 'package:ssapp/models/bdi_questions.dart';
 import 'package:ssapp/models/iciq_sf_questions.dart';
 import 'package:ssapp/models/katz_questions.dart';
 import 'package:ssapp/models/response_model.dart';
 import 'package:ssapp/models/survey_model.dart';
 import 'package:ssapp/Services/survey_service.dart';
+import 'package:ssapp/Services/surveys/survey_repository.dart';
 import 'package:ssapp/models/osteoporosis_risk_model.dart';
 import 'package:ssapp/Services/osteoporosis_risk_service.dart';
 import 'package:ssapp/models/patient_model.dart';
 import 'package:ssapp/config/supabase_config.dart';
 import 'package:hive/hive.dart';
 
+// Responsabilidad: coordinar estado, respuestas y guardado de encuestas BDI/BAI/GDS/Lawton/Katz/ICIQ-SF/Osteoporosis.
 /// Controller for BDI/BAI survey logic
 /// Handles responses, navigation, saving, and score calculations
-class SurveyController extends ChangeNotifier {
+class SurveyController extends BaseSurveyController {
   final int patientId;
   final String surveyType; // 'bdi', 'bai', 'gds', 'lawton', 'katz', 'iciqsf', or 'osteoporosis'
   final SurveyService surveyService;
@@ -25,7 +28,6 @@ class SurveyController extends ChangeNotifier {
     int _currentQuestionIndex = 0;
     final Map<int, int> _responses = {};
     int? _selectedOptionIndex;
-    bool _isSaving = false;
 
     RiskResult? _osteoporosisRiskResult;
 
@@ -41,7 +43,6 @@ class SurveyController extends ChangeNotifier {
    int get currentQuestionIndex => _currentQuestionIndex;
    Map<int, int> get responses => Map.unmodifiable(_responses);
    int? get selectedOptionIndex => _selectedOptionIndex;
-   bool get isSaving => _isSaving;
    RiskResult? get osteoporosisRiskResult => _osteoporosisRiskResult;
 
   int get surveyTypeId {
@@ -162,215 +163,139 @@ class SurveyController extends ChangeNotifier {
     return SurveyRules.severityLevel(surveyType, _responses, questions);
   }
 
+  Future<({String? riskLevel, double? weight, double? height})> _resolveOsteoporosisMeta() async {
+    if (surveyType != 'osteoporosis') {
+      return (riskLevel: null, weight: null, height: null);
+    }
+
+    final weight = initialWeight;
+    final height = initialHeight;
+
+    if (weight == null || height == null) {
+      return (riskLevel: null, weight: weight, height: height);
+    }
+
+    final patient = await _loadPatientForOsteoporosis();
+    if (patient == null) {
+      return (riskLevel: null, weight: weight, height: height);
+    }
+
+    patient.weight ??= weight;
+    patient.height ??= height;
+    if (height > 0) {
+      patient.imc = OsteoporosisRiskService.calculateBMI(weight, height);
+    }
+    await patient.save();
+
+    final patientData = PatientData(
+      age: patient.age,
+      weightKg: weight,
+      heightMeters: height,
+      sex: patient.gender == 'M' ? Sex.male : Sex.female,
+      answers: List<bool>.generate(7, (index) => (_responses[index + 1] ?? 0) == 1),
+    );
+
+    final result = OsteoporosisRiskService.calculateRisk(patientData);
+    _osteoporosisRiskResult = result;
+
+    final riskLevel =
+        result.riskLevel.name == 'notApplicable' ? 'not_applicable' : result.riskLevel.name;
+    return (riskLevel: riskLevel, weight: weight, height: height);
+  }
+
+  Future<PatientModel?> _loadPatientForOsteoporosis() async {
+    try {
+      final patientsBox = await Hive.openBox<PatientModel>('patients');
+      final localPatients = patientsBox.values.where((p) => p.patientId == patientId).toList();
+      if (localPatients.isNotEmpty) {
+        return localPatients.first;
+      }
+    } catch (error, stackTrace) {
+      logControllerError('cargar paciente de Hive', error, stackTrace);
+    }
+
+    try {
+      final response = await SupabaseConfig.client
+          .from('patients')
+          .select()
+          .eq('patient_id', patientId)
+          .maybeSingle();
+
+      if (response == null) return null;
+      return PatientModel.fromJson(response);
+    } catch (error, stackTrace) {
+      logControllerError('cargar paciente de Supabase', error, stackTrace);
+      return null;
+    }
+  }
+
    /// Save survey to Hive and sync with Supabase
+  @override
   Future<SurveySaveResult> saveSurvey() async {
-    if (_isSaving) {
-      return SurveySaveResult(
+    return executeWithSavingState<SurveySaveResult>(
+      alreadySavingResult: SurveySaveResult(
         success: false,
         wasSynced: false,
         error: 'Ya se está guardando la encuesta',
-      );
-    }
+      ),
+      action: () async {
+        if (patientId == 0) {
+          throw Exception('ID de paciente inválido. Por favor, reinicie el proceso.');
+        }
 
-    _isSaving = true;
-    notifyListeners();
+        final List<ResponseModel> responseModels = buildResponseModels(_responses);
 
-    try {
-      // Validate patient ID
-      if (patientId == 0) {
-        throw Exception('ID de paciente inválido. Por favor, reinicie el proceso.');
-      }
+        if (responseModels.length != questions.length) {
+          throw Exception('Faltan respuestas. Por favor, responda todas las preguntas.');
+        }
 
-      // Convert responses to ResponseModel list
-      final List<ResponseModel> responseModels = _responses.entries.map((entry) {
-        return ResponseModel(
-          questionId: entry.key,
-          answerValue: entry.value,
+        final totalScore = calculateTotalScore();
+        final osteoMeta = await _resolveOsteoporosisMeta();
+        final scoreForDb = surveyType == 'osteoporosis' ? totalScore : null;
+
+        final survey = SurveyModel(
+          surveyId: DateTime.now().millisecondsSinceEpoch,
+          surveyType: surveyTypeId,
+          patientId: patientId,
+          responses: responseModels,
+          synced: false,
+          risk_level: osteoMeta.riskLevel,
+          score: scoreForDb,
         );
-      }).toList();
 
-       // Validate all questions answered
-       if (responseModels.length != questions.length) {
-         throw Exception('Faltan respuestas. Por favor, responda todas las preguntas.');
-       }
+        final saveResult = await surveyService.saveSurvey(survey);
 
-       // Calculate total score
-       final totalScore = calculateTotalScore();
-
-       // For osteoporosis, calculate risk level
-       String? riskLevel;
-       int? scoreForDb;
-       double? osteoWeight;
-       double? osteoHeight;
-       if (surveyType == 'osteoporosis') {
-         scoreForDb = totalScore;
-         try {
-           // Use initialWeight and initialHeight if provided, otherwise get from patient
-           double? weight = initialWeight;
-           double? height = initialHeight;
-
-           // Store for returning in result
-           osteoWeight = weight;
-           osteoHeight = height;
-
-           if (weight != null && height != null) {
-             // Get patient data from Hive for age and gender
-             try {
-               final patientsBox = await Hive.openBox<PatientModel>('patients');
-               final patients = patientsBox.values.where((p) => p.patientId == patientId).toList();
-
-                if (patients.isNotEmpty) {
-                  final patient = patients.first;
-
-                  // Save weight and height to patient if not already set
-                  if (patient.weight == null) {
-                    patient.weight = weight;
-                  }
-                  if (patient.height == null) {
-                    patient.height = height;
-                  }
-
-                  // Calculate and save IMC
-                  if (weight != null && height != null && height > 0) {
-                    final imc = OsteoporosisRiskService.calculateBMI(weight, height);
-                    patient.imc = imc;
-                  }
-
-                  await patient.save();
-
-                  // Calculate age from birthDate
-                  final now = DateTime.now();
-                  final age = (now.year - patient.birthDate.year) as int;
-
-                  // Get sex (convert 'M'/'F' from model)
-                 final sexEnum = (patient.gender == 'M') ? Sex.male : Sex.female;
-
-                 // Convert responses to bool answers (true = 1, false = 0)
-                 final answersList = <bool>[];
-                 for (int q = 1; q <= 7; q++) {
-                   answersList.add((_responses[q] ?? 0) == 1);
-                 }
-
-                 final patientData = PatientData(
-                   age: age,
-                   weightKg: weight,
-                   heightMeters: height,
-                   sex: sexEnum,
-                   answers: answersList,
-                 );
-                 final result = OsteoporosisRiskService.calculateRisk(patientData);
-                 _osteoporosisRiskResult = result;
-                 // Convert enum name to database format: notApplicable -> not_applicable
-                 riskLevel = result.riskLevel.name == 'notApplicable' ? 'not_applicable' : result.riskLevel.name;
-               } else {
-                 print('Paciente con ID $patientId no encontrado en Hive. Buscando en Supabase...');
-                 // Si no está en Hive, buscar en Supabase
-                 try {
-                   final supabase = SupabaseConfig.client;
-                   final response = await supabase
-                       .from('patients')
-                       .select()
-                       .eq('patient_id', patientId)
-                       .maybeSingle();
-
-                   if (response != null) {
-                     final patientData = PatientModel.fromJson(response);
-
-                     // Calculate age from birthDate
-                     final now = DateTime.now();
-                     final age = (now.year - patientData.birthDate.year) as int;
-
-                     // Get sex (convert 'M'/'F' from model)
-                     final sexEnum = (patientData.gender == 'M') ? Sex.male : Sex.female;
-
-                     // Convert responses to bool answers (true = 1, false = 0)
-                     final answersList = <bool>[];
-                     for (int q = 1; q <= 7; q++) {
-                       answersList.add((_responses[q] ?? 0) == 1);
-                     }
-
-                     final osteopatientData = PatientData(
-                       age: age,
-                       weightKg: weight,
-                       heightMeters: height,
-                       sex: sexEnum,
-                       answers: answersList,
-                     );
-                     final result = OsteoporosisRiskService.calculateRisk(osteopatientData);
-                     _osteoporosisRiskResult = result;
-                     riskLevel = result.riskLevel.name == 'notApplicable' ? 'not_applicable' : result.riskLevel.name;
-                   } else {
-                     print('Paciente no encontrado en Supabase tampoco');
-                   }
-                 } catch (supabaseError) {
-                   print('Error buscando en Supabase: $supabaseError');
-                 }
-               }
-             } catch (e) {
-               print('Error al acceder a Hive: $e');
-             }
-           } else {
-             print('Peso y talla no disponibles. Peso: $weight, Talla: $height');
-           }
-         } catch (e, stackTrace) {
-           print('Error calculating osteoporosis risk: $e');
-           print('Stack trace: $stackTrace');
-         }
-       }
-
-       // Create survey
-       final survey = SurveyModel(
-         surveyId: DateTime.now().millisecondsSinceEpoch,
-         surveyType: surveyTypeId,
-         patientId: patientId,
-         responses: responseModels,
-         synced: false,
-         risk_level: surveyType == 'osteoporosis' ? riskLevel : null,
-         score: surveyType == 'osteoporosis' ? scoreForDb : null,
-       );
-
-       final saveResult = await surveyService.saveSurvey(survey);
-       final wasSynced = saveResult.wasSynced;
-
-       // For osteoporosis, also sync patient data to Supabase
-       if (surveyType == 'osteoporosis') {
-         try {
-           final patientsBox = await Hive.openBox<PatientModel>('patients');
-           final patients = patientsBox.values.where((p) => p.patientId == patientId).toList();
-
-           if (patients.isNotEmpty) {
-             final patient = patients.first;
-             // Sync patient to Supabase to save weight/height
-             await surveyService.syncPatientToSupabase(patient);
-           }
-         } catch (e) {
-           print('Error al sincronizar paciente: $e');
-         }
-       }
+        if (surveyType == 'osteoporosis') {
+          final patient = await _loadPatientForOsteoporosis();
+          if (patient != null) {
+            try {
+              await SurveyRepository().syncPatientToSupabase(patient);
+            } catch (error, stackTrace) {
+              logControllerError('sincronizar paciente osteoporosis', error, stackTrace);
+            }
+          }
+        }
 
         return SurveySaveResult(
           success: true,
-          wasSynced: wasSynced,
+          wasSynced: saveResult.wasSynced,
           totalScore: totalScore,
           interpretation: getInterpretation(),
           severityLevel: getSeverityLevel(),
           riskResult: _osteoporosisRiskResult,
-          weight: surveyType == 'osteoporosis' ? osteoWeight : null,
-          height: surveyType == 'osteoporosis' ? osteoHeight : null,
+          weight: osteoMeta.weight,
+          height: osteoMeta.height,
         );
-    } catch (e, stackTrace) {
-      print('Error al guardar encuesta: $e');
-      print('Stack trace: $stackTrace');
-
-      return SurveySaveResult(
+      },
+      onError: (error, stackTrace) {
+        return SurveySaveResult(
         success: false,
         wasSynced: false,
-        error: e.toString(),
+        error: error.toString(),
       );
-    } finally {
-      _isSaving = false;
-      notifyListeners();
-    }
+      },
+      operation: 'guardar encuesta',
+    );
   }
 
   @override
