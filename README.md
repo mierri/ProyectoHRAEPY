@@ -39,6 +39,7 @@ lib/
 Ver documentación completa del backend en:
 - **[BACKEND_API.md](BACKEND_API.md)** - API completa y ejemplos de uso
 - **[OFFLINE_STORAGE.md](OFFLINE_STORAGE.md)** - Detalles de almacenamiento offline
+- **[REFACTORING_2026_04.md](REFACTORING_2026_04.md)** - Documentación de la nueva refactorización
 
 ## 🛠 Tecnologías
 
