@@ -162,6 +162,13 @@ class QuickActionsGrid extends StatelessWidget {
         color: LightModeColors.lightSecondary,
         onTap: () => context.push('/patients'),
       ),
+      _ActionData(
+        icon: material.Icons.query_stats,
+        title: 'Investigaciones',
+        description: 'Acceso a investigaciones relacionadas',
+        color: LightModeColors.lightPrimary,
+        onTap: () => context.push('/investigations'),
+      )
     ];
 
     // Desktop: 4 en fila | Mobile/Tablet: 2 en fila
