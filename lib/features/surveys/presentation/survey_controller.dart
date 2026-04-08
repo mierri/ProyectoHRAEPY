@@ -1,14 +1,13 @@
 import 'package:ssapp/features/surveys/domain/survey_catalog.dart';
 import 'package:ssapp/features/surveys/domain/survey_rules.dart';
-import 'package:ssapp/features/surveys/domain/use_cases/save_osteoporosis_survey_use_case.dart';
 import 'package:ssapp/features/surveys/presentation/base_survey_controller.dart';
 import 'package:ssapp/features/surveys/types/bdi/domain/bdi_questions.dart';
 import 'package:ssapp/features/surveys/types/iciq_sf/domain/iciq_sf_questions.dart';
+import 'package:ssapp/features/surveys/types/osteoporosis/domain/osteoporosis_risk_model.dart';
 import 'package:ssapp/features/surveys/types/katz/domain/katz_questions.dart';
 import 'package:ssapp/shared/models/response_model.dart';
 import 'package:ssapp/shared/models/survey_model.dart';
 import 'package:ssapp/features/surveys/domain/survey_service.dart';
-import 'package:ssapp/models/osteoporosis_risk_model.dart';
 
 // Responsabilidad: coordinar estado, respuestas y guardado de encuestas BDI/BAI/GDS/Lawton/Katz/ICIQ-SF/Osteoporosis.
 /// Controller for BDI/BAI survey logic
@@ -39,6 +38,10 @@ class SurveyController extends BaseSurveyController {
    Map<int, int> get responses => Map.unmodifiable(_responses);
    int? get selectedOptionIndex => _selectedOptionIndex;
    RiskResult? get osteoporosisRiskResult => _osteoporosisRiskResult;
+
+  void setOsteoporosisRiskResult(RiskResult? value) {
+    _osteoporosisRiskResult = value;
+  }
 
   int get surveyTypeId {
     return SurveyCatalog.idForType(surveyType);
@@ -179,35 +182,10 @@ class SurveyController extends BaseSurveyController {
         }
 
         final totalScore = calculateTotalScore();
-        String? riskLevel;
-        double? weight = initialWeight;
-        double? height = initialHeight;
-
-        if (surveyType == 'osteoporosis') {
-          if (weight == null || height == null) {
-            throw Exception('Peso y altura son obligatorios para osteoporosis.');
-          }
-
-          final uc = SaveOsteoporosisSurveyUseCase();
-          final result = await uc.execute(
-            patientId: patientId,
-            weightKg: weight,
-            heightMeters: height,
-            answers: List<bool>.generate(7, (index) => (_responses[index + 1] ?? 0) == 1),
-            surveyService: surveyService,
-          );
-
-          if (!result.success) {
-            throw Exception(result.error ?? 'No se pudo procesar el riesgo de osteoporosis.');
-          }
-
-          _osteoporosisRiskResult = result.riskResult;
-          riskLevel = _osteoporosisRiskResult?.riskLevel.name == 'notApplicable'
-              ? 'not_applicable'
-              : _osteoporosisRiskResult?.riskLevel.name;
-        }
-
-        final scoreForDb = surveyType == 'osteoporosis' ? totalScore : null;
+        final String? riskLevel = null;
+        final double? weight = initialWeight;
+        final double? height = initialHeight;
+        final int? scoreForDb = null;
 
         final survey = SurveyModel(
           surveyId: DateTime.now().millisecondsSinceEpoch,
@@ -227,7 +205,7 @@ class SurveyController extends BaseSurveyController {
           totalScore: totalScore,
           interpretation: getInterpretation(),
           severityLevel: getSeverityLevel(),
-          riskResult: _osteoporosisRiskResult,
+          riskResult: null,
           weight: weight,
           height: height,
         );

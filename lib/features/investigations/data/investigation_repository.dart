@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:ssapp/core/logger/app_logger.dart';
 import 'package:ssapp/core/supabase/supabase_config.dart';
 import 'package:ssapp/features/investigations/domain/investigation_model.dart';
 
@@ -66,7 +67,7 @@ class InvestigationService extends ChangeNotifier {
       _investigations = investigations;
       notifyListeners();
     } catch (e) {
-      debugPrint('Error al cargar investigaciones: $e');
+      AppLogger.error('Error al cargar investigaciones', e);
     }
   }
 
@@ -99,7 +100,7 @@ class InvestigationService extends ChangeNotifier {
       notifyListeners();
       return created;
     } catch (e) {
-      debugPrint('Error al crear investigación: $e');
+      AppLogger.error('Error al crear investigacion', e);
       return null;
     }
   }
@@ -126,7 +127,7 @@ class InvestigationService extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      debugPrint('No se pudo vincular participante a investigación: $e');
+      AppLogger.error('No se pudo vincular participante a investigacion', e);
     }
   }
 

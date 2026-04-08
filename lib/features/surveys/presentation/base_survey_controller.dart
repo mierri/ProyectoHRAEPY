@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:ssapp/core/logger/app_logger.dart';
 import 'package:ssapp/shared/models/response_model.dart';
 
 // Responsabilidad: centralizar estado de guardado y utilidades compartidas para controladores de encuestas.
@@ -50,8 +51,7 @@ abstract class BaseSurveyController extends ChangeNotifier {
 
   @protected
   void logControllerError(String operation, Object error, StackTrace stackTrace) {
-    debugPrint('Error in $runtimeType during $operation: $error');
-    debugPrint(stackTrace.toString());
+    AppLogger.error('Error in $runtimeType during $operation', error, stackTrace);
   }
 
   Future<dynamic> saveSurvey();

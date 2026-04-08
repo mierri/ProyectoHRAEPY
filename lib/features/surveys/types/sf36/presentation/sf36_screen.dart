@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:provider/provider.dart';
-import 'package:ssapp/features/surveys/presentation/sf36_controller.dart';
+import 'package:ssapp/features/surveys/types/sf36/presentation/sf36_controller.dart';
 import 'package:ssapp/features/surveys/types/sf36/domain/sf36_questions.dart';
 import 'package:ssapp/features/surveys/domain/survey_service.dart';
 import 'package:ssapp/shared/utils/theme.dart';

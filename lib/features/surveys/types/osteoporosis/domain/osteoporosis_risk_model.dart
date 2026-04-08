@@ -77,13 +77,12 @@ class RiskResult {
 
   /// Convert result to JSON for API transmission
   Map<String, dynamic> toJson() => {
-    'bmi': bmi.toStringAsFixed(2),
-    'score': score,
-    'risk_level': riskLevel.name,
-    'is_high_risk': isHighRisk,
-    'is_applicable': isApplicable,
-    'age_group': ageGroup,
-    'bmi_category': bmiCategory,
-  };
+        'bmi': bmi.toStringAsFixed(2),
+        'score': score,
+        'risk_level': riskLevel.name,
+        'is_high_risk': isHighRisk,
+        'is_applicable': isApplicable,
+        'age_group': ageGroup,
+        'bmi_category': bmiCategory,
+      };
 }
-

@@ -3,7 +3,7 @@
 /// Run with: flutter test test/osteoporosis_risk_service_test.dart
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ssapp/models/osteoporosis_risk_model.dart';
+import 'package:ssapp/features/surveys/types/osteoporosis/domain/osteoporosis_risk_model.dart';
 import 'package:ssapp/features/surveys/types/osteoporosis/domain/osteoporosis_risk_service.dart';
 
 void main() {

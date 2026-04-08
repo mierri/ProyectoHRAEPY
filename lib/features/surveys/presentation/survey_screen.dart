@@ -7,6 +7,7 @@ import 'package:ssapp/core/logger/app_logger.dart';
 import 'package:ssapp/features/surveys/presentation/survey_controller.dart';
 import 'package:ssapp/features/surveys/types/bdi/domain/bdi_questions.dart';
 import 'package:ssapp/features/surveys/types/iciq_sf/domain/iciq_sf_questions.dart';
+import 'package:ssapp/features/surveys/types/osteoporosis/presentation/osteoporosis_survey_controller.dart';
 import 'package:ssapp/features/surveys/domain/survey_service.dart';
 import 'package:ssapp/shared/utils/theme.dart';
 import 'package:ssapp/shared/utils/toast_helper.dart';
@@ -57,13 +58,20 @@ class _SurveyScreenState extends State<SurveyScreen> {
 
           AppLogger.debug('Extracted weight=$weight, height=$height from params');
       }
-      _controller = SurveyController(
-        patientId: widget.patientId,
-        surveyType: widget.surveyType,
-        surveyService: surveyService,
-        initialWeight: weight,
-        initialHeight: height,
-      );
+      _controller = widget.surveyType == 'osteoporosis'
+          ? OsteoporosisSurveyController(
+              patientId: widget.patientId,
+              surveyService: surveyService,
+              initialWeight: weight,
+              initialHeight: height,
+            )
+          : SurveyController(
+              patientId: widget.patientId,
+              surveyType: widget.surveyType,
+              surveyService: surveyService,
+              initialWeight: weight,
+              initialHeight: height,
+            );
       _controller.addListener(_onControllerUpdate);
       _isControllerInitialized = true;
     }

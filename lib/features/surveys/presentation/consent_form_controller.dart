@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:ssapp/core/logger/app_logger.dart';
 import 'package:ssapp/features/patients/data/patient_repository.dart';
 import 'package:ssapp/features/surveys/domain/survey_type_config.dart';
 import 'package:ssapp/shared/models/patient_model.dart';
@@ -65,7 +66,7 @@ class ConsentFormController extends ChangeNotifier {
     try {
       _availablePatients = patientService.patients;
     } catch (error) {
-      debugPrint('Error loading patients: $error');
+      AppLogger.error('Error loading patients', error);
     } finally {
       _isLoadingPatients = false;
       notifyListeners();

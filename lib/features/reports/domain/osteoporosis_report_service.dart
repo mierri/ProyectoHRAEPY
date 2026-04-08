@@ -1,4 +1,4 @@
-import 'package:ssapp/models/osteoporosis_report_model.dart';
+import 'package:ssapp/features/reports/domain/osteoporosis_report_model.dart';
 import 'package:ssapp/features/surveys/types/osteoporosis/domain/osteoporosis_risk_service.dart';
 import 'package:ssapp/core/logger/app_logger.dart';
 

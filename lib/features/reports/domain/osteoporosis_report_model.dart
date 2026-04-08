@@ -165,4 +165,3 @@ class OsteoporosisCompleteReport {
     required this.generatedAt,
   });
 }
-

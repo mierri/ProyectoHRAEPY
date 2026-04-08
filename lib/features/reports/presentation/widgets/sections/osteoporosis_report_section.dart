@@ -1,6 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
-import 'package:ssapp/models/osteoporosis_report_model.dart';
+import 'package:ssapp/features/reports/domain/osteoporosis_report_model.dart';
 import 'package:ssapp/features/reports/presentation/widgets/charts/stat_bar_chart.dart';
 
 class OsteoporosisReportSection extends StatelessWidget {

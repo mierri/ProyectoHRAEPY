@@ -1,4 +1,4 @@
-import 'package:ssapp/models/osteoporosis_risk_model.dart';
+import 'package:ssapp/features/surveys/types/osteoporosis/domain/osteoporosis_risk_model.dart';
 
 /// Service for calculating osteoporosis fracture risk scores
 /// Based on clinical lookup table with age, BMI, sex, and questionnaire score

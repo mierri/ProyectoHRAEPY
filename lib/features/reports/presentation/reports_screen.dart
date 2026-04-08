@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart' as material;
 import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
-import 'package:ssapp/features/reports/domain/stats_calculator.dart';
 import 'package:ssapp/features/reports/presentation/reports_viewmodel.dart';
-import 'package:ssapp/features/reports/presentation/widgets/sections/bdi_report_section.dart';
-import 'package:ssapp/features/reports/presentation/widgets/sections/osteoporosis_report_section.dart';
-import 'package:ssapp/features/reports/presentation/widgets/sections/sf36_report_section.dart';
-import 'package:ssapp/features/reports/presentation/widgets/sections/whoqol_report_section.dart';
+import 'package:ssapp/features/reports/presentation/viewmodels/survey_report_viewmodels.dart';
 import 'package:ssapp/features/surveys/domain/survey_service.dart';
-import 'package:ssapp/features/reports/domain/osteoporosis_report_service.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -62,8 +57,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<ReportsViewModel>.value(
       value: _viewModel,
-      child: Consumer2<ReportsViewModel, SurveyService>(
-        builder: (context, vm, surveyService, _) {
+      child: Consumer<ReportsViewModel>(
+        builder: (context, vm, _) {
           return Scaffold(
             headers: [
               AppBar(
@@ -91,10 +86,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   child: vm.isLoading
                       ? const Center(child: CircularProgressIndicator())
                       : _ReportBody(
-                          surveyType: vm.selectedSurveyType,
+                          reportViewModel: vm.activeReportViewModel,
                           surveyName: _surveyNames[vm.selectedSurveyType] ?? 'Encuesta',
                           surveys: vm.surveys,
-                          surveyService: surveyService,
                         ),
                 ),
               ],
@@ -198,16 +192,14 @@ class _HeaderBar extends StatelessWidget {
 }
 
 class _ReportBody extends StatelessWidget {
-  final int surveyType;
+  final SurveyReportViewModel reportViewModel;
   final String surveyName;
   final List<Map<String, dynamic>> surveys;
-  final SurveyService surveyService;
 
   const _ReportBody({
-    required this.surveyType,
+    required this.reportViewModel,
     required this.surveyName,
     required this.surveys,
-    required this.surveyService,
   });
 
   @override
@@ -227,44 +219,9 @@ class _ReportBody extends StatelessWidget {
       );
     }
 
-    if (surveyType == 3) {
-      final data = SurveyStatsCalculator.computeWhoqolReport(surveys);
-      return SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: WhoqolReportSection(data: data),
-      );
-    }
-
-    if (surveyType == 5) {
-      final data = SurveyStatsCalculator.computeSF36Report(surveys);
-      return SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Sf36ReportSection(data: data),
-      );
-    }
-
-    if (surveyType == 9) {
-      final report = OsteoporosisReportService.generateCompleteReport(surveys);
-      return SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: OsteoporosisReportSection(report: report),
-      );
-    }
-
-    final scores = surveys.map(SurveyStatsCalculator.calculateSurveyScore).toList();
-    final stats = SurveyStatsCalculator.computeBasicStats(scores);
-    final dist = (surveyType == 2)
-        ? SurveyStatsCalculator.baiDistribution(surveys)
-        : SurveyStatsCalculator.bdiDistribution(surveys);
-
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
-      child: BdiReportSection(
-        surveys: surveys,
-        stats: stats,
-        distribution: dist,
-        title: 'Resumen $surveyName',
-      ),
+      child: reportViewModel.buildSection(surveys),
     );
   }
 }

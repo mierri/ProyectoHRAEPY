@@ -4,7 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/features/patients/data/patient_repository.dart';
 import 'package:ssapp/features/surveys/domain/survey_type_config.dart';
-import 'package:ssapp/features/surveys/presentation/consent_form_controller.dart';
+import 'package:ssapp/features/surveys/presentation/consent_controller.dart';
 import 'package:ssapp/shared/models/patient_model.dart';
 import 'package:provider/provider.dart';
 import 'package:ssapp/shared/utils/theme.dart';

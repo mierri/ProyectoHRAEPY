@@ -19,10 +19,12 @@ Sistema de gestion de pacientes y encuestas clinicas con almacenamiento offline 
 lib/
 ├── app/
 │   ├── app.dart                      # Configuracion principal de app
+│   ├── di.dart                       # Dependency Injection (providers)
 │   └── router.dart                   # Rutas GoRouter
 ├── core/
 │   ├── logger/
 │   ├── network/
+│   ├── storage/
 │   └── supabase/
 ├── features/
 │   ├── auth/
@@ -47,6 +49,7 @@ Ver documentación completa del backend en:
 - **[BACKEND_API.md](BACKEND_API.md)** - API y sincronizacion
 - **[OFFLINE_STORAGE.md](OFFLINE_STORAGE.md)** - Detalles de almacenamiento offline
 - **[REFACTORING_2026_04.md](REFACTORING_2026_04.md)** - Historial de refactorizacion
+- **[README_FEATURE_DRIVEN_REFACTOR_2026_04.md](README_FEATURE_DRIVEN_REFACTOR_2026_04.md)** - Estructura final por feature y por tipo de encuesta
 
 ## 🛠 Tecnologías
 

@@ -14,10 +14,12 @@ Objetivos:
 lib/
   app/
     app.dart
+    di.dart
     router.dart
   core/
     logger/
     network/
+    storage/
     supabase/
   features/
     auth/
@@ -37,9 +39,17 @@ lib/
       domain/
       presentation/
       types/
-  models/
-    osteoporosis_risk_model.dart
-    osteoporosis_report_model.dart
+        assist/
+        bai/
+        bdi/
+        gds/
+        iciq_sf/
+        katz/
+        lawton/
+        moca/
+        osteoporosis/
+        sf36/
+        whoqol/
   shared/
     models/
     services/
@@ -53,9 +63,11 @@ lib/
 ### app/
 - Configuración global de app y rutas.
 - `router.dart` es la única fuente de navegación.
+- `di.dart` centraliza el registro de dependencias (`Provider`).
 
 ### core/
 - Infraestructura transversal técnica (logger, red, configuración de Supabase).
+- `core/storage/hive_adapters.dart` centraliza registro de adapters Hive.
 - Sin lógica de negocio de una feature específica.
 
 ### features/
@@ -68,8 +80,12 @@ lib/
 - `shared/services/`: contratos/servicios transversales (`ISyncable`, sync coordinado).
 - `shared/utils/` y `shared/widgets/`: utilidades y componentes compartidos.
 
-### models/
-- Modelos transversales de osteoporosis que aún no viven en `shared/models`.
+### features/surveys/types/
+- Estructura 100% por instrumento: cada tipo contiene su `domain/` y, cuando aplica, `presentation/`.
+- Ejemplos:
+  - `types/whoqol/presentation/whoqol_screen.dart`
+  - `types/sf36/presentation/sf36_controller.dart`
+  - `types/osteoporosis/domain/save_osteoporosis_survey_use_case.dart`
 
 ## 4. Estado de migración y limpieza
 
@@ -104,6 +120,10 @@ Reglas:
 3. `SurveyService` (feature domain) orquesta guardado.
 4. `SaveSurveyUseCase` persiste local + intenta sincronización.
 5. `SurveyRepository` maneja Hive/Supabase.
+
+Nota de organización actual:
+- Las pantallas/controladores específicos por instrumento viven en `features/surveys/types/<instrumento>/presentation/`.
+- `features/surveys/presentation/survey_screen.dart` queda como orquestador base reutilizable para tipos genéricos.
 
 ### 6.2 Reportes
 1. `ReportsScreen` (orquestador) en `features/reports/presentation/`.

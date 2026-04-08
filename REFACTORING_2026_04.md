@@ -1,93 +1,96 @@
 # Refactorizacion Abril 2026
 
 ## Objetivo
-Consolidar separacion de responsabilidades por capas sin romper contratos publicos consumidos por widgets, manteniendo `ChangeNotifier` y navegacion con `GoRouter`.
+Consolidar una arquitectura 100% feature-driven, con responsabilidades separadas por dominio funcional y por tipo de instrumento en encuestas.
 
 ## Resumen ejecutivo
-- `SurveyService` quedo como coordinador de alto nivel con API minima.
-- Se elimino duplicacion en controllers con `BaseSurveyController`.
-- `ConsentFormScreen` delega logica de negocio en `ConsentFormController`.
-- Sincronizacion centralizada en `SyncService` mediante contrato `ISyncable`.
-- `PatientModel` delega mapeo de genero a `GenderMapper`.
+- Se eliminaron capas legacy (`lib/Services`, `lib/controllers`, `lib/screens`, `lib/provider`, `lib/models`).
+- `surveys/types/` ahora organiza cada instrumento con `domain/` y `presentation/` propios.
+- Se movio `save_osteoporosis_survey_use_case.dart` al dominio de `types/osteoporosis/`.
+- `reports/` quedo desacoplado con use cases concretos y viewmodels por tipo.
+- Se centralizo DI en `lib/app/di.dart` y registro Hive en `lib/core/storage/hive_adapters.dart`.
 
 ## Cambios por fase
 
-### Fase 1 - Servicios (Survey)
-Archivos clave:
-- `lib/Services/survey_service.dart`
-- `lib/Services/surveys/survey_rules.dart`
-- `lib/Services/surveys/survey_catalog.dart`
-
+### Fase 1 - Limpieza inmediata
 Resultado:
-- `SurveyService` mantiene solo 5 metodos publicos:
-  - `loadSurveys()`
-  - `saveSurvey()`
-  - `getCompletedSurveys()`
-  - `getStatistics()`
-  - `getSurveysByType()`
-- Catalogo y reglas estadisticas quedan en `SurveyCatalog`/`SurveyRules`.
-- Operaciones de sincronizacion quedaron fuera de `SurveyService`.
+- Logging estructurado unificado con `core/logger/app_logger.dart`.
+- Consentimiento separado en `features/surveys/presentation/consent_form_controller.dart`.
+- Eliminacion de residuos legacy vacios.
 
-### Fase 2 - Controllers (eliminar duplicacion)
-Archivos clave:
-- `lib/controllers/base_survey_controller.dart`
-- `lib/controllers/survey_controller.dart`
-- `lib/controllers/sf36_controller.dart`
-- `lib/controllers/whoqol_controller.dart`
-
+### Fase 2 - Reportes (alto impacto)
 Resultado:
-- Se centralizo estado de guardado, construccion de respuestas y manejo de errores.
-- `SurveyController`, `SF36Controller` y `WhoqolController` extienden `BaseSurveyController`.
-- `SurveyController` delega calculo de riesgo a `OsteoporosisRiskService.calculateRisk(...)`.
+- Feature `reports/` con estructura por capas (`data`, `domain`, `infrastructure`, `presentation`).
+- `GenerateReportUseCase` y `ExportDataUseCase` implementados.
+- PDF por tipo (`bdi_bai`, `whoqol`, `sf36`, `osteoporosis`) sobre `PdfReportBase`.
+- `SurveyCsvExporter` como exportador CSV por tipo.
+- `ReportsViewModel` delega render/export a viewmodels por tipo.
 
-### Fase 3 - UI (Consentimiento)
-Archivos clave:
-- `lib/controllers/consent_form_controller.dart`
-- `lib/config/survey_type_config.dart`
-- `lib/screens/consent_form_screen.dart`
-
+### Fase 3 - Survey Controller
 Resultado:
-- `ConsentFormScreen` queda enfocada en render y navegacion.
-- Estado del formulario, validaciones y submit movidos a `ConsentFormController`.
-- Colores, descripciones e instrucciones por tipo centralizados en `SurveyTypeConfig`.
+- `SurveyController` queda generico.
+- `OsteoporosisSurveyController` encapsula flujo especializado de osteoporosis.
+- `SaveOsteoporosisSurveyUseCase` vive en `features/surveys/types/osteoporosis/domain/`.
 
-### Fase 4 - Sincronizacion centralizada
-Archivos clave:
-- `lib/Services/contracts/syncable.dart`
-- `lib/Services/sync_service.dart`
-- `lib/Services/patient_service.dart`
-- `lib/Services/surveys/survey_repository.dart`
-- `lib/screens/dashboard_screen.dart`
-- `lib/screens/settings_screen.dart`
-
+### Fase 4 - Feature-driven completo
 Resultado:
-- `ISyncable` define `syncPendingToServer()` y `downloadFromServer()`.
-- `PatientService` y `SurveyRepository` implementan `ISyncable`.
-- `SyncService` es el punto unico para:
-  - `downloadFromServer()`
-  - `syncPendingOnly()`
-  - `syncAll()`
-- Dashboard/Settings ya no orquestan sincronizacion por separado.
+- Pantallas/controladores especificos movidos a `features/surveys/types/<instrumento>/presentation/`:
+  - `assist`, `whoqol`, `sf36`, `moca`, `osteoporosis`.
+- Se crearon pantallas por tipo para `bdi`, `bai`, `gds`, `lawton`, `katz`, `iciq_sf`.
+- Se agregaron barrels por tipo (`<tipo>_feature.dart`).
+- Router actualizado para resolver pantalla por instrumento desde `types/*/presentation/`.
 
-### Fase 5 - Modelo de paciente
-Archivos clave:
-- `lib/models/patient_model.dart`
-- `lib/utils/gender_mapper.dart`
+## Estado de estructura resultante (encuestas)
 
-Resultado:
-- Mapeo de genero extraido a `GenderMapper`.
-- `PatientModel.toJson()/fromJson()` usan `GenderMapper`.
-- Getter `age` permanece en el modelo, documentado como calculo derivado sin side effects.
-
-## Compatibilidad y restricciones cumplidas
-- Se mantuvo `Provider` + `ChangeNotifier`.
-- No se cambio `GoRouter` ni rutas existentes.
-- No se tocaron archivos `.g.dart`.
-- No se introdujeron dependencias externas nuevas.
-
-## Riesgos y notas
-- Existen providers legacy (`lib/provider/*`) para flujos antiguos; no son el camino principal en la nueva orquestacion.
-- Para nuevas funcionalidades de sincronizacion, usar solo `SyncService`.
+```text
+lib/features/surveys/types/
+  assist/
+    domain/
+    presentation/
+    assist_feature.dart
+  bai/
+    domain/
+    presentation/
+    bai_feature.dart
+  bdi/
+    domain/
+    presentation/
+    bdi_feature.dart
+  gds/
+    domain/
+    presentation/
+    gds_feature.dart
+  iciq_sf/
+    domain/
+    presentation/
+    iciq_sf_feature.dart
+  katz/
+    domain/
+    presentation/
+    katz_feature.dart
+  lawton/
+    domain/
+    presentation/
+    lawton_feature.dart
+  moca/
+    domain/
+    presentation/
+    moca_feature.dart
+  osteoporosis/
+    domain/
+    presentation/
+    osteoporosis_feature.dart
+  sf36/
+    domain/
+    presentation/
+    sf36_feature.dart
+  whoqol/
+    domain/
+    presentation/
+    whoqol_feature.dart
+```
 
 ## Validacion
-- Tests ejecutados despues del refactor: suite en verde tras ajustar `test/widget_test.dart` al estado real de la app.
+- Compilacion sin errores en archivos migrados por tipo.
+- Tests de osteoporosis en verde despues de mover modelos/rutas de import.
+- Diagnostico Android residual de Gradle/SDK permanece fuera de este refactor.

@@ -1,18 +1,24 @@
 import 'package:go_router/go_router.dart';
-import 'package:ssapp/features/surveys/presentation/assist_screen.dart';
+import 'package:ssapp/features/surveys/types/assist/presentation/assist_screen.dart';
+import 'package:ssapp/features/surveys/types/bai/presentation/bai_screen.dart';
+import 'package:ssapp/features/surveys/types/bdi/presentation/bdi_screen.dart';
 import 'package:ssapp/features/surveys/presentation/consent_form_screen.dart';
 import 'package:ssapp/features/dashboard/dashboard_screen.dart';
-import 'package:ssapp/features/surveys/presentation/moca_test_screen.dart';
+import 'package:ssapp/features/surveys/types/gds/presentation/gds_screen.dart';
+import 'package:ssapp/features/surveys/types/iciq_sf/presentation/iciq_sf_screen.dart';
+import 'package:ssapp/features/surveys/types/katz/presentation/katz_screen.dart';
+import 'package:ssapp/features/surveys/types/lawton/presentation/lawton_screen.dart';
+import 'package:ssapp/features/surveys/types/moca/presentation/moca_test_screen.dart';
+import 'package:ssapp/features/surveys/types/osteoporosis/presentation/osteoporosis_screen.dart';
 import 'package:ssapp/features/patients/presentation/patients_screen.dart';
 import 'package:ssapp/shared/widgets/placeholder_screen.dart';
 import 'package:ssapp/features/reports/presentation/reports_screen.dart';
 import 'package:ssapp/features/settings/settings_screen.dart';
-import 'package:ssapp/features/surveys/presentation/sf36_screen.dart';
+import 'package:ssapp/features/surveys/types/sf36/presentation/sf36_screen.dart';
 import 'package:ssapp/features/surveys/presentation/survey_results_screen.dart';
-import 'package:ssapp/features/surveys/presentation/survey_screen.dart';
 import 'package:ssapp/features/surveys/presentation/surveys_list_screen.dart';
 import 'package:ssapp/features/surveys/presentation/survey_type_selection_screen.dart';
-import 'package:ssapp/features/surveys/presentation/whoqol_screen.dart';
+import 'package:ssapp/features/surveys/types/whoqol/presentation/whoqol_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
@@ -63,10 +69,31 @@ final GoRouter appRouter = GoRouter(
           return AssistScreen(patientId: patientId);
         }
 
-        return SurveyScreen(
-          patientId: patientId,
-          surveyType: surveyType,
-        );
+        if (surveyType == 'bai') {
+          return BaiScreen(patientId: patientId);
+        }
+
+        if (surveyType == 'gds') {
+          return GdsScreen(patientId: patientId);
+        }
+
+        if (surveyType == 'lawton') {
+          return LawtonScreen(patientId: patientId);
+        }
+
+        if (surveyType == 'katz') {
+          return KatzScreen(patientId: patientId);
+        }
+
+        if (surveyType == 'iciqsf') {
+          return IciqSfScreen(patientId: patientId);
+        }
+
+        if (surveyType == 'osteoporosis') {
+          return OsteoporosisScreen(patientId: patientId);
+        }
+
+        return BdiScreen(patientId: patientId);
       },
     ),
     GoRoute(

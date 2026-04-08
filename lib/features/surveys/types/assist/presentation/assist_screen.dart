@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/features/surveys/domain/survey_service.dart';
-import 'package:ssapp/features/surveys/presentation/assist_controller.dart';
+import 'package:ssapp/features/surveys/types/assist/presentation/assist_controller.dart';
 import 'package:ssapp/features/surveys/types/assist/domain/assist_questions.dart';
 import 'package:ssapp/shared/utils/theme.dart';
 import 'package:ssapp/shared/utils/toast_helper.dart';

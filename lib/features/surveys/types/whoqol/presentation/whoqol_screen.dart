@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
-import 'package:ssapp/features/surveys/presentation/whoqol_controller.dart';
+import 'package:ssapp/features/surveys/types/whoqol/presentation/whoqol_controller.dart';
 import 'package:ssapp/features/surveys/types/whoqol/domain/whoqol_questions.dart';
 import 'package:ssapp/features/surveys/domain/survey_service.dart';
 import 'package:ssapp/shared/utils/theme.dart';
