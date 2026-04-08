@@ -311,7 +311,7 @@ Fuente: `lib/models/sf36_questions.dart`
 ---
 
 ## 5) ASSIST V3.0
-Fuentes: `lib/screens/assist_screen.dart`, `lib/models/assist_questions.dart`
+Fuentes: `lib/features/surveys/presentation/assist_screen.dart`, `lib/features/surveys/types/assist/domain/assist_questions.dart`
 
 ### Sustancias en pantalla (P1 a P7)
 - Tabaco

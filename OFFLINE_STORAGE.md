@@ -1,125 +1,50 @@
-# Almacenamiento Offline con Hive
+# Almacenamiento Offline (Estado Actual)
 
-La aplicación ahora guarda **pacientes** y **encuestas** localmente usando **Hive**, permitiendo trabajar sin conexión a internet.
+La app trabaja en modo offline-first usando Hive como almacenamiento local y Supabase como backend remoto.
 
-## 🔄 Cómo Funciona
+## Componentes activos
 
-### **Pacientes (PatientProvider)**
-- Se guardan localmente en `patientBox`
-- Al agregar/editar: se intenta sincronizar con Supabase inmediatamente
-- Si no hay conexión: se marca como `synced: false`
-- Cuando vuelva la conexión: usar `syncPendingPatients()` para enviar pendientes
+### Modelos Hive
+- `lib/shared/models/patient_model.dart`
+- `lib/shared/models/survey_model.dart`
+- `lib/shared/models/response_model.dart`
 
-### **Encuestas (SurveyProvider)**
-- Se guardan localmente en `surveyBox`
-- Mismo funcionamiento que pacientes
-- Método `syncPendingSurveys()` para sincronizar pendientes
+### Repositorios/servicios
+- `lib/features/surveys/data/survey_repository.dart`
+- `lib/features/surveys/domain/survey_service.dart`
+- `lib/features/patients/data/patient_repository.dart`
+- `lib/shared/services/sync_service.dart`
 
-## 📦 Archivos Creados/Modificados
+## Comportamiento
 
-### Modelos
-- [patient_model.dart](lib/models/patient_model.dart) - Ahora con campo `synced` y typeId: 2
-- [patient_model.g.dart](lib/models/patient_model.g.dart) - Adaptador generado por Hive
+### Guardado de encuestas
+1. Se persiste localmente en Hive.
+2. Se intenta sincronizacion con Supabase.
+3. Si falla la red, queda pendiente y se conserva en local.
 
-### Providers
-- [patient_provider.dart](lib/provider/patient_provider.dart) - Nuevo provider para pacientes
-- [survey_provider.dart](lib/provider/survey_provider.dart) - Ya existía
+### Carga de encuestas
+1. Se intenta obtener remoto.
+2. Se consolida con local para evitar perdida de datos.
+3. Se ordena por fecha de creacion.
 
-### Configuración
-- [main.dart](lib/main.dart) - Registra adaptadores de Hive
+### Sincronizacion pendiente
+- `syncPendingToServer()` envia pendientes locales.
+- `downloadFromServer()` trae cambios remotos para consolidar.
 
-### Ejemplo
-- [patient_list_page_example.dart](lib/pages/patient_list_page_example.dart) - Ejemplo de uso
+## Estado de sincronizacion
+Cada entidad mantiene bandera de sincronizacion:
+- `synced: true` -> ya consolidado en servidor.
+- `synced: false` -> pendiente de envio.
 
-## 🚀 Uso del PatientProvider
+## Inicializacion
+En `main.dart`:
+1. Inicializar Supabase.
+2. Inicializar Hive.
+3. Registrar adapters de `PatientModel`, `SurveyModel`, `ResponseModel`.
 
-```dart
-// Inicializar
-final provider = PatientProvider();
-await provider.initBox();
+## Limpieza de arquitectura
+Las capas legacy de offline/storage fueron retiradas:
+- `lib/provider/**`
+- `lib/Services/**`
 
-// Agregar paciente (intenta sincronizar automáticamente)
-final patient = PatientModel(
-  patientId: DateTime.now().millisecondsSinceEpoch,
-  name: 'Juan Pérez',
-  gender: 'M',
-  birthDate: DateTime(1990, 5, 15),
-);
-await provider.addPatient(patient);
-
-// Obtener todos los pacientes
-List<PatientModel> patients = provider.getAllPatientsAsList();
-
-// Buscar paciente por ID
-PatientModel? patient = provider.getPatientById(12345);
-
-// Actualizar paciente
-await provider.updatePatient(index, patientModificado);
-
-// Eliminar paciente
-await provider.deletePatient(index);
-
-// Sincronizar pacientes pendientes (cuando vuelva conexión)
-await provider.syncPendingPatients();
-
-// Descargar pacientes desde Supabase
-await provider.syncFromSupabase();
-
-// Cerrar al terminar
-await provider.dispose();
-```
-
-## 🔍 Verificar Estado de Sincronización
-
-Cada paciente y encuesta tiene un campo `synced`:
-- `synced: true` ✅ = Ya está en Supabase
-- `synced: false` ⚠️ = Pendiente de sincronizar
-
-```dart
-if (!patient.synced) {
-  print('Este paciente aún no se ha sincronizado');
-}
-```
-
-## 🌐 Sincronización Bidireccional
-
-### De Local → Supabase
-```dart
-await provider.syncPendingPatients();
-```
-Envía todos los pacientes con `synced: false` a Supabase.
-
-### De Supabase → Local
-```dart
-await provider.syncFromSupabase();
-```
-Descarga pacientes del servidor y actualiza/agrega localmente.
-
-## ⚙️ TypeIDs de Hive
-
-- **ResponseModel**: typeId 1
-- **SurveyModel**: typeId 0
-- **PatientModel**: typeId 2 ✅ (corregido para evitar conflictos)
-
-## 🔧 Regenerar Adaptadores
-
-Si modificas los modelos (agregar/quitar campos con @HiveField):
-
-```bash
-flutter pub run build_runner build --delete-conflicting-outputs
-```
-
-## 📱 Flujo Recomendado
-
-1. **Al iniciar la app**: Llamar `syncFromSupabase()` para descargar datos
-2. **Durante uso offline**: Agregar/editar normalmente, se guarda local
-3. **Al recuperar conexión**: Llamar `syncPendingPatients()` para enviar cambios
-4. **Opcional**: Mostrar indicador visual (ícono) para datos no sincronizados
-
-## ✨ Ventajas
-
-- ✅ Trabajo offline completo
-- ✅ Sincronización automática cuando hay conexión
-- ✅ Datos persistentes entre sesiones
-- ✅ No se pierde información
-- ✅ Sincronización bidireccional
+Toda la operacion actual de offline y sync vive en `features/*`, `shared/*` y `core/*`.

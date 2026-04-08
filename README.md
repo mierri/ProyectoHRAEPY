@@ -1,6 +1,6 @@
 # ssapp
 
-Sistema de gestión de pacientes y encuestas BDI-2 con almacenamiento offline completo.
+Sistema de gestion de pacientes y encuestas clinicas con almacenamiento offline y sincronizacion con Supabase.
 
 ## ✨ Características
 
@@ -8,38 +8,45 @@ Sistema de gestión de pacientes y encuestas BDI-2 con almacenamiento offline co
 - ✅ **Sincronización Automática**: Sincroniza automáticamente cuando hay conexión
 - ✅ **Base de datos en la nube**: Supabase como backend
 - ✅ **Gestión de Pacientes**: CRUD completo con sincronización
-- ✅ **Gestión de Encuestas BDI-2**: Almacenamiento y sincronización de respuestas
+- ✅ **Gestión de Encuestas Multiples**: BDI-II, BAI, WHOQOL, SF-36, ASSIST, GDS-15, Lawton, Katz, ICIQ-SF, Osteoporosis, MoCA
 - ✅ **Detección de Conectividad**: Monitoreo de estado de red
 - ✅ **Estado de Sincronización**: Indicadores visuales de datos pendientes
+- ✅ **Reportes por Tipo**: Exportacion CSV/PDF por instrumento
 
 ## 📁 Estructura del Proyecto
 
 ```
 lib/
-├── config/
-│   └── supabase_config.dart          # Configuración de Supabase
-├── models/
-│   ├── patient_model.dart            # Modelo de paciente con Hive
-│   ├── survey_model.dart             # Modelo de encuesta con Hive
-│   └── response_model.dart           # Modelo de respuesta con Hive
-├── provider/
-│   ├── patient_provider.dart         # Provider de pacientes (Offline)
-│   └── survey_provider.dart          # Provider de encuestas (Offline)
-├── Services/
-│   ├── patient_service.dart          # Servicio de Supabase (pacientes)
-│   ├── survey_service.dart           # Servicio de Supabase (encuestas)
-│   ├── connectivity_service.dart     # Detección de red
-│   ├── sync_service.dart             # Sincronización centralizada
-│   └── database_helper.dart          # Inicialización y gestión BD
-└── main.dart                          # Punto de entrada
+├── app/
+│   ├── app.dart                      # Configuracion principal de app
+│   └── router.dart                   # Rutas GoRouter
+├── core/
+│   ├── logger/
+│   ├── network/
+│   └── supabase/
+├── features/
+│   ├── auth/
+│   ├── dashboard/
+│   ├── patients/
+│   ├── reports/
+│   ├── settings/
+│   └── surveys/
+├── shared/
+│   ├── models/                       # Modelos Hive sincronizables
+│   ├── services/
+│   ├── utils/
+│   └── widgets/
+└── main.dart                         # Punto de entrada
 ```
 
 ## 🚀 Documentación
 
 Ver documentación completa del backend en:
-- **[BACKEND_API.md](BACKEND_API.md)** - API completa y ejemplos de uso
+- **[ARQUITECTURA.md](ARQUITECTURA.md)** - Arquitectura vigente feature-first
+- **[DOCUMENTACION_ENCUESTAS.md](DOCUMENTACION_ENCUESTAS.md)** - Subsistema de encuestas
+- **[BACKEND_API.md](BACKEND_API.md)** - API y sincronizacion
 - **[OFFLINE_STORAGE.md](OFFLINE_STORAGE.md)** - Detalles de almacenamiento offline
-- **[REFACTORING_2026_04.md](REFACTORING_2026_04.md)** - Documentación de la nueva refactorización
+- **[REFACTORING_2026_04.md](REFACTORING_2026_04.md)** - Historial de refactorizacion
 
 ## 🛠 Tecnologías
 
@@ -76,42 +83,6 @@ Ver documentación completa del backend en:
 2. **Uso offline**: Datos se guardan localmente con Hive
 3. **Al recuperar conexión**: Sincronización automática de datos pendientes
 4. **Manual**: Botón de sincronización disponible en la UI
-
-## 💻 Uso del Backend
-
-```dart
-// Inicialización (en main.dart)
-await DatabaseHelper.initializeProviders();
-await DatabaseHelper.initialSync();
-
-// Agregar paciente
-final patient = PatientModel(
-  patientId: DateTime.now().millisecondsSinceEpoch,
-  name: 'Juan Pérez',
-  gender: 'M',
-  birthDate: DateTime(1990, 1, 1),
-);
-await DatabaseHelper.patientProvider.addPatient(patient);
-
-// Agregar encuesta
-final survey = SurveyModel(
-  surveyId: DateTime.now().millisecondsSinceEpoch,
-  responses: [
-    ResponseModel(questionId: 1, answerValue: 2),
-  ],
-);
-await DatabaseHelper.surveyProvider.addSurvey(survey);
-
-// Sincronizar todos los datos
-final result = await DatabaseHelper.syncService.syncAll();
-print(result.message);
-
-// Verificar datos pendientes
-bool hasPending = DatabaseHelper.hasPendingSync;
-SyncStats stats = DatabaseHelper.syncStats!;
-```
-
-Ver más ejemplos en [BACKEND_API.md](BACKEND_API.md).
 
 ## 📊 Base de Datos
 
@@ -150,24 +121,16 @@ flutter analyze
 ## 📝 Estado del Proyecto
 
 ### ✅ Completado
-- [x] Configuración de Supabase
-- [x] Modelos de datos con Hive
-- [x] PatientProvider con almacenamiento offline
-- [x] SurveyProvider con almacenamiento offline
-- [x] Servicios de sincronización con Supabase
-- [x] Detección de conectividad
-- [x] SyncService centralizado
-- [x] DatabaseHelper para inicialización
-- [x] Sincronización bidireccional
-- [x] Manejo de errores
-- [x] Documentación completa del backend
+- [x] Arquitectura feature-first
+- [x] Modulo de encuestas modularizado por tipo
+- [x] Persistencia Hive + sincronizacion Supabase
+- [x] Reportes y exportacion por tipo (CSV/PDF)
+- [x] UI principal de pacientes, encuestas, reportes y configuracion
 
-### 🚧 Pendiente (Frontend)
-- [ ] Páginas de UI para pacientes
-- [ ] Páginas de UI para encuestas
-- [ ] Navegación entre páginas
-- [ ] Formularios de entrada
-- [ ] Indicadores visuales de sincronización
+### 🚧 Pendiente
+- [ ] Reducir warnings de `flutter analyze`
+- [ ] Aumentar cobertura de pruebas unitarias e integracion
+- [ ] Endurecer validaciones de paridad para exportadores de reportes
 
 ## 📄 Licencia
 
@@ -176,17 +139,3 @@ Este proyecto es privado.
 ## 👥 Autor
 
 Desarrollado para gestión de pacientes y encuestas BDI-2.
-
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.

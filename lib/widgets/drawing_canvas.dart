@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart' hide AlertDialog, showDialog, Colors, Column, Row, Expanded, Stack, Positioned, Card;
 import 'package:signature/signature.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
-import 'package:ssapp/utils/theme.dart';
+import 'package:ssapp/shared/utils/theme.dart';
 
 class DrawingCanvas extends StatefulWidget {
   final String title;

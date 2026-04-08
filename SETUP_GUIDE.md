@@ -106,8 +106,8 @@ Este paso es opcional. La app ya funciona con Supabase directamente.
    e) Click **Create Web Service**
 
 5. **Actualizar la app Flutter** (si usas el backend)
-   
-   En `lib/Services/survey_service.dart`:
+
+   En `lib/features/surveys/data/survey_repository.dart` (o en el archivo de configuracion de API que uses):
    ```dart
    static const String renderUrl = 'https://tu-app.onrender.com/api/surveys';
    ```
@@ -138,12 +138,14 @@ curl https://tu-app.onrender.com/api/stats
 ```
 ssapp/
 ├── lib/
-│   ├── config/
-│   │   └── supabase_config.dart    # Configuración de Supabase
-│   ├── Services/
-│   │   └── survey_service.dart     # Servicio de sincronización
-│   ├── models/                     # Modelos de datos
-│   ├── provider/                   # Lógica de negocio
+│   ├── app/
+│   ├── core/
+│   ├── features/
+│   │   └── surveys/
+│   │       ├── data/               # Repositorios y persistencia
+│   │       ├── domain/             # Reglas y casos de uso
+│   │       └── presentation/       # Pantallas/controladores
+│   ├── shared/                     # Modelos/servicios compartidos
 │   └── main.dart                   # Punto de entrada
 ├── backend/                        # Backend opcional
 │   ├── server.js                   # API Express

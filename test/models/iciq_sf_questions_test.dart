@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ssapp/models/iciq_sf_questions.dart';
+import 'package:ssapp/features/surveys/types/iciq_sf/domain/iciq_sf_questions.dart';
 
 void main() {
   group('IciqSfQuestions.evaluate', () {

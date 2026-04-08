@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ssapp/models/katz_questions.dart';
+import 'package:ssapp/features/surveys/types/katz/domain/katz_questions.dart';
 
 void main() {
   group('KatzQuestions.evaluate', () {
