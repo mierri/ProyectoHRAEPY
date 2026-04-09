@@ -4,6 +4,8 @@ import 'package:ssapp/features/surveys/types/bai/presentation/bai_screen.dart';
 import 'package:ssapp/features/surveys/types/bdi/presentation/bdi_screen.dart';
 import 'package:ssapp/features/surveys/presentation/consent_form_screen.dart';
 import 'package:ssapp/features/dashboard/dashboard_screen.dart';
+import 'package:ssapp/features/investigations/presentation/investigation_detail_screen.dart';
+import 'package:ssapp/features/investigations/presentation/investigations_screen.dart';
 import 'package:ssapp/features/surveys/types/gds/presentation/gds_screen.dart';
 import 'package:ssapp/features/surveys/types/iciq_sf/presentation/iciq_sf_screen.dart';
 import 'package:ssapp/features/surveys/types/katz/presentation/katz_screen.dart';
@@ -119,6 +121,23 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/reports',
       builder: (context, state) => const ReportsScreen(),
+    ),
+    GoRoute(
+      path: '/investigations',
+      builder: (context, state) => const InvestigationsScreen(),
+    ),
+    GoRoute(
+      path: '/investigations/:id',
+      builder: (context, state) {
+        final id = int.tryParse(state.pathParameters['id'] ?? '');
+        if (id == null) {
+          return const PlaceholderScreen(
+            title: 'Error',
+            message: 'ID de investigacion invalido',
+          );
+        }
+        return InvestigationDetailScreen(investigationId: id);
+      },
     ),
     GoRoute(
       path: '/patients',
