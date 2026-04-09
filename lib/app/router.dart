@@ -4,8 +4,10 @@ import 'package:ssapp/features/surveys/types/bai/presentation/bai_screen.dart';
 import 'package:ssapp/features/surveys/types/bdi/presentation/bdi_screen.dart';
 import 'package:ssapp/features/surveys/presentation/consent_form_screen.dart';
 import 'package:ssapp/features/dashboard/dashboard_screen.dart';
-import 'package:ssapp/features/investigations/presentation/investigation_detail_screen.dart';
-import 'package:ssapp/features/investigations/presentation/investigations_screen.dart';
+import 'package:ssapp/features/investigations/presentation/screens/investigation_apply_screen/investigation_apply_screen.dart';
+import 'package:ssapp/features/investigations/presentation/screens/create_investigation_screen/create_investigation_screen.dart';
+import 'package:ssapp/features/investigations/presentation/screens/investigation_detail_screen/investigation_detail_screen.dart';
+import 'package:ssapp/features/investigations/presentation/screens/investigations_screen/investigations_screen.dart';
 import 'package:ssapp/features/surveys/types/gds/presentation/gds_screen.dart';
 import 'package:ssapp/features/surveys/types/iciq_sf/presentation/iciq_sf_screen.dart';
 import 'package:ssapp/features/surveys/types/katz/presentation/katz_screen.dart';
@@ -127,6 +129,10 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const InvestigationsScreen(),
     ),
     GoRoute(
+      path: '/investigations/new',
+      builder: (context, state) => const CreateInvestigationScreen(),
+    ),
+    GoRoute(
       path: '/investigations/:id',
       builder: (context, state) {
         final id = int.tryParse(state.pathParameters['id'] ?? '');
@@ -137,6 +143,32 @@ final GoRouter appRouter = GoRouter(
           );
         }
         return InvestigationDetailScreen(investigationId: id);
+      },
+    ),
+    GoRoute(
+      path: '/investigations/:id/edit',
+      builder: (context, state) {
+        final id = int.tryParse(state.pathParameters['id'] ?? '');
+        if (id == null) {
+          return const PlaceholderScreen(
+            title: 'Error',
+            message: 'ID de investigacion invalido',
+          );
+        }
+        return CreateInvestigationScreen(investigationId: id);
+      },
+    ),
+    GoRoute(
+      path: '/investigations/:id/apply',
+      builder: (context, state) {
+        final id = int.tryParse(state.pathParameters['id'] ?? '');
+        if (id == null) {
+          return const PlaceholderScreen(
+            title: 'Error',
+            message: 'ID de investigacion invalido',
+          );
+        }
+        return InvestigationApplyScreen(investigationId: id);
       },
     ),
     GoRoute(

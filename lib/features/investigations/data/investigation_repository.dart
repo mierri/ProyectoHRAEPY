@@ -105,6 +105,45 @@ class InvestigationService extends ChangeNotifier {
     }
   }
 
+  Future<InvestigationModel?> updateInvestigation({
+    required int investigationId,
+    required String investigationName,
+    required String formConsent,
+    required List<int> surveyTypeIds,
+  }) async {
+    try {
+      final supabase = SupabaseConfig.client;
+
+      final updatedRaw = await supabase
+          .from('investigations')
+          .update({
+            'investigation_name': investigationName,
+            'form_consent': formConsent,
+          })
+          .eq('id', investigationId)
+          .select()
+          .single();
+
+      await _replaceSurveyTypeRelations(investigationId, surveyTypeIds);
+
+      final current = byId(investigationId);
+      final updated = InvestigationModel.fromJson(
+        updatedRaw,
+        surveyTypeIds: surveyTypeIds,
+        participantIds: current?.participantIds ?? const <int>{},
+      );
+
+      _investigations = _investigations
+          .map((item) => item.id == investigationId ? updated : item)
+          .toList();
+      notifyListeners();
+      return updated;
+    } catch (e) {
+      AppLogger.error('Error al actualizar investigacion', e);
+      return null;
+    }
+  }
+
   Future<void> linkParticipant({
     required int investigationId,
     required int patientId,
@@ -180,6 +219,19 @@ class InvestigationService extends ChangeNotifier {
               })
           .toList();
       await supabase.from('investigation_survey_types').insert(rows);
+    } catch (_) {
+      // Ignorar si la tabla relacional no está disponible todavía.
+    }
+  }
+
+  Future<void> _replaceSurveyTypeRelations(int investigationId, List<int> surveyTypeIds) async {
+    try {
+      final supabase = SupabaseConfig.client;
+      await supabase
+          .from('investigation_survey_types')
+          .delete()
+          .eq('investigation_id', investigationId);
+      await _saveSurveyTypeRelations(investigationId, surveyTypeIds);
     } catch (_) {
       // Ignorar si la tabla relacional no está disponible todavía.
     }

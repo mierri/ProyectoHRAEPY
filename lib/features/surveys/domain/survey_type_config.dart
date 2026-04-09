@@ -29,6 +29,20 @@ class SurveyInstructionContent {
 }
 
 class SurveyTypeConfig {
+  static const Map<String, int> _itemCounts = {
+    'bdi': 21,
+    'bai': 21,
+    'moca': 30,
+    'gds': 15,
+    'lawton': 8,
+    'katz': 6,
+    'iciqsf': 4,
+    'whoqol': 26,
+    'sf36': 36,
+    'assist': 8,
+    'osteoporosis': 7,
+  };
+
   static String normalizeType(String? surveyType) {
     final normalized = (surveyType ?? 'bdi').toLowerCase();
     return normalized.isEmpty ? 'bdi' : normalized;
@@ -88,6 +102,10 @@ class SurveyTypeConfig {
       default:
         return 'Este cuestionario evalúa síntomas de depresión mediante el Inventario de Depresión de Beck (BDI-II). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
     }
+  }
+
+  static int itemCountFor(String? surveyType) {
+    return _itemCounts[normalizeType(surveyType)] ?? 0;
   }
 
   static SurveyInstructionContent instructionFor(String? surveyType) {
