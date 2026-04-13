@@ -50,9 +50,9 @@ dependencies:
   pdf: ^3.11.1
   signature: ^6.3.0
   printing: ^5.13.4
-  csv: ^7.1.0
+  csv: ^8.0.0
   web: ^1.1.0
-  share_plus: ^12.0.1
+  share_plus: ^13.0.0
   path_provider: ^2.1.5
   material_symbols_icons: ^4.2906.0
 
@@ -62,7 +62,7 @@ dev_dependencies:
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
-  # activated in the `analysis_options.yaml` file located at the root of your
+  # activated in the `analyFsis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0

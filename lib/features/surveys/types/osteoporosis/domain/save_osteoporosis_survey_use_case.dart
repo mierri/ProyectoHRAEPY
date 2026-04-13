@@ -30,7 +30,11 @@ class SaveOsteoporosisSurveyUseCase {
       if (heightMeters > 0) {
         patient.imc = OsteoporosisRiskService.calculateBMI(weightKg, heightMeters);
       }
-      await patient.save();
+      // Si el paciente viene de Supabase (no desde Hive), no está en una box local.
+      // Guardamos en Hive solo cuando aplica; luego sincronizamos hacia Supabase.
+      if (patient.isInBox) {
+        await patient.save();
+      }
 
       final sex = _mapSex(patient.gender);
       final patientData = PatientData(

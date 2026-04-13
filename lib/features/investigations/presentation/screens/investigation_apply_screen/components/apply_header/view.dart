@@ -3,10 +3,12 @@ import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
 class ApplyInvestigationHeader extends StatelessWidget {
+  final int investigationId;
   final String investigationTitle;
 
   const ApplyInvestigationHeader({
     super.key,
+    required this.investigationId,
     required this.investigationTitle,
   });
 
@@ -24,7 +26,13 @@ class ApplyInvestigationHeader extends StatelessWidget {
         IconButton(
           icon: const Icon(material.Icons.arrow_back),
           variance: ButtonVariance.ghost,
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/investigations/$investigationId');
+            }
+          },
         ),
       ],
     );

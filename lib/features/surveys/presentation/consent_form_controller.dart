@@ -133,7 +133,7 @@ class ConsentFormController extends ChangeNotifier {
     }
   }
 
-  String? _validateBeforeSubmit() {
+  String? _validateBeforeSubmit({bool requireConsent = true, bool requirePatient = true}) {
     if (isOsteoporosisSurvey) {
       final age = patientAge;
       if (age != null && age < 50) {
@@ -148,20 +148,24 @@ class ConsentFormController extends ChangeNotifier {
       _osteoporosisWarning = null;
     }
 
-    if (_name.trim().isEmpty) {
-      return 'Por favor ingrese el nombre completo o seleccione un paciente';
+    if (requirePatient) {
+      if (_name.trim().isEmpty) {
+        return 'Por favor ingrese el nombre completo o seleccione un paciente';
+      }
+      if (_dateOfBirth == null) {
+        return 'Por favor seleccione la fecha de nacimiento';
+      }
     }
-    if (_dateOfBirth == null) {
-      return 'Por favor seleccione la fecha de nacimiento';
-    }
-    if (!_consentGiven) {
-      return 'Debe aceptar el consentimiento informado para continuar';
+    if (requireConsent) {
+      if (!_consentGiven) {
+        return 'Debe aceptar el consentimiento informado para continuar';
+      }
     }
     return null;
   }
 
-  Future<int> submit(PatientService patientService) async {
-    final validationError = _validateBeforeSubmit();
+  Future<int> submit(PatientService patientService, {bool requireConsent = true, bool requirePatient = true}) async {
+    final validationError = _validateBeforeSubmit(requireConsent: requireConsent, requirePatient: requirePatient);
     if (validationError != null) {
       notifyListeners();
       throw Exception(validationError);
@@ -190,7 +194,13 @@ class ConsentFormController extends ChangeNotifier {
         patient.weight = _weight;
         patient.height = _height;
         patient.imc = _imc;
-        await patient.save();
+        // El paciente seleccionado puede venir de Supabase (fuera de Hive),
+        // por eso no siempre está adjunto a una box local.
+        if (patient.isInBox) {
+          await patient.save();
+        } else {
+          await patientService.updatePatient(patient);
+        }
       }
 
       return patient.patientId;

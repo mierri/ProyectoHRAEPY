@@ -30,7 +30,9 @@ class SaveOsteoporosisSurveyUseCase {
       if (heightMeters > 0) {
         patient.imc = OsteoporosisRiskService.calculateBMI(weightKg, heightMeters);
       }
-      await patient.save();
+      if (patient.isInBox) {
+        await patient.save();
+      }
 
       final sex = _mapSex(patient.gender);
       final patientData = PatientData(

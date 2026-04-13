@@ -108,7 +108,10 @@ class SurveyRepository implements SurveyRepositoryContract {
         return {
           'survey_id': survey.surveyId,
           'patient_id': survey.patientId,
+          'investigation_id': survey.investigationId,
           'survey_type': survey.surveyType,
+          'risk_level': survey.risk_level,
+          'score': survey.score,
           'synced': survey.synced,
           'created_at': DateTime.fromMillisecondsSinceEpoch(survey.surveyId).toIso8601String(),
           'responses': survey.responses
@@ -143,7 +146,10 @@ class SurveyRepository implements SurveyRepositoryContract {
       final surveyData = {
         'survey_id': survey.surveyId,
         'patient_id': survey.patientId,
+        'investigation_id': survey.investigationId,
         'survey_type': survey.surveyType,
+        'risk_level': survey.risk_level,
+        'score': survey.score,
         'synced': true,
       };
 
@@ -279,8 +285,11 @@ class SurveyRepository implements SurveyRepositoryContract {
           surveyId: surveyId,
           surveyType: surveyData['survey_type'] as int? ?? 1,
           patientId: surveyData['patient_id'] as int?,
+          investigationId: surveyData['investigation_id'] as int?,
           responses: responses,
           synced: true,
+          risk_level: surveyData['risk_level'] as String?,
+          score: surveyData['score'] as int?,
         );
 
         await box.add(newSurvey);

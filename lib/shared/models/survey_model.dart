@@ -19,6 +19,8 @@ class SurveyModel extends HiveObject{
   String? risk_level;
   @HiveField(6)
   int? score;
+  @HiveField(7)
+  int? investigationId;
 
   SurveyModel({
     required this.surveyId,
@@ -28,6 +30,7 @@ class SurveyModel extends HiveObject{
     this.synced = false,
     this.risk_level,
     this.score,
+    this.investigationId,
   });
 
   // Métodos para sincronización con backend
@@ -36,6 +39,7 @@ class SurveyModel extends HiveObject{
     'patient_id': patientId,
     'synced': synced,
     'survey_type': surveyType,
+    if (investigationId != null) 'investigation_id': investigationId,
     if (risk_level != null) 'risk_level': risk_level,
     if (score != null) 'score': score,
   };
@@ -46,6 +50,7 @@ class SurveyModel extends HiveObject{
     surveyType: surveyType ?? 1, // Default BDI
     responses: [], // Las respuestas se cargan por separado
     synced: json['synced'] ?? true,
+    investigationId: json['investigation_id'] as int?,
     risk_level: json['risk_level'] as String?,
     score: json['score'] as int?,
   );

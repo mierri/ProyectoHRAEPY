@@ -20,6 +20,7 @@ class _MocaTestScreenState extends State<MocaTestScreen> {
   int _currentSectionIndex = 0;
   final Map<String, dynamic> _results = {};
   bool _isLoading = false;
+  bool _initialized = false;
 
   List<String> _memoryTrial1 = [];
   List<String> _memoryTrial2 = [];
@@ -40,6 +41,21 @@ class _MocaTestScreenState extends State<MocaTestScreen> {
 
   double get _progress => (_currentSectionIndex + 1) / MocaTest.sections.length;
 
+  int? _fromInvestigationId() {
+    final params = GoRouterState.of(context).uri.queryParameters;
+    final raw = params['fromInvestigation'] ?? params['from_investigation'] ?? params['fromInvestigationId'] ?? params['from_investigation_id'];
+    return int.tryParse(raw ?? '');
+  }
+
+  void _goAfterFinish() {
+    final investigationId = _fromInvestigationId();
+    if (investigationId != null) {
+      context.go('/investigations/$investigationId/apply?completedSurvey=moca&patientId=${widget.patientId}');
+      return;
+    }
+    context.go('/');
+  }
+
   @override
   void initState() {
     super.initState();
@@ -55,6 +71,15 @@ class _MocaTestScreenState extends State<MocaTestScreen> {
       penStrokeWidth: 3,
       penColor: Colors.black,
     );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      // Lazy initialization that depends on context
+      _initialized = true;
+    }
   }
 
   @override
@@ -170,7 +195,7 @@ class _MocaTestScreenState extends State<MocaTestScreen> {
           PrimaryButton(
             onPressed: () {
               material.Navigator.of(context).pop();
-              context.go('/');
+              _goAfterFinish();
             },
             child: const Text('Volver al Inicio'),
           ),

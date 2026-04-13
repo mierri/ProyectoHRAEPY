@@ -8,6 +8,7 @@ import 'package:ssapp/features/surveys/domain/survey_service.dart';
 class SF36Controller extends BaseSurveyController {
   final int patientId;
   final SurveyService? surveyService;
+  final int? investigationId;
 
   int _currentIndex = 0;
   final Map<int, double> _responses = {}; // numero de pregunta -> puntuación final
@@ -21,6 +22,7 @@ class SF36Controller extends BaseSurveyController {
   SF36Controller({
     required this.patientId,
     this.surveyService,
+    this.investigationId,
   });
 
   int get currentIndex => _currentIndex;
@@ -248,6 +250,7 @@ class SF36Controller extends BaseSurveyController {
           surveyId: DateTime.now().millisecondsSinceEpoch,
           surveyType: 5,
           patientId: patientId,
+          investigationId: investigationId,
           responses: responseModels,
           synced: false,
         );

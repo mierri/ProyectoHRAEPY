@@ -16,6 +16,7 @@ class SurveyController extends BaseSurveyController {
   final int patientId;
   final String surveyType; // 'bdi', 'bai', 'gds', 'lawton', 'katz', 'iciqsf', or 'osteoporosis'
   final SurveyService surveyService;
+  final int? investigationId;
   final double? initialWeight; // For osteoporosis
   final double? initialHeight; // For osteoporosis
 
@@ -29,6 +30,7 @@ class SurveyController extends BaseSurveyController {
      required this.patientId,
      required this.surveyType,
      required this.surveyService,
+     this.investigationId,
      this.initialWeight,
      this.initialHeight,
    });
@@ -191,6 +193,7 @@ class SurveyController extends BaseSurveyController {
           surveyId: DateTime.now().millisecondsSinceEpoch,
           surveyType: surveyTypeId,
           patientId: patientId,
+          investigationId: investigationId,
           responses: responseModels,
           synced: false,
           risk_level: riskLevel,

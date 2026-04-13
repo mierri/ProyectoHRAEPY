@@ -10,6 +10,7 @@ import 'package:ssapp/features/surveys/domain/survey_service.dart';
 class WhoqolController extends BaseSurveyController {
   final int patientId;
   final SurveyService surveyService;
+  final int? investigationId;
 
   int _currentIndex = 0;
   final Map<int, int> _responses = {};
@@ -18,6 +19,7 @@ class WhoqolController extends BaseSurveyController {
   WhoqolController({
     required this.patientId,
     required this.surveyService,
+    this.investigationId,
   });
 
   // Getters
@@ -103,6 +105,7 @@ class WhoqolController extends BaseSurveyController {
           surveyId: DateTime.now().millisecondsSinceEpoch,
           surveyType: 3,
           patientId: patientId,
+          investigationId: investigationId,
           responses: responseModels,
           synced: false,
         );

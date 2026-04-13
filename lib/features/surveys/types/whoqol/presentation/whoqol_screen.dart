@@ -22,22 +22,49 @@ class WhoqolScreen extends StatefulWidget {
 
 class _WhoqolScreenState extends State<WhoqolScreen> {
   late WhoqolController _controller;
+  bool _initialized = false;
+
+  int? _fromInvestigationId() {
+    final params = GoRouterState.of(context).uri.queryParameters;
+    final raw = params['fromInvestigation'] ?? params['from_investigation'] ?? params['fromInvestigationId'] ?? params['from_investigation_id'];
+    return int.tryParse(raw ?? '');
+  }
+
+  void _goAfterFinish() {
+    final investigationId = _fromInvestigationId();
+    if (investigationId != null) {
+      context.go('/investigations/$investigationId/apply?completedSurvey=whoqol&patientId=${widget.patientId}');
+      return;
+    }
+    context.go('/new-survey');
+  }
 
   @override
   void initState() {
     super.initState();
-    final surveyService = context.read<SurveyService>();
-    _controller = WhoqolController(
-      patientId: widget.patientId,
-      surveyService: surveyService,
-    );
-    _controller.addListener(_onControllerUpdate);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      final surveyService = context.read<SurveyService>();
+      _controller = WhoqolController(
+        patientId: widget.patientId,
+        surveyService: surveyService,
+        investigationId: _fromInvestigationId(),
+      );
+      _controller.addListener(_onControllerUpdate);
+      _initialized = true;
+    }
   }
 
   @override
   void dispose() {
-    _controller.removeListener(_onControllerUpdate);
-    _controller.dispose();
+    if (_initialized) {
+      _controller.removeListener(_onControllerUpdate);
+      _controller.dispose();
+    }
     super.dispose();
   }
 
@@ -237,7 +264,7 @@ class _WhoqolScreenState extends State<WhoqolScreen> {
                         child: OutlineButton(
                           onPressed: () {
                             material.Navigator.of(ctx).pop();
-                            context.go('/new-survey');
+                            _goAfterFinish();
                           },
                           child: const Text('No'),
                         ),
@@ -346,7 +373,10 @@ class _WhoqolScreenState extends State<WhoqolScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: PrimaryButton(
-                      onPressed: () { material.Navigator.of(ctx).pop(); context.go('/new-survey'); },
+                      onPressed: () {
+                        material.Navigator.of(ctx).pop();
+                        _goAfterFinish();
+                      },
                       child: const Text('Finalizar'),
                     ),
                   ),
@@ -380,7 +410,18 @@ class _WhoqolScreenState extends State<WhoqolScreen> {
                     content: const Text('Si sales ahora perderás el progreso. ¿Estás seguro?'),
                     actions: [
                       OutlineButton(onPressed: () => material.Navigator.of(dlg).pop(), child: const Text('Cancelar')),
-                      DestructiveButton(onPressed: () { material.Navigator.of(dlg).pop(); context.go('/'); }, child: const Text('Salir')),
+                      DestructiveButton(
+                        onPressed: () {
+                          material.Navigator.of(dlg).pop();
+                          final investigationId = _fromInvestigationId();
+                          if (investigationId != null) {
+                            context.go('/investigations/$investigationId/apply');
+                          } else {
+                            context.go('/');
+                          }
+                        },
+                        child: const Text('Salir'),
+                      ),
                     ],
                   ),
                 );

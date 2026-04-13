@@ -7,6 +7,7 @@ class OsteoporosisSurveyController extends SurveyController {
   OsteoporosisSurveyController({
     required super.patientId,
     required super.surveyService,
+    super.investigationId,
     required super.initialWeight,
     required super.initialHeight,
   }) : super(surveyType: 'osteoporosis');
@@ -60,6 +61,7 @@ class OsteoporosisSurveyController extends SurveyController {
           surveyId: DateTime.now().millisecondsSinceEpoch,
           surveyType: surveyTypeId,
           patientId: patientId,
+          investigationId: investigationId,
           responses: responseModels,
           synced: false,
           risk_level: riskLevel,

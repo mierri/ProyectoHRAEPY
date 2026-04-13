@@ -23,22 +23,49 @@ class AssistScreen extends StatefulWidget {
 class _AssistScreenState extends State<AssistScreen> {
   late AssistController _controller;
   static const Color _assistColor = Color(0xFF0891B2);
+  bool _initialized = false;
+
+  int? _fromInvestigationId() {
+    final params = GoRouterState.of(context).uri.queryParameters;
+    final raw = params['fromInvestigation'] ?? params['from_investigation'] ?? params['fromInvestigationId'] ?? params['from_investigation_id'];
+    return int.tryParse(raw ?? '');
+  }
+
+  void _goAfterFinish() {
+    final investigationId = _fromInvestigationId();
+    if (investigationId != null) {
+      context.go('/investigations/$investigationId/apply?completedSurvey=assist&patientId=${widget.patientId}');
+      return;
+    }
+    context.go('/new-survey');
+  }
 
   @override
   void initState() {
     super.initState();
-    final surveyService = context.read<SurveyService>();
-    _controller = AssistController(
-      patientId: widget.patientId,
-      surveyService: surveyService,
-    );
-    _controller.addListener(_onControllerUpdate);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      final surveyService = context.read<SurveyService>();
+      _controller = AssistController(
+        patientId: widget.patientId,
+        surveyService: surveyService,
+        investigationId: _fromInvestigationId(),
+      );
+      _controller.addListener(_onControllerUpdate);
+      _initialized = true;
+    }
   }
 
   @override
   void dispose() {
-    _controller.removeListener(_onControllerUpdate);
-    _controller.dispose();
+    if (_initialized) {
+      _controller.removeListener(_onControllerUpdate);
+      _controller.dispose();
+    }
     super.dispose();
   }
 
@@ -275,7 +302,7 @@ class _AssistScreenState extends State<AssistScreen> {
                           child: OutlineButton(
                             onPressed: () {
                               material.Navigator.of(context).pop();
-                              context.go('/new-survey');
+                              _goAfterFinish();
                             },
                             child: const Text('No'),
                           ),
@@ -298,7 +325,7 @@ class _AssistScreenState extends State<AssistScreen> {
                       child: PrimaryButton(
                         onPressed: () {
                           material.Navigator.of(context).pop();
-                          context.go('/new-survey');
+                          _goAfterFinish();
                         },
                         child: const Text('Finalizar'),
                       ),
@@ -394,7 +421,7 @@ class _AssistScreenState extends State<AssistScreen> {
                     child: PrimaryButton(
                       onPressed: () {
                         material.Navigator.of(context).pop();
-                        context.go('/new-survey');
+                        _goAfterFinish();
                       },
                       child: const Text('Finalizar'),
                     ),
@@ -555,7 +582,7 @@ class _AssistScreenState extends State<AssistScreen> {
                     child: PrimaryButton(
                       onPressed: () {
                         material.Navigator.of(context).pop();
-                        context.go('/new-survey');
+                        _goAfterFinish();
                       },
                       child: const Text('Finalizar'),
                     ),
@@ -594,7 +621,12 @@ class _AssistScreenState extends State<AssistScreen> {
                       DestructiveButton(
                         onPressed: () {
                           material.Navigator.of(dlg).pop();
-                          context.go('/');
+                          final investigationId = _fromInvestigationId();
+                          if (investigationId != null) {
+                            context.go('/investigations/$investigationId/apply');
+                          } else {
+                            context.go('/');
+                          }
                         },
                         child: const Text('Salir'),
                       ),

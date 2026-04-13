@@ -59,7 +59,7 @@ class _InvestigationDetailScreenState extends State<InvestigationDetailScreen> {
                   investigation: investigation,
                   selectedTab: _selectedTab,
                   onTabChanged: (tab) => setState(() => _selectedTab = tab),
-                    onApply: () => context.push('/investigations/${widget.investigationId}/apply'),
+                      onApply: () => context.push('/investigations/${widget.investigationId}/apply?showConsent=1'),
                   patientsById: {
                     for (final patient in patientService.patients) patient.patientId: patient,
                   },

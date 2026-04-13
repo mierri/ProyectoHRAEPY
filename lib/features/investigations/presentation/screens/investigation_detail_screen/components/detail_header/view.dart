@@ -18,7 +18,13 @@ class InvestigationDetailHeader extends StatelessWidget {
         IconButton(
           icon: const Icon(material.Icons.arrow_back),
           variance: ButtonVariance.ghost,
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/investigations');
+            }
+          },
         ),
       ],
       trailing: [

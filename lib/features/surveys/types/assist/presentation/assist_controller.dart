@@ -8,6 +8,7 @@ import 'package:ssapp/features/surveys/domain/survey_service.dart';
 class AssistController extends ChangeNotifier {
   final int patientId;
   final SurveyService surveyService;
+  final int? investigationId;
 
   int _currentIndex = 0;
   bool _isSaving = false;
@@ -27,6 +28,7 @@ class AssistController extends ChangeNotifier {
   AssistController({
     required this.patientId,
     required this.surveyService,
+    this.investigationId,
   });
 
   int get currentIndex => _currentIndex;
@@ -275,6 +277,7 @@ class AssistController extends ChangeNotifier {
         surveyId: DateTime.now().millisecondsSinceEpoch,
         surveyType: 6,
         patientId: patientId,
+        investigationId: investigationId,
         responses: responseModels,
         synced: false,
       );

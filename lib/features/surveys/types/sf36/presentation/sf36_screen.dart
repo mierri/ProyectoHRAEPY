@@ -23,22 +23,49 @@ class SF36Screen extends StatefulWidget {
 
 class _SF36ScreenState extends State<SF36Screen> {
   late SF36Controller _controller;
+  bool _initialized = false;
+
+  int? _fromInvestigationId() {
+    final params = GoRouterState.of(context).uri.queryParameters;
+    final raw = params['fromInvestigation'] ?? params['from_investigation'] ?? params['fromInvestigationId'] ?? params['from_investigation_id'];
+    return int.tryParse(raw ?? '');
+  }
+
+  void _goAfterFinish() {
+    final investigationId = _fromInvestigationId();
+    if (investigationId != null) {
+      context.go('/investigations/$investigationId/apply?completedSurvey=sf36&patientId=${widget.patientId}');
+      return;
+    }
+    context.go('/new-survey');
+  }
 
   @override
   void initState() {
     super.initState();
-    final surveyService = context.read<SurveyService>();
-    _controller = SF36Controller(
-      patientId: widget.patientId,
-      surveyService: surveyService,
-    );
-    _controller.addListener(_onControllerUpdate);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      final surveyService = context.read<SurveyService>();
+      _controller = SF36Controller(
+        patientId: widget.patientId,
+        surveyService: surveyService,
+        investigationId: _fromInvestigationId(),
+      );
+      _controller.addListener(_onControllerUpdate);
+      _initialized = true;
+    }
   }
 
   @override
   void dispose() {
-    _controller.removeListener(_onControllerUpdate);
-    _controller.dispose();
+    if (_initialized) {
+      _controller.removeListener(_onControllerUpdate);
+      _controller.dispose();
+    }
     super.dispose();
   }
 
@@ -235,7 +262,7 @@ class _SF36ScreenState extends State<SF36Screen> {
     if (mounted && showResults) {
       _showResultDialog();
     } else if (mounted) {
-      context.go('/new-survey');
+      _goAfterFinish();
     }
   }
 
@@ -400,7 +427,7 @@ class _SF36ScreenState extends State<SF36Screen> {
                       child: PrimaryButton(
                         onPressed: () {
                           Navigator.of(context).pop();
-                          context.go('/new-survey');
+                          _goAfterFinish();
                         },
                         child: const Text('OK'),
                       ),
@@ -494,7 +521,12 @@ class _SF36ScreenState extends State<SF36Screen> {
                       DestructiveButton(
                         onPressed: () {
                           Navigator.of(dialogContext).pop();
-                          context.go('/');
+                          final investigationId = _fromInvestigationId();
+                          if (investigationId != null) {
+                            context.go('/investigations/$investigationId/apply');
+                          } else {
+                            context.go('/');
+                          }
                         },
                         child: const Text('Salir'),
                       ),

@@ -31,6 +31,12 @@ class _SurveyScreenState extends State<SurveyScreen> {
   final Set<int> _iciqSelectedIndices = <int>{};
   bool _isControllerInitialized = false;
 
+  int? _fromInvestigationIdFromParams() {
+    final params = GoRouterState.of(context).uri.queryParameters;
+    final fromInvestigationStr = params['fromInvestigation'] ?? params['from_investigation'] ?? params['fromInvestigationId'] ?? params['from_investigation_id'];
+    return int.tryParse(fromInvestigationStr ?? '');
+  }
+
   @override
   void initState() {
     super.initState();
@@ -58,10 +64,12 @@ class _SurveyScreenState extends State<SurveyScreen> {
 
           AppLogger.debug('Extracted weight=$weight, height=$height from params');
       }
+      final fromInvestigationId = _fromInvestigationIdFromParams();
       _controller = widget.surveyType == 'osteoporosis'
           ? OsteoporosisSurveyController(
               patientId: widget.patientId,
               surveyService: surveyService,
+              investigationId: fromInvestigationId,
               initialWeight: weight,
               initialHeight: height,
             )
@@ -69,6 +77,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
               patientId: widget.patientId,
               surveyType: widget.surveyType,
               surveyService: surveyService,
+              investigationId: fromInvestigationId,
               initialWeight: weight,
               initialHeight: height,
             );
@@ -249,6 +258,10 @@ class _SurveyScreenState extends State<SurveyScreen> {
   }
 
   void _showCompletionDialog(bool wasSynced, int totalScore, String interpretation, String severityLevel, dynamic riskResult, double? weight, double? height) {
+    final params = GoRouterState.of(context).uri.queryParameters;
+    // Support multiple possible query param names (defensive):
+    final fromInvestigationStr = params['fromInvestigation'] ?? params['from_investigation'] ?? params['fromInvestigationId'] ?? params['from_investigation_id'];
+    final fromInvestigationId = int.tryParse(fromInvestigationStr ?? '');
 
     showDialog(
       context: context,
@@ -348,13 +361,18 @@ class _SurveyScreenState extends State<SurveyScreen> {
                     ),
                   ),
                   const Gap(20),
-                  Row(
+                    Row(
                     children: [
-                      Expanded(
+                        Expanded(
                         child: OutlineButton(
                           onPressed: () {
                             Navigator.of(context).pop();
-                            context.go('/new-survey');
+                            // Use a microtask to ensure the dialog pop completes before performing a route change.
+                            if (fromInvestigationId != null) {
+                              Future.microtask(() => context.go('/investigations/$fromInvestigationId/apply?completedSurvey=${widget.surveyType}&patientId=${widget.patientId}'));
+                            } else {
+                              Future.microtask(() => context.go('/new-survey'));
+                            }
                           },
                           child: const Text('No'),
                         ),
@@ -364,7 +382,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
                         child: PrimaryButton(
                           onPressed: () {
                             Navigator.of(context).pop();
-                            _showResultDialog(totalScore, interpretation, severityLevel, riskResult, weight, height);
+                            _showResultDialog(totalScore, interpretation, severityLevel, riskResult, weight, height, fromInvestigationId: fromInvestigationId);
                           },
                           child: const Text('Sí'),
                         ),
@@ -380,7 +398,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
     );
   }
 
-  void _showResultDialog(int totalScore, String interpretation, String severityLevel, dynamic riskResult, double? weight, double? height) {
+  void _showResultDialog(int totalScore, String interpretation, String severityLevel, dynamic riskResult, double? weight, double? height, {int? fromInvestigationId}) {
     final Color levelColor;
 
     if (widget.surveyType == 'bai') {
@@ -699,16 +717,20 @@ class _SurveyScreenState extends State<SurveyScreen> {
                       ),
                     ),
                     const Gap(24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: PrimaryButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                          context.go('/new-survey');
-                        },
-                        child: const Text('OK'),
+                        SizedBox(
+                        width: double.infinity,
+                        child: PrimaryButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            if (fromInvestigationId != null) {
+                              Future.microtask(() => context.go('/investigations/$fromInvestigationId/apply?completedSurvey=${widget.surveyType}&patientId=${widget.patientId}'));
+                            } else {
+                              Future.microtask(() => context.go('/new-survey'));
+                            }
+                          },
+                          child: const Text('OK'),
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -749,7 +771,12 @@ class _SurveyScreenState extends State<SurveyScreen> {
                       DestructiveButton(
                         onPressed: () {
                           Navigator.of(dialogContext).pop();
-                          context.go('/');
+                          final fromInvestigationId = _fromInvestigationIdFromParams();
+                          if (fromInvestigationId != null) {
+                            context.go('/investigations/$fromInvestigationId/apply');
+                          } else {
+                            context.go('/');
+                          }
                         },
                         child: const Text('Salir'),
                       ),
