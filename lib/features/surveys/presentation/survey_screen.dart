@@ -12,6 +12,8 @@ import 'package:ssapp/features/surveys/domain/survey_service.dart';
 import 'package:ssapp/shared/utils/theme.dart';
 import 'package:ssapp/shared/utils/toast_helper.dart';
 
+import '../../../shared/widgets/tts/survey_question_tts_bar.dart';
+
 class SurveyScreen extends StatefulWidget {
   final int patientId;
   final String surveyType; // 'bdi', 'bai', 'gds', 'lawton', 'katz', 'iciqsf' or 'osteoporosis' - solo para UI
@@ -885,6 +887,15 @@ class _SurveyScreenState extends State<SurveyScreen> {
                     ),
                   ),
                   const Gap(24),
+                  if (!(widget.surveyType == 'iciqsf' && question.number == 4))
+                    SurveyQuestionTtsBar(
+                      questionNumber: _controller.currentQuestionIndex + 1,
+                      totalQuestions: _controller.questions.length,
+                      category: question.category,
+                      options: question.options,
+                      surveyType: widget.surveyType,
+                    ),
+                  const Gap(12),
                   if (widget.surveyType == 'iciqsf' && question.number == 4)
                     ...question.options.asMap().entries.map((entry) {
                       final index = entry.key;

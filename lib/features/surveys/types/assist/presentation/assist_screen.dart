@@ -7,6 +7,7 @@ import 'package:ssapp/features/surveys/types/assist/presentation/assist_controll
 import 'package:ssapp/features/surveys/types/assist/domain/assist_questions.dart';
 import 'package:ssapp/shared/utils/theme.dart';
 import 'package:ssapp/shared/utils/toast_helper.dart';
+import 'package:ssapp/shared/widgets/tts/assist_question_tts_bar.dart';
 
 class AssistScreen extends StatefulWidget {
   final int patientId;
@@ -705,6 +706,16 @@ class _AssistScreenState extends State<AssistScreen> {
                         ),
                       ),
                       const Gap(24),
+                      AssistQuestionTtsBar(
+                        questionNumber: _controller.currentIndex + 1,
+                        totalQuestions: _controller.activeQuestions.length,
+                        questionTitle: _questionTitle(questionNumber),
+                        relevantSubstances: _controller.requiredSubstancesForQuestion(questionNumber)
+                            .isNotEmpty
+                            ? _controller.requiredSubstancesForQuestion(questionNumber)
+                            : _controller.selectedSubstanceDefinitions,
+                      ),
+                      const Gap(8),
                       _buildQuestionBody(questionNumber),
                       const Gap(24),
                     ],

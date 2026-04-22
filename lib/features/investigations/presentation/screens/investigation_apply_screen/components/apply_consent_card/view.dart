@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart' as material show Icons;
 import 'package:shadcn_flutter/shadcn_flutter.dart';
+import 'package:ssapp/shared/services/tts/survey_tts_text_builder.dart';
+import 'package:ssapp/shared/widgets/tts/tts_button.dart';
 
 class ApplyConsentCard extends StatelessWidget {
   final String consentText;
@@ -24,6 +26,12 @@ class ApplyConsentCard extends StatelessWidget {
                 const Gap(8),
                 Expanded(
                   child: Text('Consentimiento de la investigacion').semiBold(),
+                ),
+                TtsButton(
+                  text: SurveyTtsTextBuilder.investigationConsent(
+                    investigationName: 'Investigación',
+                    consentText: consentText,
+                  ),
                 ),
               ],
             ),

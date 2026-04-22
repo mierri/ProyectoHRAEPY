@@ -168,41 +168,69 @@ class QuickActionsGrid extends StatelessWidget {
         description: 'Acceso a investigaciones relacionadas',
         color: LightModeColors.lightPrimary,
         onTap: () => context.push('/investigations'),
+        mobileSpan: 2,
       )
     ];
 
-    // Desktop: 4 en fila | Mobile/Tablet: 2 en fila
-    // IntrinsicHeight iguala la altura de todas las tarjetas de la misma fila
+    // Desktop: 4 en fila | Mobile/Tablet: 2 en fila.
+    // Permite que algunas tarjetas ocupen más columnas en pantallas compactas.
     return LayoutBuilder(
       builder: (context, constraints) {
-        final cols    = isDesktop ? 4 : 2;
+        final cols = isDesktop ? 4 : 2;
         const spacing = 16.0;
         final cardWidth = (constraints.maxWidth - spacing * (cols - 1)) / cols;
 
-        // Dividir la lista en filas de `cols` elementos
-        final rows = <List<_ActionData>>[];
-        for (int i = 0; i < actions.length; i += cols) {
-          rows.add(actions.sublist(i, (i + cols).clamp(0, actions.length)));
+        final rows = <List<_ActionCell>>[];
+        var currentRow = <_ActionCell>[];
+        var usedCols = 0;
+
+        for (final action in actions) {
+          final span = isDesktop
+              ? 1
+              : action.mobileSpan.clamp(1, cols);
+
+          if (usedCols + span > cols) {
+            rows.add(currentRow);
+            currentRow = <_ActionCell>[];
+            usedCols = 0;
+          }
+
+          currentRow.add(_ActionCell(data: action, span: span));
+          usedCols += span;
+
+          if (usedCols == cols) {
+            rows.add(currentRow);
+            currentRow = <_ActionCell>[];
+            usedCols = 0;
+          }
+        }
+
+        if (currentRow.isNotEmpty) {
+          rows.add(currentRow);
         }
 
         return Column(
-          children: rows.map((row) => Padding(
-            padding: const EdgeInsets.only(bottom: spacing),
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (int i = 0; i < row.length; i++) ...[
-                    if (i > 0) const SizedBox(width: spacing),
-                    SizedBox(width: cardWidth, child: _ActionCard(data: row[i])),
+          children: rows.map((row) {
+            final usedInRow = row.fold<int>(0, (acc, item) => acc + item.span);
+            return Padding(
+              padding: const EdgeInsets.only(bottom: spacing),
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (int i = 0; i < row.length; i++) ...[
+                      if (i > 0) const SizedBox(width: spacing),
+                      SizedBox(
+                        width: cardWidth * row[i].span + spacing * (row[i].span - 1),
+                        child: _ActionCard(data: row[i].data),
+                      ),
+                    ],
+                    if (usedInRow < cols) Expanded(child: const SizedBox()),
                   ],
-                  // Relleno si la fila está incompleta
-                  if (row.length < cols)
-                    ...List.generate(cols - row.length, (_) => Expanded(child: const SizedBox())),
-                ],
+                ),
               ),
-            ),
-          )).toList(),
+            );
+          }).toList(),
         );
       },
     );
@@ -215,6 +243,7 @@ class _ActionData {
   final String description;
   final Color color;
   final VoidCallback onTap;
+  final int mobileSpan;
 
   const _ActionData({
     required this.icon,
@@ -222,7 +251,15 @@ class _ActionData {
     required this.description,
     required this.color,
     required this.onTap,
+    this.mobileSpan = 1,
   });
+}
+
+class _ActionCell {
+  final _ActionData data;
+  final int span;
+
+  const _ActionCell({required this.data, required this.span});
 }
 
 class _ActionCard extends StatelessWidget {

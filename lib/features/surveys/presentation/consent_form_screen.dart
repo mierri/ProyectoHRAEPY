@@ -8,6 +8,9 @@ import 'package:ssapp/features/surveys/presentation/consent_controller.dart';
 import 'package:ssapp/shared/models/patient_model.dart';
 import 'package:provider/provider.dart';
 import 'package:ssapp/shared/utils/theme.dart';
+import 'package:ssapp/shared/widgets/tts/consent_tts_cards.dart';
+import 'package:ssapp/shared/services/tts/survey_tts_text_builder.dart';
+import 'package:ssapp/shared/widgets/tts/tts_button.dart';
 
 // Responsabilidad: renderizar el formulario de consentimiento y delegar su logica al controller.
 class ConsentFormScreen extends StatefulWidget {
@@ -541,6 +544,9 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                           Icon(material.Icons.info_outline, color: surveyColor),
                           const Gap(8),
                           const Text('Consentimiento Informado').semiBold(),
+                          TtsButton(
+                            text: SurveyTtsTextBuilder.consent(widget.consentText!),
+                          ),
                         ],
                       ),
                       const Gap(16),
@@ -550,7 +556,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                 ),
               )
             else
-              ConsentInfoCard(surveyType: widget.surveyType),
+              ConsentInfoTtsCard(surveyType: widget.surveyType),
             const Gap(24),
 
             if (widget.showPatientSection) ...[

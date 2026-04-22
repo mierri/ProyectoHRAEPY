@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' as material show Icons;
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/features/investigations/domain/investigation_model.dart';
 import 'package:ssapp/shared/widgets/section_empty_state.dart';
+import 'package:ssapp/shared/widgets/tts/consent_tts_cards.dart';
 
 class InvestigationConsentSection extends StatelessWidget {
   final InvestigationModel investigation;
@@ -23,24 +24,9 @@ class InvestigationConsentSection extends StatelessWidget {
       );
     }
 
-    return SurfaceCard(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(material.Icons.fact_check_outlined, size: 16),
-                const Gap(8),
-                Text('Consentimiento informado').semiBold(),
-              ],
-            ),
-            const Gap(10),
-            Text(content, style: const TextStyle(height: 1.5)).small(),
-          ],
-        ),
-      ),
+    return InvestigationConsentTtsCard(
+      investigationName: investigation.investigationName,
+      consentText: investigation.formConsent,
     );
   }
 }
