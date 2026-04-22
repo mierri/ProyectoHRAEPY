@@ -817,7 +817,7 @@ class _AssistScreenState extends State<AssistScreen> {
                 ),
                 material.Switch(
                   value: selected,
-                  activeColor: _assistColor,
+                  activeThumbColor: _assistColor,
                   onChanged: (value) {
                     _controller.setSubstanceSelection(substance.id, value);
                     showCenteredToast(
