@@ -16,7 +16,7 @@ import '../../../shared/widgets/tts/survey_question_tts_bar.dart';
 
 class SurveyScreen extends StatefulWidget {
   final int patientId;
-  final String surveyType; // 'bdi', 'bai', 'gds', 'lawton', 'katz', 'iciqsf' or 'osteoporosis' - solo para UI
+  final String surveyType; // 'bdi', 'bai', 'gds', 'ghq12', 'phq9', 'lawton', 'katz', 'iciqsf' or 'osteoporosis'
 
   const SurveyScreen({
     super.key,
@@ -119,6 +119,12 @@ class _SurveyScreenState extends State<SurveyScreen> {
     }
     if (widget.surveyType == 'gds') {
       return const Color(0xFF0EA5E9);
+    }
+    if (widget.surveyType == 'ghq12') {
+      return const Color(0xFF0284C7);
+    }
+    if (widget.surveyType == 'phq9') {
+      return const Color(0xFF9333EA);
     }
     if (widget.surveyType == 'lawton') {
       return const Color(0xFF14B8A6);
@@ -419,6 +425,28 @@ class _SurveyScreenState extends State<SurveyScreen> {
         levelColor = LightModeColors.lightTertiary;
       } else {
         levelColor = LightModeColors.lightError;
+      }
+    } else if (widget.surveyType == 'ghq12') {
+      if (totalScore <= 11) {
+        levelColor = LightModeColors.lightTertiary;
+      } else if (totalScore <= 20) {
+        levelColor = const Color(0xFFF59E0B);
+      } else if (totalScore <= 27) {
+        levelColor = const Color(0xFFF97316);
+      } else {
+        levelColor = LightModeColors.lightError;
+      }
+    } else if (widget.surveyType == 'phq9') {
+      if (totalScore <= 4) {
+        levelColor = LightModeColors.lightTertiary;
+      } else if (totalScore <= 9) {
+        levelColor = const Color(0xFFFBBF24);
+      } else if (totalScore <= 14) {
+        levelColor = const Color(0xFFF97316);
+      } else if (totalScore <= 19) {
+        levelColor = const Color(0xFFDC2626);
+      } else {
+        levelColor = const Color(0xFFB91C1C);
       }
     } else if (widget.surveyType == 'lawton') {
       if (totalScore == 8) {
@@ -858,6 +886,10 @@ class _SurveyScreenState extends State<SurveyScreen> {
                                     ? 'Durante la última semana'
                                     : widget.surveyType == 'gds'
                                         ? 'Responda según su situación actual'
+                                    : widget.surveyType == 'ghq12'
+                                        ? 'Durante las ultimas dos semanas'
+                                    : widget.surveyType == 'phq9'
+                                        ? 'Frecuencia de sintomas en las ultimas dos semanas'
                                     : widget.surveyType == 'lawton'
                                       ? 'Responda según su capacidad actual'
                                     : widget.surveyType == 'katz'

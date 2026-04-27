@@ -173,7 +173,8 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
     final instruction = SurveyTypeConfig.instructionFor(surveyType);
     final variant = instruction.variant;
     final isBai = variant == SurveyInstructionVariant.bai;
-    final isMoca = variant == SurveyInstructionVariant.moca;
+    final isGhq12 = variant == SurveyInstructionVariant.ghq12;
+    final isPhq9 = variant == SurveyInstructionVariant.phq9;
     final isGds = variant == SurveyInstructionVariant.gds;
     final isLawton = variant == SurveyInstructionVariant.lawton;
     final isKatz = variant == SurveyInstructionVariant.katz;
@@ -251,7 +252,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                       style: const TextStyle(fontSize: 14, height: 1.5),
                     ),
                   ),
-                  if (!isMoca) ...[
+                  ...[
                     const Gap(20),
                     const Text('¿Qué significa cada opción?').medium().semiBold(),
                     const Gap(12),
@@ -281,6 +282,55 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                         icon: Symbols.sentiment_very_dissatisfied,
                         label: 'Severamente',
                         description: 'Apenas podía soportarlo.',
+                        color: const Color(0xFFDC2626),
+                      ),
+                    ] else if (isGhq12) ...[
+                      _ScaleItem(
+                        icon: Symbols.sentiment_very_satisfied,
+                        label: '0-1: Mejor/Igual que lo habitual',
+                        description: 'Indica bajo malestar psicologico en ese reactivo.',
+                        color: const Color(0xFF16A34A),
+                      ),
+                      const Gap(8),
+                      _ScaleItem(
+                        icon: Symbols.sentiment_dissatisfied,
+                        label: '2: Menos/Algo mas que lo habitual',
+                        description: 'Indica alteracion reciente leve a moderada.',
+                        color: const Color(0xFFF59E0B),
+                      ),
+                      const Gap(8),
+                      _ScaleItem(
+                        icon: Symbols.sentiment_very_dissatisfied,
+                        label: '3: Mucho menos/Mucho mas que lo habitual',
+                        description: 'Indica alteracion importante en las ultimas dos semanas.',
+                        color: const Color(0xFFDC2626),
+                      ),
+                    ] else if (isPhq9) ...[
+                      _ScaleItem(
+                        icon: Symbols.sentiment_very_satisfied,
+                        label: '0 - Para nada',
+                        description: 'El sintoma no estuvo presente en las ultimas dos semanas.',
+                        color: const Color(0xFF16A34A),
+                      ),
+                      const Gap(8),
+                      _ScaleItem(
+                        icon: Symbols.sentiment_satisfied,
+                        label: '1 - Varios dias',
+                        description: 'El sintoma estuvo presente algunos dias.',
+                        color: const Color(0xFF65A30D),
+                      ),
+                      const Gap(8),
+                      _ScaleItem(
+                        icon: Symbols.sentiment_dissatisfied,
+                        label: '2 - Mas de la mitad de los dias',
+                        description: 'El sintoma fue frecuente y persistente.',
+                        color: const Color(0xFFF59E0B),
+                      ),
+                      const Gap(8),
+                      _ScaleItem(
+                        icon: Symbols.sentiment_very_dissatisfied,
+                        label: '3 - Casi todos los dias',
+                        description: 'El sintoma estuvo presente casi continuamente.',
                         color: const Color(0xFFDC2626),
                       ),
                     ] else if (isGds) ...[

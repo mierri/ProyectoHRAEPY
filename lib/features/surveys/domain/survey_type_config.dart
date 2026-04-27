@@ -5,7 +5,8 @@ import 'package:ssapp/shared/utils/theme.dart';
 enum SurveyInstructionVariant {
   bdi,
   bai,
-  moca,
+  ghq12,
+  phq9,
   gds,
   lawton,
   katz,
@@ -32,7 +33,8 @@ class SurveyTypeConfig {
   static const Map<String, int> _itemCounts = {
     'bdi': 21,
     'bai': 21,
-    'moca': 30,
+    'ghq12': 12,
+    'phq9': 9,
     'gds': 15,
     'lawton': 8,
     'katz': 6,
@@ -52,8 +54,10 @@ class SurveyTypeConfig {
     switch (normalizeType(surveyType)) {
       case 'bai':
         return LightModeColors.lightTertiary;
-      case 'moca':
-        return LightModeColors.lightSecondary;
+      case 'ghq12':
+        return const Color(0xFF0284C7);
+      case 'phq9':
+        return const Color(0xFF9333EA);
       case 'gds':
         return const Color(0xFF0EA5E9);
       case 'lawton':
@@ -90,8 +94,10 @@ class SurveyTypeConfig {
         return 'Este cuestionario evalua severidad e impacto de la incontinencia urinaria mediante ICIQ-SF. Incluye una seccion de orientacion clinica sobre situaciones de perdida de orina. Los datos recopilados seran utilizados exclusivamente para propositos clinicos y de investigacion del Departamento de Psicologia del HRAEPY.';
       case 'osteoporosis':
         return 'Este cuestionario detecta el riesgo de fracturas por osteoporosis. Los datos de peso, talla e IMC se solicitan y se almacenan en la base de datos junto con la encuesta. Los resultados deben cruzarse con la edad, IMC y puntaje obtenido.';
-      case 'moca':
-        return 'Esta evaluación cognitiva evalúa diferentes dominios cognitivos mediante la Evaluación Cognitiva Montreal (MoCA). Evalúa atención, concentración, funciones ejecutivas, memoria, lenguaje, habilidades visuoconstructivas, pensamiento conceptual, cálculo y orientación. Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
+      case 'ghq12':
+        return 'Este cuestionario evalua malestar psicologico reciente asociado al estres mediante el Cuestionario de Salud General de Goldberg (GHQ-12). No sustituye un diagnostico clinico y se centra en cambios del funcionamiento en las ultimas dos semanas.';
+      case 'phq9':
+        return 'Este cuestionario evalua sintomas depresivos en las ultimas dos semanas mediante el PHQ-9. Incluye tamizaje de ideacion autolesiva y orienta la necesidad de valoracion clinica.';
       case 'whoqol':
         return 'Este cuestionario evalúa la calidad de vida en cuatro dominios: salud física, salud psicológica, relaciones sociales y ambiente, mediante el instrumento WHOQOL-BREF de la Organización Mundial de la Salud. Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
       case 'sf36':
@@ -117,12 +123,19 @@ class SurveyTypeConfig {
               'A continuación encontrará una lista de síntomas. Por favor, indique cuánto le ha molestado cada síntoma durante la última semana, incluyendo hoy.',
           variant: SurveyInstructionVariant.bai,
         );
-      case 'moca':
+      case 'ghq12':
         return const SurveyInstructionContent(
-          title: 'Evaluación Cognitiva Montreal (MoCA)',
+          title: 'Cuestionario de Salud General de Goldberg (GHQ-12)',
           instructions:
-              'A continuación se le presentarán una serie de tareas y preguntas que evalúan diferentes áreas de su funcionamiento cognitivo. Siga las instrucciones de cada actividad con atención. No hay respuestas buenas o malas, simplemente haga su mejor esfuerzo.',
-          variant: SurveyInstructionVariant.moca,
+              'Responda cada pregunta segun como se ha sentido ultimamente, durante las ultimas dos semanas. El instrumento detecta cambios recientes en su funcionamiento general y no rasgos permanentes de personalidad.',
+          variant: SurveyInstructionVariant.ghq12,
+        );
+      case 'phq9':
+        return const SurveyInstructionContent(
+          title: 'Cuestionario sobre la Salud del Paciente (PHQ-9)',
+          instructions:
+              'Durante las ultimas dos semanas, indique con que frecuencia le han afectado los sintomas descritos. No hay respuestas correctas o incorrectas; responda con honestidad segun su situacion actual.',
+          variant: SurveyInstructionVariant.phq9,
         );
       case 'gds':
         return const SurveyInstructionContent(

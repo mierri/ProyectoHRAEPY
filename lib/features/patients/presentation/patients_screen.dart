@@ -988,10 +988,19 @@ class _PatientDetailsDialog extends StatelessWidget {
         return 'Severa';
       case 3: // WHOQOL-BREF
         return 'WHOQOL';
-      case 4: // MoCA
-        return 'MoCA';
       case 5: // SF-36
         return 'SF-36';
+      case 12: // GHQ-12
+        if (score <= 11) return 'Bajo';
+        if (score <= 20) return 'Leve';
+        if (score <= 27) return 'Moderado';
+        return 'Alto';
+      case 13: // PHQ-9
+        if (score <= 4) return 'Minima';
+        if (score <= 9) return 'Leve';
+        if (score <= 14) return 'Moderada';
+        if (score <= 19) return 'Moderadamente grave';
+        return 'Grave';
       default:
         return '';
     }
@@ -1011,10 +1020,19 @@ class _PatientDetailsDialog extends StatelessWidget {
         return LightModeColors.lightError;
       case 3: // WHOQOL-BREF
         return const Color(0xFF7C3AED);
-      case 4: // MoCA
-        return const Color(0xFF0EA5E9);
       case 5: // SF-36
         return const Color(0xFF06B6D4);
+      case 12: // GHQ-12
+        if (score <= 11) return LightModeColors.lightTertiary;
+        if (score <= 20) return const Color(0xFFFBBF24);
+        if (score <= 27) return const Color(0xFFF97316);
+        return LightModeColors.lightError;
+      case 13: // PHQ-9
+        if (score <= 4) return LightModeColors.lightTertiary;
+        if (score <= 9) return const Color(0xFFFBBF24);
+        if (score <= 14) return const Color(0xFFF97316);
+        if (score <= 19) return const Color(0xFFDC2626);
+        return const Color(0xFFB91C1C);
 
       default:
         return LightModeColors.lightPrimary;

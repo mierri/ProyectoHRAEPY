@@ -9,12 +9,12 @@ import 'package:ssapp/shared/models/response_model.dart';
 import 'package:ssapp/shared/models/survey_model.dart';
 import 'package:ssapp/features/surveys/domain/survey_service.dart';
 
-// Responsabilidad: coordinar estado, respuestas y guardado de encuestas BDI/BAI/GDS/Lawton/Katz/ICIQ-SF/Osteoporosis.
+// Responsabilidad: coordinar estado, respuestas y guardado de encuestas psicometricas generales.
 /// Controller for BDI/BAI survey logic
 /// Handles responses, navigation, saving, and score calculations
 class SurveyController extends BaseSurveyController {
   final int patientId;
-  final String surveyType; // 'bdi', 'bai', 'gds', 'lawton', 'katz', 'iciqsf', or 'osteoporosis'
+  final String surveyType; // 'bdi', 'bai', 'gds', 'ghq12', 'phq9', 'lawton', 'katz', 'iciqsf' u 'osteoporosis'
   final SurveyService surveyService;
   final int? investigationId;
   final double? initialWeight; // For osteoporosis
@@ -47,7 +47,7 @@ class SurveyController extends BaseSurveyController {
 
   int get surveyTypeId {
     return SurveyCatalog.idForType(surveyType);
-  } // 1=BDI, 2=BAI, 7=GDS-15, 8=Lawton, 9=Osteoporosis, 10=Katz, 11=ICIQ-SF
+  } // 1=BDI, 2=BAI, 7=GDS-15, 8=Lawton, 9=Osteoporosis, 10=Katz, 11=ICIQ-SF, 12=GHQ-12, 13=PHQ-9
 
   List<SurveyQuestion> get questions {
     return SurveyCatalog.questionsForType(surveyType);

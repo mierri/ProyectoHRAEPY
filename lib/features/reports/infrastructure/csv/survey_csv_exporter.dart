@@ -15,6 +15,8 @@ class SurveyCsvExporter {
       case 8:
       case 10:
       case 11:
+      case 12:
+      case 13:
         rows.add([
           'survey_id',
           'patient_id',
@@ -160,6 +162,8 @@ class SurveyCsvExporter {
       8 => SurveyStatsCalculator.lawtonLevel(score),
       10 => SurveyStatsCalculator.katzLevel(score),
       11 => SurveyStatsCalculator.iciqsfLevel(score),
+      12 => SurveyStatsCalculator.ghq12Level(score),
+      13 => SurveyStatsCalculator.phq9Level(score),
       _ => 'N/A',
     };
   }

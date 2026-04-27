@@ -28,7 +28,7 @@ class SurveyService extends ChangeNotifier {
     return SurveyRules.statistics(_surveys);
   }
   
-  /// Obtiene encuestas por tipo (BDI=1, BAI=2, WHOQOL=3, MoCA=4, SF-36=5, ASSIST=6, GDS-15=7, Lawton=8, Osteoporosis=9, Katz=10, ICIQ-SF=11)
+  /// Obtiene encuestas por tipo (BDI=1, BAI=2, WHOQOL=3, SF-36=5, ASSIST=6, GDS-15=7, Lawton=8, Osteoporosis=9, Katz=10, ICIQ-SF=11, GHQ-12=12, PHQ-9=13)
   List<Map<String, dynamic>> getSurveysByType(int surveyType) {
     return _surveys.where((survey) => survey['survey_type'] == surveyType).toList();
   }

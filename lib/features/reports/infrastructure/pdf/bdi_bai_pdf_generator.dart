@@ -7,9 +7,18 @@ import 'package:ssapp/features/reports/infrastructure/pdf/pdf_report_base.dart';
 class BdiBaiPdfGenerator extends PdfReportBase {
   final int surveyType;
 
-  const BdiBaiPdfGenerator({required this.surveyType})
+  static String _surveyName(int surveyType) {
+    return switch (surveyType) {
+      2 => 'BAI',
+      12 => 'GHQ-12',
+      13 => 'PHQ-9',
+      _ => 'BDI-II',
+    };
+  }
+
+  BdiBaiPdfGenerator({required this.surveyType})
       : super(
-          title: 'Reporte ${surveyType == 1 ? 'BDI-II' : 'BAI'}',
+          title: 'Reporte ${_surveyName(surveyType)}',
           subtitle: 'Resumen estadístico',
           accentColor: PdfColors.blue,
         );
@@ -20,15 +29,21 @@ class BdiBaiPdfGenerator extends PdfReportBase {
     final fonts = await loadFonts();
     final scores = surveys.map(SurveyStatsCalculator.calculateSurveyScore).toList();
     final stats = SurveyStatsCalculator.computeBasicStats(scores);
-    final dist = surveyType == 1
-        ? SurveyStatsCalculator.bdiDistribution(surveys)
-        : SurveyStatsCalculator.baiDistribution(surveys);
+    final dist = switch (surveyType) {
+      2 => SurveyStatsCalculator.baiDistribution(surveys),
+      12 => SurveyStatsCalculator.ghq12Distribution(surveys),
+      13 => SurveyStatsCalculator.phq9Distribution(surveys),
+      _ => SurveyStatsCalculator.bdiDistribution(surveys),
+    };
 
     final previewRows = surveys.take(20).map((s) {
       final score = SurveyStatsCalculator.calculateSurveyScore(s);
-      final level = surveyType == 1
-          ? SurveyStatsCalculator.bdiLevel(score)
-          : SurveyStatsCalculator.baiLevel(score);
+      final level = switch (surveyType) {
+        2 => SurveyStatsCalculator.baiLevel(score),
+        12 => SurveyStatsCalculator.ghq12Level(score),
+        13 => SurveyStatsCalculator.phq9Level(score),
+        _ => SurveyStatsCalculator.bdiLevel(score),
+      };
       final date = ('${s['created_at'] ?? ''}').split('T').first;
       return [
         '${s['survey_id'] ?? ''}',
@@ -48,7 +63,7 @@ class BdiBaiPdfGenerator extends PdfReportBase {
             regular: fonts.regular,
             bold: fonts.bold,
             values: {
-              'Tipo': surveyType == 1 ? 'BDI-II' : 'BAI',
+              'Tipo': _surveyName(surveyType),
               'Registros': '${surveys.length}',
               'Media': stats.mean.toStringAsFixed(2),
               'Mediana': stats.median.toStringAsFixed(2),

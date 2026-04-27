@@ -26,6 +26,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
     9: 'Osteoporosis',
     10: 'Katz ABVD',
     11: 'ICIQ-SF',
+    12: 'GHQ-12',
+    13: 'PHQ-9',
   };
 
   @override
@@ -145,6 +147,8 @@ class _HeaderBar extends StatelessWidget {
                     SelectItemButton(value: 9, child: Text('Osteoporosis')),
                     SelectItemButton(value: 10, child: Text('Katz ABVD')),
                     SelectItemButton(value: 11, child: Text('ICIQ-SF')),
+                    SelectItemButton(value: 12, child: Text('GHQ-12')),
+                    SelectItemButton(value: 13, child: Text('PHQ-9')),
                   ],
                 ),
               ).call,
@@ -185,6 +189,10 @@ class _HeaderBar extends StatelessWidget {
         return 'Katz ABVD';
       case 11:
         return 'ICIQ-SF';
+      case 12:
+        return 'GHQ-12';
+      case 13:
+        return 'PHQ-9';
       default:
         return 'Encuesta';
     }

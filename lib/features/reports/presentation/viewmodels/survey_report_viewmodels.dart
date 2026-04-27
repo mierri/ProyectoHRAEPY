@@ -29,15 +29,25 @@ class BdiBaiReportViewModel extends SurveyReportViewModel {
   const BdiBaiReportViewModel({required this.surveyType});
 
   @override
-  String get surveyName => surveyType == 2 ? 'BAI' : 'BDI-II';
+  String get surveyName {
+    return switch (surveyType) {
+      2 => 'BAI',
+      12 => 'GHQ-12',
+      13 => 'PHQ-9',
+      _ => 'BDI-II',
+    };
+  }
 
   @override
   Widget buildSection(List<Map<String, dynamic>> surveys) {
     final scores = surveys.map(SurveyStatsCalculator.calculateSurveyScore).toList();
     final stats = SurveyStatsCalculator.computeBasicStats(scores);
-    final dist = surveyType == 2
-        ? SurveyStatsCalculator.baiDistribution(surveys)
-        : SurveyStatsCalculator.bdiDistribution(surveys);
+    final dist = switch (surveyType) {
+      2 => SurveyStatsCalculator.baiDistribution(surveys),
+      12 => SurveyStatsCalculator.ghq12Distribution(surveys),
+      13 => SurveyStatsCalculator.phq9Distribution(surveys),
+      _ => SurveyStatsCalculator.bdiDistribution(surveys),
+    };
 
     return BdiReportSection(
       surveys: surveys,
@@ -122,6 +132,8 @@ SurveyReportViewModel resolveReportViewModel(int surveyType) {
     3 => const WhoqolReportViewModel(),
     5 => const Sf36ReportViewModel(),
     9 => const OsteoporosisReportViewModel(),
+    12 => const BdiBaiReportViewModel(surveyType: 12),
+    13 => const BdiBaiReportViewModel(surveyType: 13),
     _ => BdiBaiReportViewModel(surveyType: surveyType),
   };
 }

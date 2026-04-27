@@ -33,7 +33,7 @@ class _InvestigationApplyScreenState extends State<InvestigationApplyScreen> {
   int? _selectedPatientId;
   // Mantener qué pacientes ya dieron consentimiento en esta sesión para evitar mostrar el formulario otra vez.
   final Set<int> _consentedPatientIds = {};
-  // Mantener qué encuestas fueron completadas para el paciente actual (por código de tipo: 'bdi','moca',...)
+  // Mantener que encuestas fueron completadas para el paciente actual (por codigo de tipo: 'bdi','phq9',...).
   final Set<String> _completedSurveyTypes = {};
   String? _lastProcessedCompletionToken;
 
@@ -412,8 +412,10 @@ class _InvestigationApplyScreenState extends State<InvestigationApplyScreen> {
   }
 
   List<_SurveyLaunchItem> _surveyItems(InvestigationModel investigation) {
-    return investigation.surveyTypeIds.map((id) {
-      final surveyType = InvestigationService.surveyTypeToRouteCode[id] ?? 'bdi';
+    return investigation.surveyTypeIds
+        .where(InvestigationService.surveyTypeToRouteCode.containsKey)
+        .map((id) {
+      final surveyType = InvestigationService.surveyTypeToRouteCode[id]!;
       return _SurveyLaunchItem(
         surveyType: surveyType,
         title: InvestigationService.surveyTypes[id] ?? 'Tipo $id',

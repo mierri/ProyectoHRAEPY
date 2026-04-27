@@ -1,15 +1,16 @@
 import 'package:ssapp/features/surveys/types/bdi/domain/bdi_questions.dart';
 import 'package:ssapp/features/surveys/types/gds/domain/gds_questions.dart';
+import 'package:ssapp/features/surveys/types/ghq12/domain/ghq12_questions.dart';
 import 'package:ssapp/features/surveys/types/iciq_sf/domain/iciq_sf_questions.dart';
 import 'package:ssapp/features/surveys/types/katz/domain/katz_questions.dart';
 import 'package:ssapp/features/surveys/types/lawton/domain/lawton_questions.dart';
 import 'package:ssapp/features/surveys/types/osteoporosis/domain/osteoporosis_questions.dart';
+import 'package:ssapp/features/surveys/types/phq9/domain/phq9_questions.dart';
 
 class SurveyCatalog {
   static const int bdi = 1;
   static const int bai = 2;
   static const int whoqol = 3;
-  static const int moca = 4;
   static const int sf36 = 5;
   static const int assist = 6;
   static const int gds = 7;
@@ -17,12 +18,13 @@ class SurveyCatalog {
   static const int osteoporosis = 9;
   static const int katz = 10;
   static const int iciqSf = 11;
+  static const int ghq12 = 12;
+  static const int phq9 = 13;
 
   static const Map<int, String> namesById = {
     bdi: 'BDI-II',
     bai: 'BAI',
     whoqol: 'WHOQOL-BREF',
-    moca: 'MoCA',
     sf36: 'SF-36',
     assist: 'ASSIST V3.0',
     gds: 'GDS-15',
@@ -30,13 +32,14 @@ class SurveyCatalog {
     osteoporosis: 'Osteoporosis',
     katz: 'Katz ABVD',
     iciqSf: 'ICIQ-SF',
+    ghq12: 'GHQ-12',
+    phq9: 'PHQ-9',
   };
 
   static const Map<int, String> colorsById = {
     bdi: 'primary',
     bai: 'tertiary',
     whoqol: 'secondary',
-    moca: 'secondary',
     sf36: 'secondary',
     assist: 'secondary',
     gds: 'secondary',
@@ -44,13 +47,14 @@ class SurveyCatalog {
     osteoporosis: 'secondary',
     katz: 'secondary',
     iciqSf: 'secondary',
+    ghq12: 'secondary',
+    phq9: 'secondary',
   };
 
   static const Map<String, int> idsByType = {
     'bdi': bdi,
     'bai': bai,
     'whoqol': whoqol,
-    'moca': moca,
     'sf36': sf36,
     'assist': assist,
     'gds': gds,
@@ -58,13 +62,14 @@ class SurveyCatalog {
     'katz': katz,
     'iciqsf': iciqSf,
     'osteoporosis': osteoporosis,
+    'ghq12': ghq12,
+    'phq9': phq9,
   };
 
   static const Map<int, String> typesById = {
     bdi: 'bdi',
     bai: 'bai',
     whoqol: 'whoqol',
-    moca: 'moca',
     sf36: 'sf36',
     assist: 'assist',
     gds: 'gds',
@@ -72,6 +77,8 @@ class SurveyCatalog {
     osteoporosis: 'osteoporosis',
     katz: 'katz',
     iciqSf: 'iciqsf',
+    ghq12: 'ghq12',
+    phq9: 'phq9',
   };
 
   static int idForType(String surveyType) {
@@ -108,8 +115,11 @@ class SurveyCatalog {
         return IciqSfQuestions.questions;
       case osteoporosis:
         return OsteoporosisQuestions.questions;
+      case ghq12:
+        return Ghq12Questions.questions;
+      case phq9:
+        return Phq9Questions.questions;
       case whoqol:
-      case moca:
       case sf36:
       case assist:
       case bdi:

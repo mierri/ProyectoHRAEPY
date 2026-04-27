@@ -8,26 +8,30 @@ class InvestigationService extends ChangeNotifier {
     1: 'BDI-II',
     2: 'BAI',
     3: 'WHOQOL-BREF',
-    4: 'MoCA',
     5: 'SF-36',
     6: 'ASSIST V3.0',
     7: 'GDS-15',
     8: 'Lawton AIVD',
     9: 'Osteoporosis',
     10: 'Katz ABVD',
+    11: 'ICIQ-SF',
+    12: 'GHQ-12',
+    13: 'PHQ-9',
   };
 
   static const Map<int, String> surveyTypeToRouteCode = {
     1: 'bdi',
     2: 'bai',
     3: 'whoqol',
-    4: 'moca',
     5: 'sf36',
     6: 'assist',
     7: 'gds',
     8: 'lawton',
     9: 'osteoporosis',
     10: 'katz',
+    11: 'iciqsf',
+    12: 'ghq12',
+    13: 'phq9',
   };
 
   List<InvestigationModel> _investigations = [];

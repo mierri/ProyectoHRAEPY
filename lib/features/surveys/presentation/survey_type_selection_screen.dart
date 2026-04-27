@@ -7,12 +7,13 @@ enum SurveyType {
   bai,
   bdi,
   gds,
+  ghq12,
+  phq9,
   lawton,
   katz,
   iciqsf,
   osteoporosis,
   whoqol,
-  moca,
   sf36,
   assist,
 }
@@ -26,6 +27,10 @@ extension SurveyTypeExtension on SurveyType {
         return 'BDI-II';
       case SurveyType.gds:
         return 'GDS-15';
+      case SurveyType.ghq12:
+        return 'GHQ-12';
+      case SurveyType.phq9:
+        return 'PHQ-9';
       case SurveyType.lawton:
         return 'Lawton';
       case SurveyType.katz:
@@ -34,8 +39,6 @@ extension SurveyTypeExtension on SurveyType {
         return 'ICIQ-SF';
       case SurveyType.osteoporosis:
         return 'Osteoporosis';
-      case SurveyType.moca:
-        return 'MoCA';
       case SurveyType.whoqol:
         return 'WHOQOL-BREF';
       case SurveyType.sf36:
@@ -53,6 +56,10 @@ extension SurveyTypeExtension on SurveyType {
         return 'Beck Depression Inventory — Segunda Edición';
       case SurveyType.gds:
         return 'Geriatric Depression Scale — 15 Items';
+      case SurveyType.ghq12:
+        return 'General Health Questionnaire — 12 Items';
+      case SurveyType.phq9:
+        return 'Patient Health Questionnaire — 9 Items';
       case SurveyType.lawton:
         return 'Lawton Instrumental Activities of Daily Living';
       case SurveyType.katz:
@@ -61,8 +68,6 @@ extension SurveyTypeExtension on SurveyType {
         return 'International Consultation on Incontinence Questionnaire - Short Form';
       case SurveyType.osteoporosis:
         return 'Osteoporosis Fracture Risk Questionnaire';
-      case SurveyType.moca:
-        return 'Montreal Cognitive Assessment';
       case SurveyType.whoqol:
         return 'World Health Organization Quality of Life';
       case SurveyType.sf36:
@@ -80,6 +85,10 @@ extension SurveyTypeExtension on SurveyType {
         return 'Inventario de Depresión de Beck';
       case SurveyType.gds:
         return 'Escala de Depresión Geriátrica';
+      case SurveyType.ghq12:
+        return 'Cuestionario de Salud General de Goldberg';
+      case SurveyType.phq9:
+        return 'Cuestionario sobre la Salud del Paciente';
       case SurveyType.lawton:
         return 'Escala de Actividades Instrumentales de la Vida Diaria';
       case SurveyType.katz:
@@ -88,8 +97,6 @@ extension SurveyTypeExtension on SurveyType {
         return 'Cuestionario Internacional sobre Incontinencia Urinaria';
       case SurveyType.osteoporosis:
         return 'Cuestionario de Riesgo de Fractura por Osteoporosis';
-      case SurveyType.moca:
-        return 'Evaluación Cognitiva Montreal';
       case SurveyType.whoqol:
         return 'Cuestionario de Calidad de Vida';
       case SurveyType.sf36:
@@ -107,6 +114,10 @@ extension SurveyTypeExtension on SurveyType {
         return material.Icons.favorite_outline;
       case SurveyType.gds:
         return material.Icons.elderly_outlined;
+      case SurveyType.ghq12:
+        return material.Icons.monitor_heart_outlined;
+      case SurveyType.phq9:
+        return material.Icons.mood_outlined;
       case SurveyType.lawton:
         return material.Icons.home_work_outlined;
       case SurveyType.katz:
@@ -115,8 +126,6 @@ extension SurveyTypeExtension on SurveyType {
         return material.Icons.water_drop_outlined;
       case SurveyType.osteoporosis:
         return material.Icons.medical_services_outlined; // Use a visible icon (bone icon if available)
-      case SurveyType.moca:
-        return material.Icons.spa_outlined;
       case SurveyType.whoqol:
         return material.Icons.self_improvement_outlined;
       case SurveyType.sf36:
@@ -134,6 +143,10 @@ extension SurveyTypeExtension on SurveyType {
         return LightModeColors.lightPrimary;
       case SurveyType.gds:
         return const Color(0xFF0EA5E9);
+      case SurveyType.ghq12:
+        return const Color(0xFF0284C7);
+      case SurveyType.phq9:
+        return const Color(0xFF9333EA);
       case SurveyType.lawton:
         return const Color(0xFF14B8A6);
       case SurveyType.katz:
@@ -142,8 +155,6 @@ extension SurveyTypeExtension on SurveyType {
         return const Color(0xFF2563EB);
       case SurveyType.osteoporosis:
         return const Color(0xFF145374); // Azul petróleo
-      case SurveyType.moca:
-        return LightModeColors.lightSecondary;
       case SurveyType.whoqol:
         return const Color(0xFF7C3AED);
       case SurveyType.sf36:

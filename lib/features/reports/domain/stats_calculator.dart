@@ -76,6 +76,67 @@ class SurveyStatsCalculator {
     );
   }
 
+  static LevelDistribution ghq12Distribution(List<Map<String, dynamic>> surveys) {
+    final counts = <String, int>{
+      'Bajo': 0,
+      'Leve': 0,
+      'Moderado': 0,
+      'Alto': 0,
+    };
+    for (final s in surveys) {
+      final score = calculateSurveyScore(s);
+      final level = _ghq12Level(score);
+      counts[level] = counts[level]! + 1;
+    }
+    return LevelDistribution(
+      counts: counts,
+      ranges: {
+        'Bajo': '0-11',
+        'Leve': '12-20',
+        'Moderado': '21-27',
+        'Alto': '28-36',
+      },
+      colors: {
+        'Bajo': '#10B981',
+        'Leve': '#FBBF24',
+        'Moderado': '#F97316',
+        'Alto': '#EF4444',
+      },
+    );
+  }
+
+  static LevelDistribution phq9Distribution(List<Map<String, dynamic>> surveys) {
+    final counts = <String, int>{
+      'Minima': 0,
+      'Leve': 0,
+      'Moderada': 0,
+      'Moderadamente grave': 0,
+      'Grave': 0,
+    };
+    for (final s in surveys) {
+      final score = calculateSurveyScore(s);
+      final level = _phq9Level(score);
+      counts[level] = counts[level]! + 1;
+    }
+    return LevelDistribution(
+      counts: counts,
+      ranges: {
+        'Minima': '0-4',
+        'Leve': '5-9',
+        'Moderada': '10-14',
+        'Moderadamente grave': '15-19',
+        'Grave': '20-27',
+      },
+      colors: {
+        'Minima': '#10B981',
+        'Leve': '#FBBF24',
+        'Moderada': '#F97316',
+        'Moderadamente grave': '#DC2626',
+        'Grave': '#B91C1C',
+      },
+    );
+  }
+
   static String bdiLevel(int score) => _bdiLevel(score);
   static String baiLevel(int score) => _baiLevel(score);
   static String gdsLevel(int score) => _gdsLevel(score);
@@ -83,6 +144,8 @@ class SurveyStatsCalculator {
   static String katzLevel(int score) => _katzLevel(score);
   static String iciqsfLevel(int score) => _iciqsfLevel(score);
   static String assistLevel(int score) => _assistLevel(score);
+  static String ghq12Level(int score) => _ghq12Level(score);
+  static String phq9Level(int score) => _phq9Level(score);
 
   static String _bdiLevel(int score) {
     if (score <= 13) return 'Mínima';
@@ -124,6 +187,21 @@ class SurveyStatsCalculator {
     if (score <= 5) return 'Leve';
     if (score <= 12) return 'Moderada';
     return 'Severa';
+  }
+
+  static String _ghq12Level(int score) {
+    if (score <= 11) return 'Bajo';
+    if (score <= 20) return 'Leve';
+    if (score <= 27) return 'Moderado';
+    return 'Alto';
+  }
+
+  static String _phq9Level(int score) {
+    if (score <= 4) return 'Minima';
+    if (score <= 9) return 'Leve';
+    if (score <= 14) return 'Moderada';
+    if (score <= 19) return 'Moderadamente grave';
+    return 'Grave';
   }
 
   // Whoqol

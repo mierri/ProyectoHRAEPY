@@ -92,8 +92,12 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         return LightModeColors.lightTertiary;
       case 'moderado':
         return const Color(0xFFF59E0B);
+      case 'moderadamente grave':
+        return const Color(0xFFDC2626);
       case 'alto':
         return LightModeColors.lightError;
+      case 'grave':
+        return const Color(0xFFB91C1C);
       default:
         return LightModeColors.lightSecondary;
     }
@@ -134,6 +138,12 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         return material.Icons.warning_amber_outlined;
       case 'sin incontinencia':
         return material.Icons.check_circle_outline;
+      case 'moderadamente grave':
+        return material.Icons.report_problem_outlined;
+      case 'alto':
+        return material.Icons.warning_amber_outlined;
+      case 'grave':
+        return material.Icons.error_outline;
       default:
         return material.Icons.help_outline;
     }
@@ -174,8 +184,6 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         if (score >= 3) return 'Bueno';
         if (score >= 2.5) return 'Regular';
         return 'Bajo';
-      case 4: // MoCA
-        return 'MoCA';
       case 5: // SF-36
         if (score >= 4) return 'Excelente';
         if (score >= 3.5) return 'Muy bueno';
@@ -202,6 +210,17 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         if (score <= 5) return 'Leve';
         if (score <= 12) return 'Moderada';
         return 'Severa';
+      case 12: // GHQ-12
+        if (score <= 11) return 'Bajo';
+        if (score <= 20) return 'Leve';
+        if (score <= 27) return 'Moderado';
+        return 'Alto';
+      case 13: // PHQ-9
+        if (score <= 4) return 'Minima';
+        if (score <= 9) return 'Leve';
+        if (score <= 14) return 'Moderada';
+        if (score <= 19) return 'Moderadamente grave';
+        return 'Grave';
       default:
         return 'Resultado';
     }
@@ -275,8 +294,6 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
           default:
             return 'Se recomienda una evaluación más detallada de su calidad de vida.';
         }
-      case 4: // MoCA
-        return 'La evaluación cognitiva ha sido completada. Consulte con su médico para interpretar los resultados en detalle.';
       case 5: // SF-36
         switch (level.toLowerCase()) {
           case 'excelente':
@@ -325,6 +342,19 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
           return 'Sin evidencia de incontinencia urinaria segun ICIQ-SF.';
         }
         return 'Se detecta presencia de incontinencia urinaria. Se recomienda valoracion clinica para manejo individualizado.';
+      case 12: // GHQ-12
+        if (level.toLowerCase() == 'bajo') {
+          return 'El puntaje sugiere bajo malestar psicologico reciente. Se recomienda mantener seguimiento preventivo.';
+        }
+        if (level.toLowerCase() == 'leve') {
+          return 'Se observa malestar psicologico leve. Puede beneficiarse de seguimiento clinico y estrategias de manejo de estres.';
+        }
+        if (level.toLowerCase() == 'moderado') {
+          return 'Se observa malestar psicologico moderado. Se recomienda valoracion por profesional de salud mental.';
+        }
+        return 'Se observa malestar psicologico alto. Se recomienda atencion profesional prioritaria.';
+      case 13: // PHQ-9
+        return 'El PHQ-9 sugiere sintomas depresivos segun su severidad actual. Si existe ideacion autolesiva, active valoracion clinica urgente.';
       default:
         return 'Se recomienda consultar con un profesional de salud para una evaluación completa.';
     }
@@ -397,7 +427,6 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         case 1: return 'Inventario de Depresión de Beck II';
         case 2: return 'Inventario de Ansiedad de Beck';
         case 3: return 'Cuestionario de Calidad de Vida WHOQOL-BREF';
-        case 4: return 'Evaluación Cognitiva Montreal';
         case 5: return 'Encuesta de Salud de 36 Items';
         case 6: return 'OMS-ASSIST V3.0';
         case 7: return 'Escala de Depresión Geriátrica de 15 ítems';
@@ -405,6 +434,8 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         case 9: return 'Cuestionario de Riesgo de Fractura por Osteoporosis';
         case 10: return 'Indice de Katz para Actividades Basicas de la Vida Diaria';
         case 11: return 'International Consultation on Incontinence Questionnaire - Short Form';
+        case 12: return 'Cuestionario de Salud General de Goldberg';
+        case 13: return 'Cuestionario sobre la Salud del Paciente';
         default: return 'Encuesta';
       }
     }
@@ -766,11 +797,6 @@ class _ScoreInterpretationCard extends StatelessWidget {
           {'range': '1.0-2.4', 'label': 'Calidad de vida baja', 'color': LightModeColors.lightError},
         ];
         break;
-      case 4: // MoCA
-        ranges = [
-          {'range': 'N/A', 'label': 'Evaluación cognitiva completada', 'color': const Color(0xFF0EA5E9)},
-        ];
-        break;
       case 5: // SF-36
         ranges = [
           {'range': '4.0-5.0', 'label': 'Salud excelente', 'color': LightModeColors.lightTertiary},
@@ -812,6 +838,23 @@ class _ScoreInterpretationCard extends StatelessWidget {
           {'range': '1-5', 'label': 'Impacto leve', 'color': const Color(0xFFFBBF24)},
           {'range': '6-12', 'label': 'Impacto moderado', 'color': const Color(0xFFF97316)},
           {'range': '13-21', 'label': 'Impacto severo', 'color': LightModeColors.lightError},
+        ];
+        break;
+      case 12: // GHQ-12
+        ranges = [
+          {'range': '0-11', 'label': 'Malestar bajo', 'color': LightModeColors.lightTertiary},
+          {'range': '12-20', 'label': 'Malestar leve', 'color': const Color(0xFFFBBF24)},
+          {'range': '21-27', 'label': 'Malestar moderado', 'color': const Color(0xFFF97316)},
+          {'range': '28-36', 'label': 'Malestar alto', 'color': LightModeColors.lightError},
+        ];
+        break;
+      case 13: // PHQ-9
+        ranges = [
+          {'range': '0-4', 'label': 'Depresion minima', 'color': LightModeColors.lightTertiary},
+          {'range': '5-9', 'label': 'Depresion leve', 'color': const Color(0xFFFBBF24)},
+          {'range': '10-14', 'label': 'Depresion moderada', 'color': const Color(0xFFF97316)},
+          {'range': '15-19', 'label': 'Moderadamente grave', 'color': const Color(0xFFDC2626)},
+          {'range': '20-27', 'label': 'Depresion grave', 'color': const Color(0xFFB91C1C)},
         ];
         break;
       default:

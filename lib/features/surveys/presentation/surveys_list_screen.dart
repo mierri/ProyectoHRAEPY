@@ -18,7 +18,7 @@ class SurveysListScreen extends StatefulWidget {
 
 class _SurveysListScreenState extends State<SurveysListScreen> {
   bool _isLoading = true;
-  String _filterType = 'all';   // 'all' | 'bdi' | 'bai' | 'gds' | 'lawton' | 'katz' | 'iciqsf' | 'moca' | 'whoqol' | 'sf36' | 'assist'
+  String _filterType = 'all';
   String _filterStatus = 'all'; // 'all' | 'synced' | 'pending'
 
   @override
@@ -40,7 +40,20 @@ class _SurveysListScreenState extends State<SurveysListScreen> {
 
   List<Map<String, dynamic>> _filteredSurveys(List<Map<String, dynamic>> all) {
     var result = all;
-    const _typeIdMap = {'bdi': 1, 'bai': 2, 'whoqol': 3, 'moca': 4, 'sf36': 5, 'assist': 6, 'gds': 7, 'lawton': 8, 'osteoporosis': 9, 'katz': 10, 'iciqsf': 11};
+    const _typeIdMap = {
+      'bdi': 1,
+      'bai': 2,
+      'whoqol': 3,
+      'sf36': 5,
+      'assist': 6,
+      'gds': 7,
+      'lawton': 8,
+      'osteoporosis': 9,
+      'katz': 10,
+      'iciqsf': 11,
+      'ghq12': 12,
+      'phq9': 13,
+    };
     if (_typeIdMap.containsKey(_filterType)) {
       final typeId = _typeIdMap[_filterType]!;
       result = result.where((s) => (s['survey_type'] ?? 1) == typeId).toList();
@@ -194,10 +207,11 @@ class _FiltersSection extends StatelessWidget {
         _FilterOption(value: 'bdi', label: 'BDI-II'),
         _FilterOption(value: 'bai', label: 'BAI'),
         _FilterOption(value: 'gds', label: 'GDS-15'),
+        _FilterOption(value: 'ghq12', label: 'GHQ-12'),
+        _FilterOption(value: 'phq9', label: 'PHQ-9'),
         _FilterOption(value: 'lawton', label: 'Lawton AIVD'),
           _FilterOption(value: 'katz', label: 'Katz ABVD'),
         _FilterOption(value: 'iciqsf', label: 'ICIQ-SF'),
-        _FilterOption(value: 'moca', label: 'MoCA'),
         _FilterOption(value: 'whoqol', label: 'WHOQOL-BREF'),
         _FilterOption(value: 'sf36', label: 'SF-36'),
         _FilterOption(value: 'assist', label: 'ASSIST V3.0'),
@@ -386,7 +400,6 @@ class _SurveyCard extends StatelessWidget {
       case 1: return LightModeColors.lightPrimary;
       case 2: return LightModeColors.lightTertiary;
       case 3: return const Color(0xFF7C3AED); // WHOQOL - violeta
-      case 4: return const Color(0xFF0EA5E9); // MoCA - celeste
       case 5: return const Color(0xFF06B6D4); // SF-36 - cyan
       case 6: return LightModeColors.lightSecondary; // ASSIST
       case 7: return const Color(0xFF0EA5E9); // GDS-15 - celeste
@@ -394,6 +407,8 @@ class _SurveyCard extends StatelessWidget {
       case 9: return const Color(0xFF145374); // Osteoporosis
         case 10: return const Color(0xFF0D9488); // Katz ABVD
       case 11: return const Color(0xFF2563EB); // ICIQ-SF
+      case 12: return const Color(0xFF0284C7); // GHQ-12
+      case 13: return const Color(0xFF9333EA); // PHQ-9
       default: return LightModeColors.lightPrimary;
     }
   }
@@ -403,7 +418,6 @@ class _SurveyCard extends StatelessWidget {
       case 1: return 'BDI-II';
       case 2: return 'BAI';
       case 3: return 'WHOQOL-BREF';
-      case 4: return 'MoCA';
       case 5: return 'SF-36';
       case 6: return 'ASSIST';
       case 7: return 'GDS-15';
@@ -411,6 +425,8 @@ class _SurveyCard extends StatelessWidget {
       case 9: return 'Osteoporosis';
         case 10: return 'Katz ABVD';
       case 11: return 'ICIQ-SF';
+      case 12: return 'GHQ-12';
+      case 13: return 'PHQ-9';
       default: return 'Encuesta';
     }
   }
@@ -418,13 +434,14 @@ class _SurveyCard extends StatelessWidget {
   int get _expectedResponses {
     switch (survey['survey_type'] as int? ?? 1) {
       case 3: return 26; // WHOQOL
-      case 4: return 0;  // MoCA no usa responses table del mismo modo
       case 5: return 36; // SF-36
       case 7: return 15; // GDS-15
       case 8: return 8;  // Lawton
       case 9: return 7;  // Osteoporosis
         case 10: return 6; // Katz
       case 11: return 4; // ICIQ-SF
+      case 12: return 12; // GHQ-12
+      case 13: return 9; // PHQ-9
       default: return 21; // BDI / BAI
     }
   }
@@ -457,7 +474,6 @@ class _SurveyCard extends StatelessWidget {
       return 'Severa';
     }
     if (type == 3) return 'WHOQOL'; // WHOQOL - no single score
-    if (type == 4) return 'MoCA';   // MoCA
     if (type == 5) return 'SF-36';  // SF-36
     if (type == 7) return score <= 4 ? 'Normal' : 'Síntomas depresivos';
     if (type == 8) return score == 8 ? 'Independencia total' : 'Deterioro funcional';
@@ -468,6 +484,19 @@ class _SurveyCard extends StatelessWidget {
       if (score <= 5) return 'Leve';
       if (score <= 12) return 'Moderada';
       return 'Severa';
+    }
+    if (type == 12) {
+      if (score <= 11) return 'Bajo';
+      if (score <= 20) return 'Leve';
+      if (score <= 27) return 'Moderado';
+      return 'Alto';
+    }
+    if (type == 13) {
+      if (score <= 4) return 'Minima';
+      if (score <= 9) return 'Leve';
+      if (score <= 14) return 'Moderada';
+      if (score <= 19) return 'Moderadamente grave';
+      return 'Grave';
     }
     return '';
   }
@@ -486,7 +515,6 @@ class _SurveyCard extends StatelessWidget {
       return LightModeColors.lightError;
     }
     if (type == 3) return const Color(0xFF7C3AED);
-    if (type == 4) return const Color(0xFF0EA5E9);
     if (type == 5) return const Color(0xFF06B6D4); // SF-36 cyan
     if (type == 7) return score <= 4 ? LightModeColors.lightTertiary : LightModeColors.lightError;
     if (type == 8) return score == 8 ? LightModeColors.lightTertiary : const Color(0xFFF59E0B);
@@ -497,6 +525,19 @@ class _SurveyCard extends StatelessWidget {
       if (score <= 5) return const Color(0xFFFBBF24);
       if (score <= 12) return const Color(0xFFF97316);
       return LightModeColors.lightError;
+    }
+    if (type == 12) {
+      if (score <= 11) return LightModeColors.lightTertiary;
+      if (score <= 20) return const Color(0xFFFBBF24);
+      if (score <= 27) return const Color(0xFFF97316);
+      return LightModeColors.lightError;
+    }
+    if (type == 13) {
+      if (score <= 4) return LightModeColors.lightTertiary;
+      if (score <= 9) return const Color(0xFFFBBF24);
+      if (score <= 14) return const Color(0xFFF97316);
+      if (score <= 19) return const Color(0xFFDC2626);
+      return const Color(0xFFB91C1C);
     }
 
     return LightModeColors.lightPrimary;
@@ -524,14 +565,12 @@ class _SurveyCard extends StatelessWidget {
     final totalResp    = responses?.length ?? 0;
     final surveyType   = survey['survey_type'] as int? ?? 1;
     final expected     = _expectedResponses;
-    final isComplete   = surveyType == 4 ? true : (expected == 0 ? true : totalResp >= expected);
+    final isComplete   = expected == 0 ? true : totalResp >= expected;
     final score        = _score;
     final level        = _level(score, surveyType);
     final levelColor   = _levelColor(score, surveyType);
     final surveyColor  = _surveyColor;
-    final respLabel    = surveyType == 4
-        ? 'MoCA'
-        : (isComplete ? 'Completa' : '$totalResp/$expected respuestas');
+    final respLabel    = isComplete ? 'Completa' : '$totalResp/$expected respuestas';
 
     return GestureDetector(
       onTap: isComplete
