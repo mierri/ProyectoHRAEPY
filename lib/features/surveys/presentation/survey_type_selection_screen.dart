@@ -16,9 +16,20 @@ enum SurveyType {
   whoqol,
   sf36,
   assist,
+  sociodemographic,
+  socialDeterminants,
 }
 
 extension SurveyTypeExtension on SurveyType {
+  String get routeType {
+    switch (this) {
+      case SurveyType.socialDeterminants:
+        return 'social_determinants';
+      default:
+        return name;
+    }
+  }
+
   String get code {
     switch (this) {
       case SurveyType.bai:
@@ -45,6 +56,10 @@ extension SurveyTypeExtension on SurveyType {
         return 'SF-36';
       case SurveyType.assist:
         return 'ASSIST V3.0';
+      case SurveyType.sociodemographic:
+        return 'Sociodemografico';
+      case SurveyType.socialDeterminants:
+        return 'Determinantes Sociales';
     }
   }
 
@@ -74,6 +89,10 @@ extension SurveyTypeExtension on SurveyType {
         return 'Short Form 36 Health Survey';
       case SurveyType.assist:
         return 'Alcohol, Smoking and Substance Involvement Screening Test';
+      case SurveyType.sociodemographic:
+        return 'Sociodemographic Questionnaire';
+      case SurveyType.socialDeterminants:
+        return 'Social Determinants Questionnaire';
     }
   }
 
@@ -103,6 +122,10 @@ extension SurveyTypeExtension on SurveyType {
         return 'Encuesta de Salud de 36 Items';
       case SurveyType.assist:
         return 'Cribado de Consumo de Sustancias OMS';
+      case SurveyType.sociodemographic:
+        return 'Cuestionario Sociodemográfico';
+      case SurveyType.socialDeterminants:
+        return 'Cuestionario de Determinantes Sociales';
     }
   }
 
@@ -132,6 +155,10 @@ extension SurveyTypeExtension on SurveyType {
         return material.Icons.health_and_safety_outlined;
       case SurveyType.assist:
         return material.Icons.medication_outlined;
+      case SurveyType.sociodemographic:
+        return material.Icons.assignment_ind_outlined;
+      case SurveyType.socialDeterminants:
+        return material.Icons.diversity_3_outlined;
     }
   }
 
@@ -161,6 +188,10 @@ extension SurveyTypeExtension on SurveyType {
         return const Color(0xFF06B6D4);
       case SurveyType.assist:
         return LightModeColors.lightSecondary;
+      case SurveyType.sociodemographic:
+        return const Color(0xFF4F46E5);
+      case SurveyType.socialDeterminants:
+        return const Color(0xFF0F766E);
     }
   }
 }
@@ -198,7 +229,7 @@ class SurveyTypeSelectionScreen extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 16),
               child: SurveyTypeCard(
                 surveyType: type,
-                onTap: () => context.push('/consent-form?surveyType=${type.name}'),
+                onTap: () => context.push('/consent-form?surveyType=${type.routeType}'),
               ),
             )),
           ],

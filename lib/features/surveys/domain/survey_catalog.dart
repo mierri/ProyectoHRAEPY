@@ -6,6 +6,8 @@ import 'package:ssapp/features/surveys/types/katz/domain/katz_questions.dart';
 import 'package:ssapp/features/surveys/types/lawton/domain/lawton_questions.dart';
 import 'package:ssapp/features/surveys/types/osteoporosis/domain/osteoporosis_questions.dart';
 import 'package:ssapp/features/surveys/types/phq9/domain/phq9_questions.dart';
+import 'package:ssapp/features/surveys/types/sociodemographic/domain/sociodemographic_questions.dart';
+import 'package:ssapp/features/surveys/types/social_determinants/domain/social_determinants_questions.dart';
 
 class SurveyCatalog {
   static const int bdi = 1;
@@ -20,6 +22,8 @@ class SurveyCatalog {
   static const int iciqSf = 11;
   static const int ghq12 = 12;
   static const int phq9 = 13;
+  static const int sociodemographic = 14;
+  static const int socialDeterminants = 15;
 
   static const Map<int, String> namesById = {
     bdi: 'BDI-II',
@@ -34,6 +38,8 @@ class SurveyCatalog {
     iciqSf: 'ICIQ-SF',
     ghq12: 'GHQ-12',
     phq9: 'PHQ-9',
+    sociodemographic: 'Sociodemografico',
+    socialDeterminants: 'Determinantes Sociales',
   };
 
   static const Map<int, String> colorsById = {
@@ -49,6 +55,8 @@ class SurveyCatalog {
     iciqSf: 'secondary',
     ghq12: 'secondary',
     phq9: 'secondary',
+    sociodemographic: 'secondary',
+    socialDeterminants: 'secondary',
   };
 
   static const Map<String, int> idsByType = {
@@ -64,6 +72,9 @@ class SurveyCatalog {
     'osteoporosis': osteoporosis,
     'ghq12': ghq12,
     'phq9': phq9,
+    'sociodemographic': sociodemographic,
+    'social_determinants': socialDeterminants,
+    'socialdeterminants': socialDeterminants,
   };
 
   static const Map<int, String> typesById = {
@@ -79,6 +90,8 @@ class SurveyCatalog {
     iciqSf: 'iciqsf',
     ghq12: 'ghq12',
     phq9: 'phq9',
+    sociodemographic: 'sociodemographic',
+    socialDeterminants: 'social_determinants',
   };
 
   static int idForType(String surveyType) {
@@ -119,6 +132,10 @@ class SurveyCatalog {
         return Ghq12Questions.questions;
       case phq9:
         return Phq9Questions.questions;
+      case sociodemographic:
+        return SociodemographicQuestions.questions;
+      case socialDeterminants:
+        return SocialDeterminantsQuestions.questions;
       case whoqol:
       case sf36:
       case assist:

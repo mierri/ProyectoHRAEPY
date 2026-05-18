@@ -20,6 +20,8 @@ import 'package:ssapp/features/reports/presentation/reports_screen.dart';
 import 'package:ssapp/features/settings/settings_screen.dart';
 import 'package:ssapp/features/surveys/types/sf36/presentation/sf36_screen.dart';
 import 'package:ssapp/features/surveys/types/phq9/presentation/phq9_screen.dart';
+import 'package:ssapp/features/surveys/types/sociodemographic/presentation/sociodemographic_screen.dart';
+import 'package:ssapp/features/surveys/types/social_determinants/presentation/social_determinants_screen.dart';
 import 'package:ssapp/features/surveys/presentation/survey_results_screen.dart';
 import 'package:ssapp/features/surveys/presentation/surveys_list_screen.dart';
 import 'package:ssapp/features/surveys/presentation/survey_type_selection_screen.dart';
@@ -84,6 +86,14 @@ final GoRouter appRouter = GoRouter(
 
         if (surveyType == 'phq9') {
           return Phq9Screen(patientId: patientId);
+        }
+
+        if (surveyType == 'sociodemographic') {
+          return SociodemographicScreen(patientId: patientId);
+        }
+
+        if (surveyType == 'social_determinants') {
+          return SocialDeterminantsScreen(patientId: patientId);
         }
 
         if (surveyType == 'lawton') {

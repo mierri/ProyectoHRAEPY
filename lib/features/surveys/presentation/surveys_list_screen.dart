@@ -216,6 +216,8 @@ class _FiltersSection extends StatelessWidget {
         _FilterOption(value: 'sf36', label: 'SF-36'),
         _FilterOption(value: 'assist', label: 'ASSIST V3.0'),
         _FilterOption(value: 'osteoporosis', label: 'Osteoporosis'),
+        _FilterOption(value: 'sociodemographic', label: 'Sociodemografico'),
+        _FilterOption(value: 'social_determinants', label: 'Determinantes Sociales'),
       ],
       selected: filterType == 'all' ? null : filterType,
       hint: 'Todas',
@@ -409,6 +411,8 @@ class _SurveyCard extends StatelessWidget {
       case 11: return const Color(0xFF2563EB); // ICIQ-SF
       case 12: return const Color(0xFF0284C7); // GHQ-12
       case 13: return const Color(0xFF9333EA); // PHQ-9
+      case 14: return const Color(0xFF4F46E5); // Sociodemográfico
+      case 15: return const Color(0xFF0F766E); // Determinantes Sociales
       default: return LightModeColors.lightPrimary;
     }
   }
@@ -427,8 +431,15 @@ class _SurveyCard extends StatelessWidget {
       case 11: return 'ICIQ-SF';
       case 12: return 'GHQ-12';
       case 13: return 'PHQ-9';
+      case 14: return 'Sociodemografico';
+      case 15: return 'Determinantes Sociales';
       default: return 'Encuesta';
     }
+  }
+
+  bool get _hasScore {
+    final type = survey['survey_type'] as int? ?? 1;
+    return type != 14 && type != 15;
   }
 
   int get _expectedResponses {
@@ -442,6 +453,8 @@ class _SurveyCard extends StatelessWidget {
       case 11: return 4; // ICIQ-SF
       case 12: return 12; // GHQ-12
       case 13: return 9; // PHQ-9
+      case 14: return 15; // Sociodemográfico
+      case 15: return 15; // Determinantes Sociales
       default: return 21; // BDI / BAI
     }
   }
@@ -498,6 +511,8 @@ class _SurveyCard extends StatelessWidget {
       if (score <= 19) return 'Moderadamente grave';
       return 'Grave';
     }
+    if (type == 14) return 'Sociodemográfico'; // Sociodemográfico - no score
+    if (type == 15) return 'Determinantes Sociales'; // Determinantes Sociales - no score
     return '';
   }
 
@@ -539,6 +554,9 @@ class _SurveyCard extends StatelessWidget {
       if (score <= 19) return const Color(0xFFDC2626);
       return const Color(0xFFB91C1C);
     }
+    if (type == 14) return const Color(0xFF4F46E5);
+    if (type == 15) return const Color(0xFF0F766E);
+    
 
     return LightModeColors.lightPrimary;
   }
@@ -573,7 +591,7 @@ class _SurveyCard extends StatelessWidget {
     final respLabel    = isComplete ? 'Completa' : '$totalResp/$expected respuestas';
 
     return GestureDetector(
-      onTap: isComplete
+      onTap: isComplete && _hasScore
           ? () => showCenteredToast(
                 context,
                 title: 'Resultados',
@@ -618,7 +636,7 @@ class _SurveyCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (isComplete) _ScoreBadge(score: score, level: level, color: levelColor),
+                if (isComplete && _hasScore) _ScoreBadge(score: score, level: level, color: levelColor),
               ],
             ),
             const Gap(10),

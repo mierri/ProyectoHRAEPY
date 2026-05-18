@@ -221,6 +221,9 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         if (score <= 14) return 'Moderada';
         if (score <= 19) return 'Moderadamente grave';
         return 'Grave';
+      case 14: // Sociodemográfico
+      case 15: // Determinantes sociales
+        return 'Sin puntuación';
       default:
         return 'Resultado';
     }
@@ -355,6 +358,10 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         return 'Se observa malestar psicologico alto. Se recomienda atencion profesional prioritaria.';
       case 13: // PHQ-9
         return 'El PHQ-9 sugiere sintomas depresivos segun su severidad actual. Si existe ideacion autolesiva, active valoracion clinica urgente.';
+      case 14: // Sociodemográfico
+        return 'El cuestionario sociodeomográfico no tiene una interpretación de puntajes. Se recomienda utilizar la información recopilada para contextualizar la situación del paciente.';
+      case 15: // Determinantes Sociales
+        return 'El cuestionario de determinantes sociales no tiene una interpretación de puntajes. Se recomienda utilizar la información recopilada para contextualizar la situación del paciente.';
       default:
         return 'Se recomienda consultar con un profesional de salud para una evaluación completa.';
     }
@@ -436,6 +443,8 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         case 11: return 'International Consultation on Incontinence Questionnaire - Short Form';
         case 12: return 'Cuestionario de Salud General de Goldberg';
         case 13: return 'Cuestionario sobre la Salud del Paciente';
+        case 14: return 'Cuestionario Sociodemográfico';
+        case 15: return 'Cuestionario de Determinantes Sociales';
         default: return 'Encuesta';
       }
     }
@@ -857,6 +866,18 @@ class _ScoreInterpretationCard extends StatelessWidget {
           {'range': '20-27', 'label': 'Depresion grave', 'color': const Color(0xFFB91C1C)},
         ];
         break;
+      case 14: {  // Sociodemográfico
+         ranges = [
+          {'range': 'N/A', 'label': 'Sociodemográfico', 'color': const Color(0xFF4F46E5)},
+        ];
+        break;
+      }
+      case 15: {  // Determinantes Sociales
+         ranges = [
+          {'range': 'N/A', 'label': 'Determinantes Sociales', 'color': const Color(0xFF0F766E)},
+        ];
+        break;
+      }
       default:
         ranges = [];
     }

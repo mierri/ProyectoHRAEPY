@@ -118,6 +118,7 @@ class SurveyRepository implements SurveyRepositoryContract {
               .map((r) => {
                     'question_id': r.questionId,
                     'answer_value': r.answerValue,
+                    if (r.answerText != null && r.answerText!.isNotEmpty) 'answer_text': r.answerText,
                   })
               .toList(),
         };
@@ -179,6 +180,7 @@ class SurveyRepository implements SurveyRepositoryContract {
                 'survey_id': survey.surveyId,
                 'question_id': r.questionId,
                 'answer_value': r.answerValue,
+                if (r.answerText != null && r.answerText!.isNotEmpty) 'answer_text': r.answerText,
               })
           .toList();
 
@@ -277,6 +279,7 @@ class SurveyRepository implements SurveyRepositoryContract {
               (r) => ResponseModel(
                 questionId: r['question_id'] as int,
                 answerValue: r['answer_value'] as int,
+                answerText: r['answer_text'] as String?,
               ),
             )
             .toList();

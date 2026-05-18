@@ -15,6 +15,8 @@ enum SurveyInstructionVariant {
   sf36,
   assist,
   osteoporosis,
+  sociodemographic,
+  socialDeterminants,
 }
 
 class SurveyInstructionContent {
@@ -43,10 +45,15 @@ class SurveyTypeConfig {
     'sf36': 36,
     'assist': 8,
     'osteoporosis': 7,
+    'sociodemographic': 15,
+    'social_determinants': 15,
   };
 
   static String normalizeType(String? surveyType) {
     final normalized = (surveyType ?? 'bdi').toLowerCase();
+    if (normalized == 'socialdeterminants') {
+      return 'social_determinants';
+    }
     return normalized.isEmpty ? 'bdi' : normalized;
   }
 
@@ -74,6 +81,10 @@ class SurveyTypeConfig {
         return LightModeColors.lightSecondary;
       case 'osteoporosis':
         return const Color(0xFF145374);
+      case 'sociodemographic':
+        return const Color(0xFF4F46E5);
+      case 'social_determinants':
+        return const Color(0xFF0F766E);
       case 'bdi':
       default:
         return LightModeColors.lightPrimary;
@@ -104,6 +115,10 @@ class SurveyTypeConfig {
         return 'Este cuestionario evalúa diferentes aspectos de la salud y el bienestar mediante la Encuesta de Salud de 36 Items (SF-36). Evalúa funcionamiento físico, rol físico, dolor corporal, salud general, vitalidad, funcionamiento social, rol emocional y salud mental. Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
       case 'assist':
         return 'Este cuestionario evalúa riesgo asociado al consumo de tabaco, alcohol y otras sustancias mediante el instrumento OMS-ASSIST V3.0. Los resultados orientan el nivel de intervención (sin intervención, intervención breve o tratamiento intensivo). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
+      case 'sociodemographic':
+        return 'Este cuestionario recoge datos sociodemográficos del participante. No genera puntaje clínico; la información es para caracterización y análisis del contexto.';
+      case 'social_determinants':
+        return 'Este cuestionario recoge determinantes sociales del hogar (educación, vivienda, servicios y apoyo social). No genera puntaje clínico; la información es para análisis del contexto.';
       case 'bdi':
       default:
         return 'Este cuestionario evalúa síntomas de depresión mediante el Inventario de Depresión de Beck (BDI-II). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
@@ -192,6 +207,20 @@ class SurveyTypeConfig {
           instructions:
               'Este cuestionario detecta riesgo asociado al consumo de tabaco, alcohol y otras sustancias. Primero se registra consumo alguna vez en la vida y luego frecuencia/problemas en los últimos 3 meses para cada sustancia seleccionada. Responda con la mayor precisión posible.',
           variant: SurveyInstructionVariant.assist,
+        );
+      case 'sociodemographic':
+        return const SurveyInstructionContent(
+          title: 'Cuestionario Sociodemográfico',
+          instructions:
+              'Responda cada apartado con la información del participante. Algunos campos pueden requerir especificación adicional.',
+          variant: SurveyInstructionVariant.sociodemographic,
+        );
+      case 'social_determinants':
+        return const SurveyInstructionContent(
+          title: 'Cuestionario de Determinantes Sociales',
+          instructions:
+              'Responda cada apartado con la información del hogar. Marque todas las opciones que apliquen cuando se solicite.',
+          variant: SurveyInstructionVariant.socialDeterminants,
         );
       case 'bdi':
       default:

@@ -19,17 +19,20 @@ class ResponseModelAdapter extends TypeAdapter<ResponseModel> {
     return ResponseModel(
       questionId: fields[0] as int,
       answerValue: fields[1] as int,
+      answerText: fields[2] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, ResponseModel obj) {
     writer
-      ..writeByte(2)
+      ..writeByte(3)
       ..writeByte(0)
       ..write(obj.questionId)
       ..writeByte(1)
-      ..write(obj.answerValue);
+      ..write(obj.answerValue)
+      ..writeByte(2)
+      ..write(obj.answerText);
   }
 
   @override
