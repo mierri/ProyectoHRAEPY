@@ -1,193 +1,143 @@
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart' show Icons;
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/features/reports/domain/report_models.dart';
 import 'package:ssapp/features/reports/domain/stats_calculator.dart';
-import 'package:ssapp/features/reports/presentation/widgets/charts/severity_pie_chart.dart';
-import 'package:ssapp/features/reports/presentation/widgets/charts/stat_bar_chart.dart';
-import 'package:ssapp/features/reports/presentation/widgets/charts/timeline_line_chart.dart';
+import 'package:ssapp/features/reports/presentation/widgets/chart_card.dart';
+import 'package:ssapp/features/reports/presentation/widgets/charts/gauge_chart.dart';
+import 'package:ssapp/features/reports/presentation/widgets/charts/line_timeline_chart.dart';
+import 'package:ssapp/features/reports/presentation/widgets/charts/stacked_bar_chart.dart';
+import 'package:ssapp/features/reports/presentation/widgets/metric_cards.dart';
+import 'package:ssapp/features/reports/presentation/widgets/section_header.dart';
 
 class BdiReportSection extends StatelessWidget {
   final List<Map<String, dynamic>> surveys;
-  final BasicStats stats;
-  final LevelDistribution distribution;
-  final String title;
+  static final k1 = GlobalKey(debugLabel: 'bdi_k1');
+  static final k2 = GlobalKey(debugLabel: 'bdi_k2');
+  static final k3 = GlobalKey(debugLabel: 'bdi_k3');
+  static List<GlobalKey> get chartKeys => [k1, k2, k3];
 
-  const BdiReportSection({
-    super.key,
-    required this.surveys,
-    required this.stats,
-    required this.distribution,
-    this.title = 'Reporte',
-  });
+  const BdiReportSection({super.key, required this.surveys});
 
   @override
   Widget build(BuildContext context) {
+    if (surveys.isEmpty) return const _EmptyState();
     final sorted = List<Map<String, dynamic>>.from(surveys)
       ..sort((a, b) => DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
-    final timelineScores = sorted
-        .map(SurveyStatsCalculator.calculateSurveyScore)
-        .map((e) => e.toDouble())
-        .toList();
-    final maxTimeline = timelineScores.isEmpty
-        ? 1.0
-        : timelineScores.reduce((a, b) => a > b ? a : b);
-
-    final bars = <BarChartGroupData>[];
-    final labels = <String>[];
-    var index = 0;
-    distribution.counts.forEach((label, value) {
-      labels.add(label);
-      bars.add(
-        BarChartGroupData(
-          x: index,
-          barRods: [
-            BarChartRodData(toY: value.toDouble(), width: 18),
-          ],
-        ),
-      );
-      index++;
-    });
-
-    final maxCount = distribution.counts.values.isEmpty
-        ? 1.0
-        : distribution.counts.values.reduce((a, b) => a > b ? a : b).toDouble();
-
-    final pieSections = distribution.counts.entries
-        .where((e) => e.value > 0)
-        .map(
-          (e) => PieChartSectionData(
-            value: e.value.toDouble(),
-            title: '${distribution.pct(e.key).toStringAsFixed(0)}%',
-            radius: 55,
-          ),
-        )
-        .toList();
-
-    final pieLegend = distribution.counts.entries
-        .map(
-          (e) => LegendItem(
-            label: e.key,
-            color: const Color(0xFF6B7280),
-            value: e.value.toString(),
-          ),
-        )
-        .toList();
+    final scores = sorted.map(SurveyStatsCalculator.calculateSurveyScore).toList();
+    final stats = SurveyStatsCalculator.computeBasicStats(scores);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title).semiBold().xLarge(),
+        SectionHeader(
+          title: 'BDI-II — Inventario de Depresión de Beck',
+          subtitle: 'Severidad de la depresión (0–63 puntos)',
+          icon: Icons.psychology_outlined,
+          color: const Color(0xFF10B981),
+        ),
+        const Gap(16),
+        MetricCardGroup(cards: buildScoredMetricCards(
+          mean: stats.mean, mode: stats.mode, stdDev: stats.stdDev, count: stats.count,
+          color: const Color(0xFF10B981),
+        )),
+        const Gap(16),
+        ChartCard(
+          title: 'Severidad media — Gauge',
+          boundaryKey: k1,
+          chart: GaugeChart(
+            value: stats.mean,
+            maxValue: 63,
+            centerLabel: stats.mean.toStringAsFixed(1),
+            sublabel: SurveyStatsCalculator.bdiLevel(stats.mean.round()),
+            segments: const [
+              GaugeSegment(label: 'Mínima', endValue: 13, color: Color(0xFF10B981)),
+              GaugeSegment(label: 'Leve', endValue: 19, color: Color(0xFFFBBF24)),
+              GaugeSegment(label: 'Moderada', endValue: 28, color: Color(0xFFF97316)),
+              GaugeSegment(label: 'Severa', endValue: 63, color: Color(0xFFEF4444)),
+            ],
+          ),
+        ),
         const Gap(12),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            _MetricCard(label: 'Media', value: stats.mean.toStringAsFixed(1)),
-            _MetricCard(label: 'Mediana', value: stats.median.toStringAsFixed(1)),
-            _MetricCard(label: 'Moda', value: stats.mode.toStringAsFixed(0)),
-            _MetricCard(label: 'Desv. Est.', value: stats.stdDev.toStringAsFixed(2)),
+        ChartCard(
+          title: 'Cognitivo vs Somático (últimas ${sorted.length.clamp(0, 8)} encuestas)',
+          boundaryKey: k2,
+          chart: _stackedBdi(sorted.length > 8 ? sorted.sublist(sorted.length - 8) : sorted),
+        ),
+        const Gap(12),
+        ChartCard(
+          title: 'Evolución del puntaje',
+          boundaryKey: k3,
+          chart: LineTimelineChart(
+            series: [LineChartBarData(
+              spots: [for (var i = 0; i < scores.length; i++) FlSpot(i.toDouble(), scores[i].toDouble())],
+              isCurved: true,
+              color: const Color(0xFF10B981),
+              barWidth: 2.5,
+              dotData: FlDotData(show: scores.length <= 15),
+            )],
+            maxY: 63,
+          ),
+        ),
+        const Gap(12),
+        _InterpretationBox(text: SurveyStatsCalculator.bdiInterpretation(stats.mean)),
+      ],
+    );
+  }
+
+  Widget _stackedBdi(List<Map<String, dynamic>> last) {
+    int cogScore(Map<String, dynamic> s) {
+      final r = s['responses'] as List? ?? [];
+      return r.where((x) => (x['question_id'] as int? ?? 0) <= 13)
+          .fold(0, (sum, x) => sum + (x['answer_value'] as int? ?? 0));
+    }
+    int somScore(Map<String, dynamic> s) {
+      final r = s['responses'] as List? ?? [];
+      return r.where((x) => (x['question_id'] as int? ?? 0) > 13)
+          .fold(0, (sum, x) => sum + (x['answer_value'] as int? ?? 0));
+    }
+    final groups = <BarChartGroupData>[];
+    for (var i = 0; i < last.length; i++) {
+      final cog = cogScore(last[i]).toDouble();
+      final som = somScore(last[i]).toDouble();
+      groups.add(BarChartGroupData(x: i, barRods: [
+        BarChartRodData(toY: cog + som, width: 22, color: const Color(0xFF10B981),
+          rodStackItems: [
+            BarChartRodStackItem(0, cog, const Color(0xFF10B981)),
+            BarChartRodStackItem(cog, cog + som, const Color(0xFF059669)),
           ],
         ),
-        const Gap(16),
-        SurfaceCard(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Distribución por nivel').semiBold(),
-                const Gap(12),
-                SizedBox(
-                  height: 260,
-                  child: StatBarChart(
-                    groups: bars,
-                    maxY: maxCount + 1,
-                    bottomLabels: labels,
-                    leftAxisLabel: 'N',
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const Gap(16),
-        SurfaceCard(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Tendencia temporal').semiBold(),
-                const Gap(12),
-                SizedBox(
-                  height: 260,
-                  child: TimelineLineChart(
-                    series: [
-                      LineChartBarData(
-                        spots: [
-                          for (var i = 0; i < timelineScores.length; i++)
-                            FlSpot(i.toDouble(), timelineScores[i]),
-                        ],
-                        isCurved: true,
-                        dotData: const FlDotData(show: true),
-                      ),
-                    ],
-                    maxY: maxTimeline + 1,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const Gap(16),
-        SurfaceCard(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Proporción por nivel').semiBold(),
-                const Gap(12),
-                SizedBox(
-                  height: 320,
-                  child: SeverityPieChart(
-                    sections: pieSections,
-                    legend: pieLegend,
-                    centerSpaceRadius: 36,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+      ]));
+    }
+    return StackedBarChart(
+      groups: groups,
+      maxY: 63,
+      bottomLabels: List.generate(last.length, (i) => '${i + 1}'),
+      legend: const [
+        (label: 'Cognitivo', color: Color(0xFF10B981)),
+        (label: 'Somático', color: Color(0xFF059669)),
       ],
     );
   }
 }
 
-class _MetricCard extends StatelessWidget {
-  final String label;
-  final String value;
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+  @override
+  Widget build(BuildContext context) => const Center(child: Text('Sin encuestas disponibles'));
+}
 
-  const _MetricCard({required this.label, required this.value});
-
+class _InterpretationBox extends StatelessWidget {
+  final String text;
+  const _InterpretationBox({required this.text});
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minWidth: 130),
-      child: SurfaceCard(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label).small().muted(),
-              const Gap(4),
-              Text(value).semiBold().large(),
-            ],
-          ),
-        ),
-      ),
+    return OutlinedContainer(
+      borderRadius: BorderRadius.circular(8),
+      padding: const EdgeInsets.all(14),
+      backgroundColor: const Color(0xFF10B981).withValues(alpha: 0.05),
+      borderColor: const Color(0xFF10B981).withValues(alpha: 0.3),
+      child: Text(text, style: const TextStyle(fontSize: 13, height: 1.5)),
     );
   }
 }

@@ -22,7 +22,9 @@ class SurveyStatsCalculator {
         : (sorted[n ~/ 2 - 1] + sorted[n ~/ 2]) / 2.0;
 
     final freqMap = <int, int>{};
-    for (final s in sorted) freqMap[s] = (freqMap[s] ?? 0) + 1;
+    for (final s in sorted) {
+      freqMap[s] = (freqMap[s] ?? 0) + 1;
+    }
     final mode = freqMap.entries.reduce((a, b) => a.value > b.value ? a : b).key;
 
     final variance =

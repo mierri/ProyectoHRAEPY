@@ -28,6 +28,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
     11: 'ICIQ-SF',
     12: 'GHQ-12',
     13: 'PHQ-9',
+    14: 'Sociodemográfico',
+    15: 'Determinantes Sociales',
   };
 
   @override
@@ -149,6 +151,8 @@ class _HeaderBar extends StatelessWidget {
                     SelectItemButton(value: 11, child: Text('ICIQ-SF')),
                     SelectItemButton(value: 12, child: Text('GHQ-12')),
                     SelectItemButton(value: 13, child: Text('PHQ-9')),
+                    SelectItemButton(value: 14, child: Text('Sociodemográfico')),
+                    SelectItemButton(value: 15, child: Text('Determinantes Sociales')),
                   ],
                 ),
               ).call,
@@ -193,6 +197,10 @@ class _HeaderBar extends StatelessWidget {
         return 'GHQ-12';
       case 13:
         return 'PHQ-9';
+      case 14:
+        return 'Sociodemográfico';
+      case 15:
+        return 'Determinantes Sociales';
       default:
         return 'Encuesta';
     }

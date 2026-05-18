@@ -1,4 +1,5 @@
 /// Models for Osteoporosis Reports
+library;
 
 class OsteoporosisReportMetrics {
   final int totalPatients;

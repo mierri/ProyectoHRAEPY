@@ -86,6 +86,58 @@ abstract class PdfReportBase {
     );
   }
 
+  /// Embeds a captured chart PNG as a full-width image in the PDF.
+  pw.Widget embedChartImage(Uint8List? png, {double height = 160}) {
+    if (png == null) return pw.SizedBox.shrink();
+    return pw.Container(
+      height: height,
+      child: pw.Image(pw.MemoryImage(png), fit: pw.BoxFit.contain),
+    );
+  }
+
+  /// Renders metric cards as a horizontal row in the PDF.
+  pw.Widget buildMetricCardsRow({
+    required pw.Font regular,
+    required pw.Font bold,
+    required List<({String label, String value, String? hint})> cards,
+  }) {
+    return pw.Row(
+      children: cards.map((card) => pw.Expanded(
+        child: pw.Container(
+          margin: const pw.EdgeInsets.symmetric(horizontal: 4),
+          padding: const pw.EdgeInsets.all(8),
+          decoration: pw.BoxDecoration(
+            border: pw.Border.all(color: accentColor),
+            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+            color: PdfColors.white,
+          ),
+          child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+            pw.Text(card.label, style: pw.TextStyle(font: regular, fontSize: 8, color: PdfColors.grey600)),
+            pw.SizedBox(height: 3),
+            pw.Text(card.value, style: pw.TextStyle(font: bold, fontSize: 14, color: accentColor)),
+            if (card.hint != null)
+              pw.Text(card.hint!, style: pw.TextStyle(font: regular, fontSize: 7, color: PdfColors.grey500)),
+          ]),
+        ),
+      )).toList(),
+    );
+  }
+
+  /// Renders a colored interpretation box.
+  pw.Widget buildInterpretationBox({
+    required pw.Font regular,
+    required String text,
+  }) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(10),
+      decoration: pw.BoxDecoration(
+        color: PdfColor.fromHex('#F0F9FF'),
+        border: pw.Border(left: pw.BorderSide(color: accentColor, width: 3)),
+      ),
+      child: pw.Text(text, style: pw.TextStyle(font: regular, fontSize: 9)),
+    );
+  }
+
   void drawSector(PdfGraphics canvas, double cx, double cy, double r, double startAngle, double sweepAngle) {
     addArcSegment(canvas, cx, cy, r, startAngle, sweepAngle);
   }
