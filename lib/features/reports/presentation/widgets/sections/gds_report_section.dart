@@ -24,6 +24,19 @@ class GdsReportSection extends StatelessWidget {
   // Negative items (answer YES = 0 pt): 1,5,7,11,13
   static const _positiveItems = [2, 3, 4, 6, 8, 9, 10, 12, 14, 15];
 
+  static const _itemLabels = {
+    2:  'Renunció a hobbies',
+    3:  'Vida vacía',
+    4:  'Aburrimiento frecuente',
+    6:  'Teme algo malo',
+    8:  'Se siente impotente',
+    9:  'Prefiere quedarse en casa',
+    10: 'Problemas de memoria',
+    12: 'Dificultad en proyectos',
+    14: 'Situación desesperada',
+    15: 'Otros están mejor',
+  };
+
   @override
   Widget build(BuildContext context) {
     if (surveys.isEmpty) return const Center(child: Text('Sin encuestas disponibles'));
@@ -47,7 +60,7 @@ class GdsReportSection extends StatelessWidget {
     }
 
     final hBarItems = itemFreq.entries
-        .map((e) => (label: 'Ítem ${e.key}', value: total == 0 ? 0.0 : (e.value / total * 100)))
+        .map((e) => (label: _itemLabels[e.key] ?? 'Ítem ${e.key}', value: total == 0 ? 0.0 : (e.value / total * 100)))
         .toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 

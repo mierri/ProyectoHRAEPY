@@ -43,7 +43,12 @@ class OsteoporosisReportSection extends StatelessWidget {
     // Risk factors horizontal bar
     final rfItems = report.riskFactors
         .take(8)
-        .map((rf) => (label: 'F${rf.questionNumber}', value: rf.yesPercentage))
+        .map((rf) {
+          final label = rf.questionText.length > 28
+              ? '${rf.questionText.substring(0, 26)}…'
+              : rf.questionText;
+          return (label: label, value: rf.yesPercentage);
+        })
         .toList();
 
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

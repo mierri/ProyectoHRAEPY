@@ -21,8 +21,14 @@ class LawtonReportSection extends StatelessWidget {
   static const _color = Color(0xFF14B8A6);
 
   static const _taskLabels = [
-    'Teléfono', 'Transporte', 'Medicación', 'Finanzas',
-    'Compras', 'Comida', 'Limpieza', 'Ropa',
+    'Uso del teléfono',
+    'Uso del transporte',
+    'Manejo de medicación',
+    'Manejo de finanzas',
+    'Realización de compras',
+    'Preparación de comida',
+    'Limpieza del hogar',
+    'Lavado de ropa',
   ];
 
   @override

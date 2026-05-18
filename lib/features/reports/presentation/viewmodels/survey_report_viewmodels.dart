@@ -6,6 +6,7 @@ import 'package:ssapp/features/reports/domain/stats_calculator.dart';
 import 'package:ssapp/features/reports/infrastructure/pdf/bdi_bai_pdf_generator.dart';
 import 'package:ssapp/features/reports/infrastructure/pdf/osteoporosis_pdf_generator.dart';
 import 'package:ssapp/features/reports/infrastructure/pdf/sf36_pdf_generator.dart';
+import 'package:ssapp/features/reports/infrastructure/pdf/generic_pdf_generator.dart';
 import 'package:ssapp/features/reports/infrastructure/pdf/whoqol_pdf_generator.dart';
 import 'package:ssapp/features/reports/presentation/widgets/sections/assist_report_section.dart';
 import 'package:ssapp/features/reports/presentation/widgets/sections/bai_report_section.dart';
@@ -30,7 +31,23 @@ abstract class SurveyReportViewModel {
   List<GlobalKey> get chartKeys;
 
   Widget buildSection(List<Map<String, dynamic>> surveys);
+
+  /// Legacy: generates PDF without chart images (fallback).
   Future<Uint8List> generatePdf(List<Map<String, dynamic>> surveys);
+
+  /// Generates PDF with captured chart images embedded.
+  /// Default falls back to [generatePdf]; override for better output.
+  Future<Uint8List> generatePdfWithImages(
+    List<Map<String, dynamic>> surveys,
+    List<Uint8List?> chartImages,
+  ) async {
+    // Default: use GenericPdfGenerator which embeds chart images
+    return GenericPdfReportGenerator(
+      surveyName: surveyName,
+      surveys: surveys,
+      chartImages: chartImages,
+    ).generate();
+  }
 }
 
 // ── BDI-II ────────────────────────────────────────────────────────────────────
