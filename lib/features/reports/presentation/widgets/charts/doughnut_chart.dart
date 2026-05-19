@@ -47,6 +47,9 @@ class DoughnutChart extends StatelessWidget {
       )).toList(),
     );
     return LayoutBuilder(builder: (_, constraints) {
+      if (constraints.maxWidth <= 0) {
+        return const SizedBox.shrink();
+      }
       if (constraints.maxWidth < 400) {
         return Column(children: [chart, const Gap(10), legendW]);
       }

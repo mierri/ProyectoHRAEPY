@@ -64,6 +64,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    final isTablet = width >= _BP.tablet;
+    final isDesktop = width >= _BP.desktop;
+    final hPad = isDesktop
+        ? ((width - _BP.maxContent) / 2).clamp(24.0, 120.0)
+        : 16.0;
+
     return Scaffold(
       headers: [
         AppBar(
@@ -86,15 +93,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ],
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final width     = constraints.maxWidth;
-          final isTablet  = width >= _BP.tablet;
-          final isDesktop = width >= _BP.desktop;
-
-          // Padding horizontal adaptativo
-          final hPad = isDesktop
-              ? ((width - _BP.maxContent) / 2).clamp(24.0, 120.0)
-              : 16.0;
-
           return SingleChildScrollView(
             padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 24),
             child: Column(
@@ -176,6 +174,9 @@ class QuickActionsGrid extends StatelessWidget {
     // Permite que algunas tarjetas ocupen más columnas en pantallas compactas.
     return LayoutBuilder(
       builder: (context, constraints) {
+        if (constraints.maxWidth <= 0) {
+          return const SizedBox.shrink();
+        }
         final cols = isDesktop ? 4 : 2;
         const spacing = 16.0;
         final cardWidth = (constraints.maxWidth - spacing * (cols - 1)) / cols;
@@ -211,23 +212,20 @@ class QuickActionsGrid extends StatelessWidget {
 
         return Column(
           children: rows.map((row) {
-            final usedInRow = row.fold<int>(0, (acc, item) => acc + item.span);
             return Padding(
               padding: const EdgeInsets.only(bottom: spacing),
-              child: IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    for (int i = 0; i < row.length; i++) ...[
-                      if (i > 0) const SizedBox(width: spacing),
-                      SizedBox(
-                        width: cardWidth * row[i].span + spacing * (row[i].span - 1),
-                        child: _ActionCard(data: row[i].data),
-                      ),
-                    ],
-                    if (usedInRow < cols) Expanded(child: const SizedBox()),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (int i = 0; i < row.length; i++) ...[
+                    if (i > 0) const SizedBox(width: spacing),
+                    SizedBox(
+                      width: cardWidth * row[i].span + spacing * (row[i].span - 1),
+                      child: _ActionCard(data: row[i].data),
+                    ),
                   ],
-                ),
+                ],
               ),
             );
           }).toList(),
@@ -335,6 +333,9 @@ class StatisticsSection extends StatelessWidget {
         const Gap(16),
         LayoutBuilder(
           builder: (context, constraints) {
+            if (constraints.maxWidth <= 0) {
+              return const SizedBox.shrink();
+            }
             final cols    = isTablet ? 4 : 2;
             const spacing = 14.0;
             final cardWidth = (constraints.maxWidth - spacing * (cols - 1)) / cols;
@@ -347,16 +348,15 @@ class StatisticsSection extends StatelessWidget {
             return Column(
               children: rows.map((row) => Padding(
                 padding: const EdgeInsets.only(bottom: spacing),
-                child: IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (int i = 0; i < row.length; i++) ...[
-                        if (i > 0) const SizedBox(width: spacing),
-                        SizedBox(width: cardWidth, child: _StatCard(data: row[i])),
+                    child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (int i = 0; i < row.length; i++) ...[
+                          if (i > 0) const SizedBox(width: spacing),
+                          SizedBox(width: cardWidth, child: _StatCard(data: row[i])),
+                        ],
                       ],
-                    ],
-                  ),
                 ),
               )).toList(),
             );

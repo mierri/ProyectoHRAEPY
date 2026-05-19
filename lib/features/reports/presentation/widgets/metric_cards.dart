@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart' show Icons;
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
 class MetricCardData {
@@ -26,6 +25,9 @@ class MetricCardGroup extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
+        if (constraints.maxWidth <= 0) {
+          return const SizedBox.shrink();
+        }
         final isNarrow = constraints.maxWidth < 520;
         if (isNarrow) {
           return GridView.builder(
@@ -41,16 +43,15 @@ class MetricCardGroup extends StatelessWidget {
             itemBuilder: (_, i) => _MetricCard(data: cards[i]),
           );
         }
-        return IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (int i = 0; i < cards.length; i++) ...[
-                Expanded(child: _MetricCard(data: cards[i])),
-                if (i < cards.length - 1) const Gap(10),
-              ],
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (int i = 0; i < cards.length; i++) ...[
+              Expanded(child: _MetricCard(data: cards[i])),
+              if (i < cards.length - 1) const Gap(10),
             ],
-          ),
+          ],
         );
       },
     );

@@ -42,6 +42,9 @@ class TornadoChart extends StatelessWidget {
             ),
             const Gap(6),
             Expanded(child: LayoutBuilder(builder: (_, c) {
+              if (c.maxWidth <= 0) {
+                return const SizedBox.shrink();
+              }
               final half = c.maxWidth / 2;
               final lFrac = maxValue == 0 ? 0.0 : (item.leftValue / maxValue).clamp(0.0, 1.0);
               final rFrac = maxValue == 0 ? 0.0 : (item.rightValue / maxValue).clamp(0.0, 1.0);

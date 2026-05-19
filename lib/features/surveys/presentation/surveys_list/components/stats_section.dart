@@ -21,21 +21,22 @@ class SurveysStatsSection extends StatelessWidget {
         children: [
           const Text('Estadísticas').medium(),
           const Gap(12),
-          IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (int i = 0; i < items.length; i++) ...[
-                  if (i > 0) const Gap(10),
-                  Expanded(child: SurveyStatCard(
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (int i = 0; i < items.length; i++) ...[
+                if (i > 0) const Gap(10),
+                Expanded(
+                  child: SurveyStatCard(
                     icon: items[i].$1,
                     label: items[i].$2,
                     value: items[i].$3,
                     color: items[i].$4,
-                  )),
-                ],
+                  ),
+                ),
               ],
-            ),
+            ],
           ),
         ],
       ),

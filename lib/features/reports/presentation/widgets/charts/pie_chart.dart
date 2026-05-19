@@ -19,6 +19,9 @@ class ReportPieChart extends StatelessWidget {
       children: legend.map((item) => _Chip(item: item)).toList(),
     );
     return LayoutBuilder(builder: (ctx, constraints) {
+      if (constraints.maxWidth <= 0) {
+        return const SizedBox.shrink();
+      }
       if (constraints.maxWidth < 400) {
         return Column(children: [chart, const Gap(10), legendW]);
       }

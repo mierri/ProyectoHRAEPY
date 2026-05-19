@@ -28,6 +28,9 @@ class GaugeChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (_, constraints) {
+      if (constraints.maxWidth <= 0 || constraints.maxHeight <= 0) {
+        return const SizedBox.shrink();
+      }
       final w = constraints.maxWidth.isFinite ? constraints.maxWidth : 280.0;
       final h = constraints.maxHeight.isFinite ? constraints.maxHeight : 160.0;
       // The semicircle center is at bottom-center; radius constrained by both dims
