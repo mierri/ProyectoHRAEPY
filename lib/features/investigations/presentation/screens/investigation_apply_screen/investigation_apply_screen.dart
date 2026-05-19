@@ -11,7 +11,7 @@ import 'package:ssapp/features/investigations/presentation/screens/investigation
 import 'package:ssapp/features/patients/data/patient_repository.dart';
 import 'package:ssapp/features/surveys/domain/survey_service.dart';
 import 'package:ssapp/features/surveys/domain/survey_type_config.dart';
-import 'package:ssapp/features/surveys/presentation/consent_form_screen.dart';
+import 'package:ssapp/features/surveys/presentation/consent_form/consent_form_screen.dart';
 
 class InvestigationApplyScreen extends StatefulWidget {
   final int investigationId;

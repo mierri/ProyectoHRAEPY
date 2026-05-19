@@ -2,7 +2,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ssapp/features/surveys/types/assist/presentation/assist_screen.dart';
 import 'package:ssapp/features/surveys/types/bai/presentation/bai_screen.dart';
 import 'package:ssapp/features/surveys/types/bdi/presentation/bdi_screen.dart';
-import 'package:ssapp/features/surveys/presentation/consent_form_screen.dart';
+import 'package:ssapp/features/surveys/presentation/consent_form/consent_form_screen.dart';
 import 'package:ssapp/features/dashboard/dashboard_screen.dart';
 import 'package:ssapp/features/investigations/presentation/screens/investigation_apply_screen/investigation_apply_screen.dart';
 import 'package:ssapp/features/investigations/presentation/screens/create_investigation_screen/create_investigation_screen.dart';
@@ -14,7 +14,7 @@ import 'package:ssapp/features/surveys/types/iciq_sf/presentation/iciq_sf_screen
 import 'package:ssapp/features/surveys/types/katz/presentation/katz_screen.dart';
 import 'package:ssapp/features/surveys/types/lawton/presentation/lawton_screen.dart';
 import 'package:ssapp/features/surveys/types/osteoporosis/presentation/osteoporosis_screen.dart';
-import 'package:ssapp/features/patients/presentation/patients_screen.dart';
+import 'package:ssapp/features/patients/presentation/screens/patients_screen.dart';
 import 'package:ssapp/shared/widgets/placeholder_screen.dart';
 import 'package:ssapp/features/reports/presentation/reports_screen.dart';
 import 'package:ssapp/features/settings/settings_screen.dart';
@@ -22,9 +22,9 @@ import 'package:ssapp/features/surveys/types/sf36/presentation/sf36_screen.dart'
 import 'package:ssapp/features/surveys/types/phq9/presentation/phq9_screen.dart';
 import 'package:ssapp/features/surveys/types/sociodemographic/presentation/sociodemographic_screen.dart';
 import 'package:ssapp/features/surveys/types/social_determinants/presentation/social_determinants_screen.dart';
-import 'package:ssapp/features/surveys/presentation/survey_results_screen.dart';
-import 'package:ssapp/features/surveys/presentation/surveys_list_screen.dart';
-import 'package:ssapp/features/surveys/presentation/survey_type_selection_screen.dart';
+import 'package:ssapp/features/surveys/presentation/survey_results/survey_results_screen.dart';
+import 'package:ssapp/features/surveys/presentation/surveys_list/surveys_list_screen.dart';
+import 'package:ssapp/features/surveys/presentation/survey_type_selection/survey_type_selection_screen.dart';
 import 'package:ssapp/features/surveys/types/whoqol/presentation/whoqol_screen.dart';
 
 final GoRouter appRouter = GoRouter(
