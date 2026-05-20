@@ -4,6 +4,7 @@ import 'package:ssapp/core/logger/app_logger.dart';
 import 'package:ssapp/shared/services/syncable.dart';
 import 'package:ssapp/core/supabase/supabase_config.dart';
 import 'package:ssapp/shared/models/patient_model.dart';
+import 'package:ssapp/shared/utils/id_generator.dart';
 
 // Responsabilidad: gestionar CRUD y carga de pacientes locales/remotos.
 class PatientService extends ChangeNotifier implements ISyncable {
@@ -18,7 +19,7 @@ class PatientService extends ChangeNotifier implements ISyncable {
     required DateTime birthDate,
   }) async {
     try {
-      final patientId = DateTime.now().millisecondsSinceEpoch;
+      final patientId = generateId();
       final patient = PatientModel(
         patientId: patientId,
         name: name,

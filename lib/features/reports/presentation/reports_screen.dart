@@ -42,8 +42,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_viewModel.surveys.isEmpty && !_viewModel.isLoading) {
-      _loadForType(_viewModel.selectedSurveyType);
+      _loadInitial();
     }
+  }
+
+  Future<void> _loadInitial() async {
+    final surveyService = context.read<SurveyService>();
+    await surveyService.loadSurveys();
+    if (mounted) await _loadForType(_viewModel.selectedSurveyType);
   }
 
   Future<void> _loadForType(int surveyType) {

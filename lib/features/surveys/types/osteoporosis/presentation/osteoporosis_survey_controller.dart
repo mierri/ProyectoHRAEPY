@@ -2,6 +2,7 @@ import 'package:ssapp/features/surveys/presentation/survey_controller.dart';
 import 'package:ssapp/features/surveys/types/osteoporosis/domain/save_osteoporosis_survey_use_case.dart';
 import 'package:ssapp/shared/models/response_model.dart';
 import 'package:ssapp/shared/models/survey_model.dart';
+import 'package:ssapp/shared/utils/id_generator.dart';
 
 class OsteoporosisSurveyController extends SurveyController {
   OsteoporosisSurveyController({
@@ -58,7 +59,7 @@ class OsteoporosisSurveyController extends SurveyController {
 
         final totalScore = calculateTotalScore();
         final survey = SurveyModel(
-          surveyId: DateTime.now().millisecondsSinceEpoch,
+          surveyId: generateId(),
           surveyType: surveyTypeId,
           patientId: patientId,
           investigationId: investigationId,

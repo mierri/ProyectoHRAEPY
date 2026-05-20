@@ -4,6 +4,7 @@ import 'package:ssapp/features/surveys/presentation/base_survey_controller.dart'
 import 'package:ssapp/features/surveys/presentation/survey_controller.dart';
 import 'package:ssapp/shared/models/response_model.dart';
 import 'package:ssapp/shared/models/survey_model.dart';
+import 'package:ssapp/shared/utils/id_generator.dart';
 
 // Responsabilidad: manejar respuestas de formularios sin puntaje y guardar encuestas.
 abstract class FormSurveyController extends BaseSurveyController {
@@ -128,7 +129,7 @@ abstract class FormSurveyController extends BaseSurveyController {
         }
 
         final survey = SurveyModel(
-          surveyId: DateTime.now().millisecondsSinceEpoch,
+          surveyId: generateId(),
           surveyType: surveyTypeId,
           patientId: patientId,
           investigationId: investigationId,

@@ -40,6 +40,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (!mounted) return;
     try {
       final patientService = context.read<PatientService>();
+      final surveyService = context.read<SurveyService>();
+
+      await Future.wait([
+        patientService.loadPatients(),
+        surveyService.loadSurveys(),
+      ]);
+
+      if (!mounted) return;
+
       final syncService = SyncService(
         patientService: patientService,
         surveyRepository: SurveyRepository(),

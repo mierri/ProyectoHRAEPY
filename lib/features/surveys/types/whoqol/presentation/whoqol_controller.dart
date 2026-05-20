@@ -3,6 +3,7 @@ import 'package:ssapp/features/surveys/types/whoqol/domain/whoqol_questions.dart
 import 'package:ssapp/shared/models/response_model.dart';
 import 'package:ssapp/shared/models/survey_model.dart';
 import 'package:ssapp/features/surveys/domain/survey_service.dart';
+import 'package:ssapp/shared/utils/id_generator.dart';
 
 // Responsabilidad: gestionar estado y guardado de la encuesta WHOQOL-BREF.
 /// Controller for WHOQOL-BREF survey logic
@@ -102,7 +103,7 @@ class WhoqolController extends BaseSurveyController {
         }
 
         final survey = SurveyModel(
-          surveyId: DateTime.now().millisecondsSinceEpoch,
+          surveyId: generateId(),
           surveyType: 3,
           patientId: patientId,
           investigationId: investigationId,

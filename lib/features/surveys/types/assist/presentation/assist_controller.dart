@@ -4,6 +4,7 @@ import 'package:ssapp/features/surveys/types/assist/domain/assist_questions.dart
 import 'package:ssapp/shared/models/response_model.dart';
 import 'package:ssapp/shared/models/survey_model.dart';
 import 'package:ssapp/features/surveys/domain/survey_service.dart';
+import 'package:ssapp/shared/utils/id_generator.dart';
 
 class AssistController extends ChangeNotifier {
   final int patientId;
@@ -274,7 +275,7 @@ class AssistController extends ChangeNotifier {
       }
 
       final survey = SurveyModel(
-        surveyId: DateTime.now().millisecondsSinceEpoch,
+        surveyId: generateId(),
         surveyType: 6,
         patientId: patientId,
         investigationId: investigationId,

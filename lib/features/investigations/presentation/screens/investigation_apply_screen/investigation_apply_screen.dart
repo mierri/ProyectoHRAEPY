@@ -83,11 +83,13 @@ class _InvestigationApplyScreenState extends State<InvestigationApplyScreen> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    await Future.wait([
-      context.read<InvestigationService>().loadInvestigations(),
-      context.read<PatientService>().loadPatients(),
-      context.read<SurveyService>().loadSurveys(),
-    ]);
+    try {
+      await Future.wait([
+        context.read<InvestigationService>().loadInvestigations(),
+        context.read<PatientService>().loadPatients(),
+        context.read<SurveyService>().loadSurveys(),
+      ]);
+    } catch (_) {}
     if (mounted) {
       // Mostrar el formulario de consentimiento inicial SOLO si el navigador indicó showConsent=1
       final params = GoRouterState.of(context).uri.queryParameters;

@@ -5,6 +5,7 @@ import 'package:ssapp/features/investigations/data/investigation_repository.dart
 import 'package:ssapp/features/investigations/presentation/components/tab_selector/tab_selector.dart';
 import 'package:ssapp/features/investigations/presentation/screens/investigation_detail_screen/components/components.dart';
 import 'package:ssapp/features/patients/data/patient_repository.dart';
+import 'package:ssapp/features/surveys/domain/survey_service.dart';
 
 class InvestigationDetailScreen extends StatefulWidget {
   final int investigationId;
@@ -30,12 +31,13 @@ class _InvestigationDetailScreenState extends State<InvestigationDetailScreen> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-
-    await Future.wait([
-      context.read<InvestigationService>().loadInvestigations(),
-      context.read<PatientService>().loadPatients(),
-    ]);
-
+    try {
+      await Future.wait([
+        context.read<InvestigationService>().loadInvestigations(),
+        context.read<PatientService>().loadPatients(),
+        context.read<SurveyService>().loadSurveys(),
+      ]);
+    } catch (_) {}
     if (mounted) {
       setState(() => _isLoading = false);
     }

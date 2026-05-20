@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:hive/hive.dart';
 import 'package:ssapp/core/logger/app_logger.dart';
 import 'package:ssapp/core/supabase/supabase_config.dart';
 import 'package:ssapp/features/investigations/domain/investigation_model.dart';
@@ -69,9 +70,12 @@ class InvestigationService extends ChangeNotifier {
       }
 
       _investigations = investigations;
+      await _saveToHive(_investigations);
       notifyListeners();
     } catch (e) {
-      AppLogger.error('Error al cargar investigaciones', e);
+      AppLogger.error('Error al cargar investigaciones desde servidor, usando cache local', e);
+      _investigations = await _loadFromHive();
+      notifyListeners();
     }
   }
 
@@ -101,6 +105,7 @@ class InvestigationService extends ChangeNotifier {
       );
 
       _investigations = [created, ..._investigations];
+      await _saveToHive(_investigations);
       notifyListeners();
       return created;
     } catch (e) {
@@ -140,6 +145,7 @@ class InvestigationService extends ChangeNotifier {
       _investigations = _investigations
           .map((item) => item.id == investigationId ? updated : item)
           .toList();
+      await _saveToHive(_investigations);
       notifyListeners();
       return updated;
     } catch (e) {
@@ -167,6 +173,7 @@ class InvestigationService extends ChangeNotifier {
         _investigations = _investigations
             .map((i) => i.id == current.id ? updated : i)
             .toList();
+        await _saveToHive(_investigations);
         notifyListeners();
       }
     } catch (e) {
@@ -174,7 +181,62 @@ class InvestigationService extends ChangeNotifier {
     }
   }
 
-  Future<List<int>> _loadSurveyTypeIds(int investigationId) async {    try {
+  Future<void> unlinkParticipant({
+    required int investigationId,
+    required int patientId,
+  }) async {
+    try {
+      final supabase = SupabaseConfig.client;
+      await supabase
+          .from('investigation_participants')
+          .delete()
+          .eq('investigation_id', investigationId)
+          .eq('patient_id', patientId);
+
+      final current = byId(investigationId);
+      if (current != null && current.participantIds.contains(patientId)) {
+        final updated = current.copyWith(
+          participantIds: current.participantIds.difference({patientId}),
+        );
+        _investigations = _investigations
+            .map((i) => i.id == current.id ? updated : i)
+            .toList();
+        await _saveToHive(_investigations);
+        notifyListeners();
+      }
+    } catch (e) {
+      AppLogger.error('No se pudo desvincular participante de investigacion', e);
+    }
+  }
+
+  Future<void> _saveToHive(List<InvestigationModel> investigations) async {
+    try {
+      final box = await Hive.openBox<InvestigationModel>('investigations');
+      await box.clear();
+      await box.addAll(investigations);
+    } catch (e) {
+      AppLogger.error('Error al guardar investigaciones en cache local', e);
+    }
+  }
+
+  Future<List<InvestigationModel>> _loadFromHive() async {
+    try {
+      Box<InvestigationModel> box;
+      try {
+        box = await Hive.openBox<InvestigationModel>('investigations');
+      } catch (e) {
+        await Hive.deleteBoxFromDisk('investigations');
+        box = await Hive.openBox<InvestigationModel>('investigations');
+      }
+      return box.values.toList();
+    } catch (e) {
+      AppLogger.error('Error al leer cache local de investigaciones', e);
+      return [];
+    }
+  }
+
+  Future<List<int>> _loadSurveyTypeIds(int investigationId) async {
+    try {
       final supabase = SupabaseConfig.client;
       final rows = await supabase
           .from('investigation_survey_types')
@@ -187,11 +249,9 @@ class InvestigationService extends ChangeNotifier {
           .toList();
 
       if (ids.isNotEmpty) return ids;
-    } catch (_) {
-      // Fallback a campo simple cuando aún no existe la tabla relacional.
-    }
+    } catch (_) {}
 
-  return const <int>[];
+    return const <int>[];
   }
 
   Future<Set<int>> _loadParticipantIds(int investigationId) async {
@@ -223,9 +283,7 @@ class InvestigationService extends ChangeNotifier {
               })
           .toList();
       await supabase.from('investigation_survey_types').insert(rows);
-    } catch (_) {
-      // Ignorar si la tabla relacional no está disponible todavía.
-    }
+    } catch (_) {}
   }
 
   Future<void> _replaceSurveyTypeRelations(int investigationId, List<int> surveyTypeIds) async {
@@ -236,9 +294,6 @@ class InvestigationService extends ChangeNotifier {
           .delete()
           .eq('investigation_id', investigationId);
       await _saveSurveyTypeRelations(investigationId, surveyTypeIds);
-    } catch (_) {
-      // Ignorar si la tabla relacional no está disponible todavía.
-    }
+    } catch (_) {}
   }
 }
-

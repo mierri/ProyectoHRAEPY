@@ -30,12 +30,20 @@ class ReportsViewModel extends ChangeNotifier {
   SurveyReportViewModel get activeReportViewModel =>
       resolveReportViewModel(selectedSurveyType);
 
-  Future<void> loadReport(SurveyService surveyService, int surveyType) async {
+  Future<void> loadReport(
+    SurveyService surveyService,
+    int surveyType, {
+    int? investigationId,
+  }) async {
     selectedSurveyType = surveyType;
     isLoading = true;
     notifyListeners();
     try {
-      _surveys = _generateReportUseCase.execute(surveyService, surveyType);
+      _surveys = _generateReportUseCase.execute(
+        surveyService,
+        surveyType,
+        investigationId: investigationId,
+      );
     } catch (e, st) {
       AppLogger.error('Error loading report data', e, st);
       _surveys = [];
