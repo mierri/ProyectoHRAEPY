@@ -89,7 +89,7 @@ class WhoqolQuestions {
     ),
     WhoqolQuestion(
       number: 13,
-      text: '¿Qué disponible tiene la información que necesita en su vida diaria?',
+      text: '¿Qué tan disponible tiene la información que necesita en su vida diaria?',
       scaleType: WhoqolScaleType.capacity,
     ),
     WhoqolQuestion(

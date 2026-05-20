@@ -20,6 +20,11 @@ class _PatientsScreenState extends State<PatientsScreen> {
   String _searchQuery = '';
   bool _isLoading = true;
 
+  // Memoización de lista filtrada
+  List<PatientModel>? _cachedFiltered;
+  List<PatientModel>? _cachedSource;
+  String? _cachedQuery;
+
   @override
   void initState() {
     super.initState();
@@ -42,15 +47,39 @@ class _PatientsScreenState extends State<PatientsScreen> {
   }
 
   List<PatientModel> _filtered(List<PatientModel> all) {
-    if (_searchQuery.isEmpty) return all;
-    return all
-        .where((p) => p.name.toLowerCase().contains(_searchQuery.toLowerCase()))
-        .toList();
+    if (identical(_cachedSource, all) &&
+        _cachedQuery == _searchQuery &&
+        _cachedFiltered != null) {
+      return _cachedFiltered!;
+    }
+    final q = _searchQuery.toLowerCase();
+    final result = q.isEmpty
+        ? all
+        : all.where((p) => p.name.toLowerCase().contains(q)).toList();
+    _cachedSource = all;
+    _cachedQuery = _searchQuery;
+    _cachedFiltered = result;
+    return result;
   }
 
   @override
   Widget build(BuildContext context) {
-    final patients = _filtered(context.watch<PatientService>().patients);
+    // Solo reconstruye cuando cambia la lista de pacientes, no en cualquier notify
+    final allPatients = context.select<PatientService, List<PatientModel>>(
+      (s) => s.patients,
+    );
+    // Mapa patientId→count calculado O(M) una sola vez; cada card ya no itera
+    final surveyCounts = context.select<SurveyService, Map<int, int>>((s) {
+      final counts = <int, int>{};
+      for (final survey in s.surveys) {
+        if ((survey['responses'] as List?)?.isNotEmpty == true) {
+          final pid = survey['patient_id'] as int?;
+          if (pid != null) counts[pid] = (counts[pid] ?? 0) + 1;
+        }
+      }
+      return counts;
+    });
+    final patients = _filtered(allPatients);
 
     return Scaffold(
       headers: [
@@ -96,8 +125,13 @@ class _PatientsScreenState extends State<PatientsScreen> {
                     : ListView.separated(
                         padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                         itemCount: patients.length,
-                        separatorBuilder: (_, __) => const Gap(12),
-                        itemBuilder: (_, i) => PatientCard(patient: patients[i]),
+                        separatorBuilder: (_, i) => const Gap(12),
+                        itemBuilder: (_, i) => RepaintBoundary(
+                          child: PatientCard(
+                            patient: patients[i],
+                            surveyCount: surveyCounts[patients[i].patientId] ?? 0,
+                          ),
+                        ),
                       ),
               ),
             ]),

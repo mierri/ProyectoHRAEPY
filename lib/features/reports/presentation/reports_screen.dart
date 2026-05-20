@@ -243,7 +243,64 @@ class _ReportBody extends StatelessWidget {
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
-      child: reportViewModel.buildSection(surveys),
+      child: RepaintBoundary(
+        child: _DeferredSection(
+          reportViewModel: reportViewModel,
+          surveys: surveys,
+        ),
+      ),
     );
+  }
+}
+
+/// Difiere la construcción de la sección al siguiente frame para no bloquear
+/// la animación de navegación ni el hilo principal al cambiar tipo de reporte.
+class _DeferredSection extends StatefulWidget {
+  final SurveyReportViewModel reportViewModel;
+  final List<Map<String, dynamic>> surveys;
+
+  const _DeferredSection({
+    required this.reportViewModel,
+    required this.surveys,
+  });
+
+  @override
+  State<_DeferredSection> createState() => _DeferredSectionState();
+}
+
+class _DeferredSectionState extends State<_DeferredSection> {
+  bool _ready = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _ready = true);
+    });
+  }
+
+  @override
+  void didUpdateWidget(_DeferredSection old) {
+    super.didUpdateWidget(old);
+    // Al cambiar tipo de reporte o datos: muestra loading un frame antes
+    // de reconstruir todos los charts, liberando el hilo principal.
+    if (old.reportViewModel.surveyType != widget.reportViewModel.surveyType ||
+        !identical(old.surveys, widget.surveys)) {
+      setState(() => _ready = false);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _ready = true);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_ready) {
+      return const SizedBox(
+        height: 300,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    return widget.reportViewModel.buildSection(widget.surveys);
   }
 }

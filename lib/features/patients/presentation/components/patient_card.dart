@@ -1,26 +1,21 @@
 import 'package:flutter/material.dart' as material show Icons;
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/features/patients/presentation/components/patient_details_dialog.dart';
 import 'package:ssapp/features/patients/presentation/patient_utils.dart';
-import 'package:ssapp/features/surveys/domain/survey_service.dart';
 import 'package:ssapp/shared/models/patient_model.dart';
 import 'package:ssapp/shared/utils/theme.dart';
 
 class PatientCard extends StatelessWidget {
   final PatientModel patient;
+  /// Conteo pre-calculado en la pantalla padre (evita O(N×M) por card).
+  final int surveyCount;
 
-  const PatientCard({super.key, required this.patient});
+  const PatientCard({super.key, required this.patient, required this.surveyCount});
 
   @override
   Widget build(BuildContext context) {
-    final surveyService = context.watch<SurveyService>();
-    final count = surveyService.surveys
-        .where((s) =>
-            s['patient_id'] == patient.patientId &&
-            (s['responses'] as List?)?.isNotEmpty == true)
-        .length;
+    final count = surveyCount;
     final color = genderColor(patient.gender);
 
     return GestureDetector(
@@ -82,6 +77,8 @@ class _GenderAvatar extends StatelessWidget {
 }
 
 class _PatientInfo extends StatelessWidget {
+  static final _dateFmt = DateFormat('dd/MM/yyyy');
+
   final PatientModel patient;
   final Color color;
   const _PatientInfo({required this.patient, required this.color});
@@ -105,7 +102,7 @@ class _PatientInfo extends StatelessWidget {
         Text(' • ').muted().small(),
         Text(genderLabel(patient.gender)).muted().small(),
         Text(' • ').muted().small(),
-        Text(DateFormat('dd/MM/yyyy').format(patient.birthDate)).muted().small(),
+        Text(_dateFmt.format(patient.birthDate)).muted().small(),
       ]),
     ]);
   }

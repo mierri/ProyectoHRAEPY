@@ -65,7 +65,7 @@ class ReportsViewModel extends ChangeNotifier {
       final keys = activeReportViewModel.chartKeys;
       final images = <Uint8List?>[];
       for (final key in keys) {
-        images.add(await captureChart(key, pixelRatio: 2.5));
+        images.add(await captureChart(key, pixelRatio: 2.0));
       }
 
       final bytes = await activeReportViewModel.generatePdfWithImages(_surveys, images);

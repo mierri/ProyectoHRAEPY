@@ -18,6 +18,8 @@ class InvestigationService extends ChangeNotifier {
     11: 'ICIQ-SF',
     12: 'GHQ-12',
     13: 'PHQ-9',
+    14: 'Sociodemográfico',
+    15: 'Determinantes Sociales',
   };
 
   static const Map<int, String> surveyTypeToRouteCode = {
@@ -33,6 +35,8 @@ class InvestigationService extends ChangeNotifier {
     11: 'iciqsf',
     12: 'ghq12',
     13: 'phq9',
+    14: 'sociodemographic',
+    15: 'social_determinants',
   };
 
   List<InvestigationModel> _investigations = [];
