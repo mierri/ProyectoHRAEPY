@@ -24,6 +24,10 @@ class ConsentFormScreen extends StatefulWidget {
   final bool showPatientSection;
   final bool showConsentSection;
   final int? initialPatientId;
+  // Cuando true, el texto de consentimiento se muestra colapsado con un "ver más"
+  // y los checkboxes aparecen en modo solo-lectura (ya aceptados en la pantalla anterior).
+  final bool collapseConsent;
+  final List<String> readOnlyCheckboxLabels;
 
   const ConsentFormScreen({
     super.key,
@@ -33,6 +37,8 @@ class ConsentFormScreen extends StatefulWidget {
     this.showPatientSection = true,
     this.showConsentSection = true,
     this.initialPatientId,
+    this.collapseConsent = false,
+    this.readOnlyCheckboxLabels = const [],
   });
 
   @override
@@ -47,6 +53,8 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
   final _tallaController = TextEditingController();
   final _imcController = TextEditingController();
   final _nameController = TextEditingController();
+
+  bool _consentExpanded = false;
 
   void _onControllerChanged() {
     if (!mounted) return;
@@ -204,28 +212,35 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (widget.consentText != null && widget.consentText!.trim().isNotEmpty)
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(material.Icons.info_outline, color: surveyColor),
-                          const Gap(8),
-                          const Text('Consentimiento Informado').semiBold(),
-                          TtsButton(
-                            text: SurveyTtsTextBuilder.consent(widget.consentText!),
-                          ),
-                        ],
+              widget.collapseConsent
+                  ? _CollapsibleConsentCard(
+                      consentText: widget.consentText!,
+                      isExpanded: _consentExpanded,
+                      onToggle: () => setState(() => _consentExpanded = !_consentExpanded),
+                      checkboxLabels: widget.readOnlyCheckboxLabels,
+                    )
+                  : Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(material.Icons.info_outline, color: surveyColor),
+                                const Gap(8),
+                                const Text('Consentimiento Informado').semiBold(),
+                                TtsButton(
+                                  text: SurveyTtsTextBuilder.consent(widget.consentText!),
+                                ),
+                              ],
+                            ),
+                            const Gap(16),
+                            Text(widget.consentText!).muted(),
+                          ],
+                        ),
                       ),
-                      const Gap(16),
-                      Text(widget.consentText!).muted(),
-                    ],
-                  ),
-                ),
-              )
+                    )
             else
               ConsentInfoTtsCard(surveyType: widget.surveyType),
             const Gap(24),
@@ -409,7 +424,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
               ],
             ],
 
-            if (widget.showConsentSection)
+            if (widget.showConsentSection && !widget.collapseConsent)
               GestureDetector(
                 onTap: () => _controller.onConsentChanged(!_controller.consentGiven),
                 child: Row(
@@ -484,6 +499,74 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                 ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CollapsibleConsentCard extends StatelessWidget {
+  final String consentText;
+  final bool isExpanded;
+  final VoidCallback onToggle;
+  final List<String> checkboxLabels;
+
+  const _CollapsibleConsentCard({
+    required this.consentText,
+    required this.isExpanded,
+    required this.onToggle,
+    required this.checkboxLabels,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(material.Icons.fact_check_outlined,
+                    size: 18, color: Theme.of(context).colorScheme.primary),
+                const Gap(8),
+                Expanded(child: Text('Consentimiento Informado').semiBold()),
+                GestureDetector(
+                  onTap: onToggle,
+                  child: Text(
+                    isExpanded ? 'ver menos' : 'ver más',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      decoration: TextDecoration.underline,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (isExpanded) ...[
+              const Gap(12),
+              Text(consentText, style: const TextStyle(height: 1.6)).small().muted(),
+              if (checkboxLabels.isNotEmpty) ...[
+                const Gap(12),
+                for (final label in checkboxLabels) ...[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Checkbox(
+                        state: CheckboxState.checked,
+                        onChanged: null,
+                      ),
+                      const Gap(8),
+                      Expanded(child: Text(label).small().muted()),
+                    ],
+                  ),
+                  const Gap(6),
+                ],
+              ],
+            ],
           ],
         ),
       ),

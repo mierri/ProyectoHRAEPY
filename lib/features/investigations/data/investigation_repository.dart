@@ -17,6 +17,8 @@ class InvestigationService extends ChangeNotifier {
     11: 'ICIQ-SF',
     12: 'GHQ-12',
     13: 'PHQ-9',
+    14: 'Sociodemográfico',
+    15: 'Determinantes Sociales',
   };
 
   static const Map<int, String> surveyTypeToRouteCode = {
@@ -32,6 +34,8 @@ class InvestigationService extends ChangeNotifier {
     11: 'iciqsf',
     12: 'ghq12',
     13: 'phq9',
+    14: 'sociodemographic',
+    15: 'social_determinants',
   };
 
   List<InvestigationModel> _investigations = [];
@@ -58,12 +62,14 @@ class InvestigationService extends ChangeNotifier {
         final investigationId = raw['id'] as int;
         final surveyTypeIds = await _loadSurveyTypeIds(investigationId);
         final participantIds = await _loadParticipantIds(investigationId);
+        final consentCheckboxes = await _loadConsentCheckboxes(investigationId);
 
         investigations.add(
           InvestigationModel.fromJson(
             raw,
             surveyTypeIds: surveyTypeIds,
             participantIds: participantIds,
+            consentCheckboxes: consentCheckboxes,
           ),
         );
       }
@@ -79,6 +85,7 @@ class InvestigationService extends ChangeNotifier {
     required String investigationName,
     required String formConsent,
     required List<int> surveyTypeIds,
+    List<String> consentCheckboxes = const [],
   }) async {
     try {
       final supabase = SupabaseConfig.client;
@@ -94,10 +101,12 @@ class InvestigationService extends ChangeNotifier {
 
       final investigationId = inserted['id'] as int;
       await _saveSurveyTypeRelations(investigationId, surveyTypeIds);
+      await _saveConsentCheckboxes(investigationId, consentCheckboxes);
 
       final created = InvestigationModel.fromJson(
         inserted,
         surveyTypeIds: surveyTypeIds,
+        consentCheckboxes: consentCheckboxes,
       );
 
       _investigations = [created, ..._investigations];
@@ -114,6 +123,7 @@ class InvestigationService extends ChangeNotifier {
     required String investigationName,
     required String formConsent,
     required List<int> surveyTypeIds,
+    List<String> consentCheckboxes = const [],
   }) async {
     try {
       final supabase = SupabaseConfig.client;
@@ -129,12 +139,14 @@ class InvestigationService extends ChangeNotifier {
           .single();
 
       await _replaceSurveyTypeRelations(investigationId, surveyTypeIds);
+      await _replaceConsentCheckboxes(investigationId, consentCheckboxes);
 
       final current = byId(investigationId);
       final updated = InvestigationModel.fromJson(
         updatedRaw,
         surveyTypeIds: surveyTypeIds,
         participantIds: current?.participantIds ?? const <int>{},
+        consentCheckboxes: consentCheckboxes,
       );
 
       _investigations = _investigations
@@ -151,12 +163,18 @@ class InvestigationService extends ChangeNotifier {
   Future<void> linkParticipant({
     required int investigationId,
     required int patientId,
+    String? email,
+    String? phone1,
+    String? phone2,
   }) async {
     try {
       final supabase = SupabaseConfig.client;
       await supabase.from('investigation_participants').upsert({
         'investigation_id': investigationId,
         'patient_id': patientId,
+        if (email != null) 'email': email,
+        if (phone1 != null) 'phone1': phone1,
+        if (phone2 != null && phone2.trim().isNotEmpty) 'phone2': phone2,
       });
 
       final current = byId(investigationId);
@@ -239,6 +257,46 @@ class InvestigationService extends ChangeNotifier {
     } catch (_) {
       // Ignorar si la tabla relacional no está disponible todavía.
     }
+  }
+
+  Future<List<String>> _loadConsentCheckboxes(int investigationId) async {
+    try {
+      final supabase = SupabaseConfig.client;
+      final rows = await supabase
+          .from('investigation_consent_checkboxes')
+          .select('label')
+          .eq('investigation_id', investigationId)
+          .order('sort_order', ascending: true);
+      return List<Map<String, dynamic>>.from(rows)
+          .map((e) => e['label'] as String)
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<void> _saveConsentCheckboxes(int investigationId, List<String> labels) async {
+    if (labels.isEmpty) return;
+    try {
+      final supabase = SupabaseConfig.client;
+      final rows = labels.asMap().entries.map((e) => {
+        'investigation_id': investigationId,
+        'label': e.value,
+        'sort_order': e.key,
+      }).toList();
+      await supabase.from('investigation_consent_checkboxes').insert(rows);
+    } catch (_) {}
+  }
+
+  Future<void> _replaceConsentCheckboxes(int investigationId, List<String> labels) async {
+    try {
+      final supabase = SupabaseConfig.client;
+      await supabase
+          .from('investigation_consent_checkboxes')
+          .delete()
+          .eq('investigation_id', investigationId);
+      await _saveConsentCheckboxes(investigationId, labels);
+    } catch (_) {}
   }
 }
 

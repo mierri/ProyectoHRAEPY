@@ -8,6 +8,7 @@ import 'package:ssapp/features/investigations/presentation/screens/investigation
 import 'package:ssapp/features/investigations/presentation/screens/investigation_apply_screen/components/apply_header/view.dart';
 import 'package:ssapp/features/investigations/presentation/screens/investigation_apply_screen/components/apply_patient_picker/view.dart';
 import 'package:ssapp/features/investigations/presentation/screens/investigation_apply_screen/components/survey_launch_card/view.dart';
+import 'package:ssapp/features/investigations/presentation/screens/investigation_informed_consent_screen.dart';
 import 'package:ssapp/features/patients/data/patient_repository.dart';
 import 'package:ssapp/features/surveys/domain/survey_service.dart';
 import 'package:ssapp/features/surveys/domain/survey_type_config.dart';
@@ -89,8 +90,22 @@ class _InvestigationApplyScreenState extends State<InvestigationApplyScreen> {
       context.read<SurveyService>().loadSurveys(),
     ]);
     if (mounted) {
-      // Mostrar el formulario de consentimiento inicial SOLO si el navigador indicó showConsent=1
       final params = GoRouterState.of(context).uri.queryParameters;
+
+      // Pre-marcar como consentidos a todos los participantes ya vinculados a esta investigacion.
+      // Esto permite que al retomarla otro dia no se vuelva a pedir el consentimiento.
+      final investigation = context.read<InvestigationService>().byId(widget.investigationId);
+      if (investigation != null) {
+        _consentedPatientIds.addAll(investigation.participantIds);
+      }
+
+      // Si viene un resumePatientId (retomar desde detalle), auto-seleccionar ese participante.
+      final resumePatientId = int.tryParse(params['resumePatientId'] ?? '');
+      if (resumePatientId != null) {
+        setState(() => _selectedPatientId = resumePatientId);
+      }
+
+      // Mostrar el formulario de consentimiento inicial SOLO si el navigador indicó showConsent=1
       final showConsent = params['showConsent'] == '1' || params['showConsent'] == 'true';
       if (showConsent && _selectedPatientId == null) {
         setState(() => _isRunningInitialConsent = true);
@@ -113,33 +128,58 @@ class _InvestigationApplyScreenState extends State<InvestigationApplyScreen> {
     // Si ya tenemos un paciente seleccionado y consentido, no mostrar.
     if (_selectedPatientId != null && _consentedPatientIds.contains(_selectedPatientId)) return;
 
-    // Abrir pantalla de consentimiento en modo no-autonavegacion para obtener/crear paciente.
-    final result = await Navigator.of(context).push(material.MaterialPageRoute(builder: (ctx) {
-      return ConsentFormScreen(
-        surveyType: null,
-        consentText: investigation.formConsent,
-        autoNavigate: false,
-        showPatientSection: true,
-        showConsentSection: true,
-      );
-    }));
+    // --- Pantalla 1: consentimiento informado largo + checkboxes + contacto ---
+    final contactResult = await Navigator.of(context).push<Map?>(
+      material.MaterialPageRoute(builder: (ctx) {
+        return InvestigationInformedConsentScreen(
+          consentText: investigation.formConsent,
+          customCheckboxLabels: investigation.consentCheckboxes,
+        );
+      }),
+    );
 
-    if (result == null) {
-      // Si el usuario cancela el formulario inicial de consentimiento, volvemos a la pantalla
-      // anterior (detalle de la investigacion) en lugar de quedarnos en la pantalla de aplicar.
-      if (mounted) Navigator.of(context).pop();
+    if (!mounted) return;
+    if (contactResult == null) {
+      Navigator.of(context).pop();
       return;
     }
-    final Map? map = result as Map?;
-    if (map == null) return;
-    final returnedPatientId = map['patientId'] as int?;
+
+    final email = contactResult['email'] as String?;
+    final phone1 = contactResult['phone1'] as String?;
+    final phone2 = contactResult['phone2'] as String?;
+
+    // --- Pantalla 2: datos del paciente, consentimiento colapsado ---
+    final patientResult = await Navigator.of(context).push<Map?>(
+      material.MaterialPageRoute(builder: (ctx) {
+        return ConsentFormScreen(
+          surveyType: null,
+          consentText: investigation.formConsent,
+          autoNavigate: false,
+          showPatientSection: true,
+          showConsentSection: false,
+          collapseConsent: true,
+          readOnlyCheckboxLabels: investigation.consentCheckboxes,
+        );
+      }),
+    );
+
+    if (!mounted) return;
+    if (patientResult == null) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    final returnedPatientId = patientResult['patientId'] as int?;
     if (returnedPatientId == null) return;
 
-    // Guardar selección y vincular participante
+    // Guardar selección y vincular participante con datos de contacto
     setState(() => _selectedPatientId = returnedPatientId);
     await context.read<InvestigationService>().linkParticipant(
       investigationId: widget.investigationId,
       patientId: returnedPatientId,
+      email: email,
+      phone1: phone1,
+      phone2: phone2,
     );
     setState(() => _consentedPatientIds.add(returnedPatientId));
   }

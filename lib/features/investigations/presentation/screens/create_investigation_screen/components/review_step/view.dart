@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart' as material show Icons;
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/features/investigations/data/investigation_repository.dart';
 
@@ -5,12 +6,14 @@ class InvestigationReviewStep extends StatelessWidget {
   final String name;
   final String consent;
   final List<int> selectedSurveyTypeIds;
+  final List<String> consentCheckboxes;
 
   const InvestigationReviewStep({
     super.key,
     required this.name,
     required this.consent,
     required this.selectedSurveyTypeIds,
+    this.consentCheckboxes = const [],
   });
 
   @override
@@ -72,8 +75,34 @@ class InvestigationReviewStep extends StatelessWidget {
             ),
           ),
         ),
+        if (consentCheckboxes.isNotEmpty) ...[
+          const Gap(12),
+          SurfaceCard(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Checkboxes de consentimiento').semiBold(),
+                  const Gap(8),
+                  for (final label in consentCheckboxes) ...[
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(material.Icons.check_box_outline_blank, size: 16,
+                            color: Theme.of(context).colorScheme.mutedForeground),
+                        const Gap(8),
+                        Expanded(child: Text(label).small().muted()),
+                      ],
+                    ),
+                    const Gap(6),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
 }
-

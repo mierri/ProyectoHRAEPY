@@ -32,6 +32,7 @@ class _CreateInvestigationScreenState extends State<CreateInvestigationScreen> {
   final TextEditingController _consentController = TextEditingController();
 
   final List<int> _selectedSurveyTypeIds = [];
+  List<String> _consentCheckboxes = [];
 
   CreateFlowStep _currentStep = CreateFlowStep.details;
   bool _isLoading = false;
@@ -81,6 +82,7 @@ class _CreateInvestigationScreenState extends State<CreateInvestigationScreen> {
       _selectedSurveyTypeIds
         ..clear()
         ..addAll(investigation.surveyTypeIds);
+      setState(() => _consentCheckboxes = List<String>.from(investigation.consentCheckboxes));
     }
 
     if (mounted) {
@@ -133,11 +135,13 @@ class _CreateInvestigationScreenState extends State<CreateInvestigationScreen> {
             investigationName: _nameController.text.trim(),
             formConsent: _consentController.text.trim(),
             surveyTypeIds: List<int>.from(_selectedSurveyTypeIds),
+            consentCheckboxes: List<String>.from(_consentCheckboxes),
           )
         : await service.createInvestigation(
             investigationName: _nameController.text.trim(),
             formConsent: _consentController.text.trim(),
             surveyTypeIds: List<int>.from(_selectedSurveyTypeIds),
+            consentCheckboxes: List<String>.from(_consentCheckboxes),
           );
 
     if (!mounted) return;
@@ -215,6 +219,8 @@ class _CreateInvestigationScreenState extends State<CreateInvestigationScreen> {
               consentController: _consentController,
               selectedSurveyTypeIds: _selectedSurveyTypeIds,
               onToggleSurvey: _toggleSurvey,
+              consentCheckboxes: _consentCheckboxes,
+              onCheckboxesChanged: (labels) => setState(() => _consentCheckboxes = labels),
             ),
           ],
         ),
@@ -229,6 +235,8 @@ class _StepBody extends StatelessWidget {
   final TextEditingController consentController;
   final List<int> selectedSurveyTypeIds;
   final ValueChanged<int> onToggleSurvey;
+  final List<String> consentCheckboxes;
+  final ValueChanged<List<String>> onCheckboxesChanged;
 
   const _StepBody({
     required this.step,
@@ -236,6 +244,8 @@ class _StepBody extends StatelessWidget {
     required this.consentController,
     required this.selectedSurveyTypeIds,
     required this.onToggleSurvey,
+    required this.consentCheckboxes,
+    required this.onCheckboxesChanged,
   });
 
   @override
@@ -249,12 +259,17 @@ class _StepBody extends StatelessWidget {
           onToggleSurvey: onToggleSurvey,
         );
       case CreateFlowStep.consent:
-        return InvestigationConsentStep(consentController: consentController);
+        return InvestigationConsentStep(
+          consentController: consentController,
+          checkboxLabels: consentCheckboxes,
+          onCheckboxesChanged: onCheckboxesChanged,
+        );
       case CreateFlowStep.review:
         return InvestigationReviewStep(
           name: nameController.text.trim(),
           consent: consentController.text.trim(),
           selectedSurveyTypeIds: selectedSurveyTypeIds,
+          consentCheckboxes: consentCheckboxes,
         );
     }
   }
