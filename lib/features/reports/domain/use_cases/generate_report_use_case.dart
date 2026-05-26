@@ -9,8 +9,13 @@ class GenerateReportUseCase {
 
 	List<Map<String, dynamic>> execute(
 		SurveyService surveyService,
-		int surveyType,
-	) {
-		return _repository.getCompletedSurveysByType(surveyService, surveyType);
+		int surveyType, {
+		int? investigationId,
+	}) {
+		return _repository.getCompletedSurveysByType(
+			surveyService,
+			surveyType,
+			investigationId: investigationId,
+		);
 	}
 }

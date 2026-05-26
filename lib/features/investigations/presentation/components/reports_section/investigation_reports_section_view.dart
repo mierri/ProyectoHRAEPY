@@ -1,8 +1,28 @@
+import 'package:flutter/material.dart' as material show Icons;
+import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/features/investigations/domain/investigation_model.dart';
-import 'package:ssapp/features/investigations/presentation/components/reports_section/widgets/kpi_card.dart';
+import 'package:ssapp/features/reports/presentation/reports_viewmodel.dart';
+import 'package:ssapp/features/surveys/domain/survey_service.dart';
 
-class InvestigationReportsSection extends StatelessWidget {
+const Map<int, String> _surveyNames = {
+  1: 'BDI-II',
+  2: 'BAI',
+  3: 'WHOQOL-BREF',
+  5: 'SF-36',
+  6: 'ASSIST V3.0',
+  7: 'GDS-15',
+  8: 'Lawton AIVD',
+  9: 'Osteoporosis',
+  10: 'Katz ABVD',
+  11: 'ICIQ-SF',
+  12: 'GHQ-12',
+  13: 'PHQ-9',
+  14: 'Sociodemográfico',
+  15: 'Determinantes Sociales',
+};
+
+class InvestigationReportsSection extends StatefulWidget {
   final InvestigationModel investigation;
 
   const InvestigationReportsSection({
@@ -11,88 +31,179 @@ class InvestigationReportsSection extends StatelessWidget {
   });
 
   @override
+  State<InvestigationReportsSection> createState() =>
+      _InvestigationReportsSectionState();
+}
+
+class _InvestigationReportsSectionState
+    extends State<InvestigationReportsSection> {
+  late final ReportsViewModel _viewModel;
+  late List<int> _availableTypes;
+
+  @override
+  void initState() {
+    super.initState();
+    _viewModel = ReportsViewModel();
+    _availableTypes = widget.investigation.surveyTypeIds
+        .where((id) => _surveyNames.containsKey(id))
+        .toList();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_availableTypes.isNotEmpty &&
+        _viewModel.surveys.isEmpty &&
+        !_viewModel.isLoading) {
+      _loadForType(_availableTypes.first);
+    }
+  }
+
+  @override
+  void dispose() {
+    _viewModel.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadForType(int surveyType) {
+    final surveyService = context.read<SurveyService>();
+    return _viewModel.loadReport(
+      surveyService,
+      surveyType,
+      investigationId: widget.investigation.id,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final sessions = (investigation.surveyTypeIds.length * investigation.participantIds.length).clamp(0, 999);
-    final completionRate = sessions == 0 ? 0 : 72 + (investigation.id % 24);
-
-    final bars = _monthlyBars(sessions);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
+    if (_availableTypes.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            KpiCard(label: 'Sesiones', value: '$sessions'),
-            KpiCard(label: 'Completitud', value: '$completionRate%'),
-            KpiCard(label: 'Pacientes', value: '${investigation.participantIds.length}'),
-            KpiCard(label: 'Encuestas', value: '${investigation.surveyTypeIds.length}'),
+            Icon(
+              material.Icons.bar_chart,
+              size: 72,
+              color: Theme.of(context).colorScheme.mutedForeground,
+            ),
+            const Gap(12),
+            const Text('Sin encuestas configuradas').semiBold(),
+            const Gap(4),
+            const Text('Esta investigación no tiene encuestas asignadas')
+                .small()
+                .muted(),
           ],
         ),
-        const Gap(14),
-        SurfaceCard(
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Sesiones por mes').semiBold(),
-                const Gap(12),
-                SizedBox(
-                  height: 130,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+      );
+    }
+
+    return ChangeNotifierProvider<ReportsViewModel>.value(
+      value: _viewModel,
+      child: Consumer<ReportsViewModel>(
+        builder: (context, vm, _) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _ControlBar(
+                selectedSurveyType: vm.selectedSurveyType,
+                availableTypes: _availableTypes,
+                isExporting: vm.isExporting,
+                onSurveyTypeChanged: _loadForType,
+                onExportCsv:
+                    vm.surveys.isEmpty ? null : () => vm.exportCsv(context),
+                onExportPdf:
+                    vm.surveys.isEmpty ? null : () => vm.exportPdf(context),
+              ),
+              const Divider(height: 1),
+              const Gap(16),
+              if (vm.isLoading)
+                const Center(child: CircularProgressIndicator())
+              else if (vm.surveys.isEmpty)
+                Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      for (final item in bars)
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Text('${item.value}', style: const TextStyle(fontSize: 10)),
-                                const Gap(4),
-                                Container(
-                                  height: item.height,
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
-                                  ),
-                                ),
-                                const Gap(6),
-                                Text(item.month, style: const TextStyle(fontSize: 10)),
-                              ],
-                            ),
-                          ),
-                        ),
+                      Icon(
+                        material.Icons.bar_chart,
+                        size: 72,
+                        color: Theme.of(context).colorScheme.mutedForeground,
+                      ),
+                      const Gap(12),
+                      Text(
+                        'Sin respuestas para ${_surveyNames[vm.selectedSurveyType] ?? 'Encuesta'}',
+                      ).semiBold(),
+                      const Gap(4),
+                      const Text(
+                        'Aún no hay encuestas completadas en esta investigación',
+                      ).small().muted(),
                     ],
                   ),
-                ),
-              ],
-            ),
+                )
+              else
+                vm.activeReportViewModel.buildSection(vm.surveys),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _ControlBar extends StatelessWidget {
+  final int selectedSurveyType;
+  final List<int> availableTypes;
+  final bool isExporting;
+  final ValueChanged<int> onSurveyTypeChanged;
+  final VoidCallback? onExportCsv;
+  final VoidCallback? onExportPdf;
+
+  const _ControlBar({
+    required this.selectedSurveyType,
+    required this.availableTypes,
+    required this.isExporting,
+    required this.onSurveyTypeChanged,
+    required this.onExportCsv,
+    required this.onExportPdf,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        SizedBox(
+          width: 260,
+          child: Select<int>(
+            value: selectedSurveyType,
+            onChanged: (v) {
+              if (v != null) onSurveyTypeChanged(v);
+            },
+            itemBuilder: (context, item) =>
+                Text(_surveyNames[item] ?? 'Encuesta'),
+            popup: SelectPopup(
+              items: SelectItemList(
+                children: [
+                  for (final typeId in availableTypes)
+                    SelectItemButton(
+                      value: typeId,
+                      child: Text(_surveyNames[typeId] ?? 'Encuesta'),
+                    ),
+                ],
+              ),
+            ).call,
           ),
+        ),
+        OutlineButton(
+          onPressed: isExporting ? null : onExportCsv,
+          child: const Text('Exportar CSV'),
+        ),
+        PrimaryButton(
+          onPressed: isExporting ? null : onExportPdf,
+          child: Text(isExporting ? 'Exportando...' : 'Exportar PDF'),
         ),
       ],
     );
   }
-
-  List<_MonthlyBar> _monthlyBars(int sessions) {
-    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'];
-
-    return List.generate(months.length, (index) {
-      final value = ((sessions * 0.2).round() + ((index + investigation.id) % 6)).clamp(0, 32);
-      final height = value == 0 ? 8.0 : (value * 2.8).clamp(14, 84).toDouble();
-      return _MonthlyBar(month: months[index], value: value, height: height);
-    });
-  }
 }
-
-class _MonthlyBar {
-  final String month;
-  final int value;
-  final double height;
-
-  const _MonthlyBar({required this.month, required this.value, required this.height});
-}
-

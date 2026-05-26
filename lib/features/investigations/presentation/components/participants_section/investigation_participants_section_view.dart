@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' as material show Icons;
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
+import 'package:ssapp/features/investigations/data/investigation_repository.dart';
 import 'package:ssapp/features/investigations/domain/investigation_model.dart';
 import 'package:ssapp/features/surveys/domain/survey_service.dart';
 import 'package:ssapp/shared/models/patient_model.dart';
@@ -16,6 +17,41 @@ class InvestigationParticipantsSection extends StatelessWidget {
     required this.investigation,
     required this.patientsById,
   });
+
+  Future<void> _confirmAndRemove(
+    BuildContext context,
+    PatientModel patient,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eliminar participante'),
+        content: Text(
+          '¿Seguro que deseas eliminar a ${patient.name} de esta investigación?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text(
+              'Eliminar',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      await context.read<InvestigationService>().unlinkParticipant(
+            investigationId: investigation.id,
+            patientId: patient.patientId,
+          );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

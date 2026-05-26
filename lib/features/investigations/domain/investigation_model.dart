@@ -1,21 +1,35 @@
+import 'package:hive/hive.dart';
+part 'investigation_model.g.dart';
+
+@HiveType(typeId: 3)
 class InvestigationModel {
+  @HiveField(0)
   final int id;
+  @HiveField(1)
   final String investigationName;
+  @HiveField(2)
   final String formConsent;
+  @HiveField(3)
   final List<int> surveyTypeIds;
-  final Set<int> participantIds;
+  @HiveField(4)
+  final List<int> participantIdsList;
+  @HiveField(5)
   final DateTime createdAt;
   final List<String> consentCheckboxes;
+
+  Set<int> get participantIds => participantIdsList.toSet();
 
   InvestigationModel({
     required this.id,
     required this.investigationName,
     required this.formConsent,
     required this.surveyTypeIds,
-    this.participantIds = const <int>{},
+    Set<int> participantIds = const <int>{},
+    List<int>? participantIdsList,
     this.consentCheckboxes = const <String>[],
     DateTime? createdAt,
-  }) : createdAt = createdAt ?? DateTime.now();
+  })  : participantIdsList = participantIdsList ?? participantIds.toList(),
+        createdAt = createdAt ?? DateTime.now();
 
   InvestigationModel copyWith({
     int? id,
@@ -43,7 +57,6 @@ class InvestigationModel {
     Set<int>? participantIds,
     List<String>? consentCheckboxes,
   }) {
-
     final createdRaw = json['created_at'] as String?;
 
     return InvestigationModel(
@@ -59,4 +72,3 @@ class InvestigationModel {
     );
   }
 }
-

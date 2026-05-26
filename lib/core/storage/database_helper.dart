@@ -1,4 +1,5 @@
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:ssapp/features/investigations/domain/investigation_model.dart';
 import 'package:ssapp/features/patients/data/patient_repository.dart';
 import 'package:ssapp/shared/models/patient_model.dart';
 import 'package:ssapp/shared/models/response_model.dart';
@@ -26,6 +27,7 @@ class DatabaseHelper {
     Hive.registerAdapter(PatientModelAdapter());
     Hive.registerAdapter(SurveyModelAdapter());
     Hive.registerAdapter(ResponseModelAdapter());
+    Hive.registerAdapter(InvestigationModelAdapter());
     
     _initialized = true;
   }

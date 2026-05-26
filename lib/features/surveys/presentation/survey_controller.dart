@@ -8,6 +8,7 @@ import 'package:ssapp/features/surveys/types/katz/domain/katz_questions.dart';
 import 'package:ssapp/shared/models/response_model.dart';
 import 'package:ssapp/shared/models/survey_model.dart';
 import 'package:ssapp/features/surveys/domain/survey_service.dart';
+import 'package:ssapp/shared/utils/id_generator.dart';
 
 // Responsabilidad: coordinar estado, respuestas y guardado de encuestas psicometricas generales.
 /// Controller for BDI/BAI survey logic
@@ -190,7 +191,7 @@ class SurveyController extends BaseSurveyController {
         final int? scoreForDb = null;
 
         final survey = SurveyModel(
-          surveyId: DateTime.now().millisecondsSinceEpoch,
+          surveyId: generateId(),
           surveyType: surveyTypeId,
           patientId: patientId,
           investigationId: investigationId,

@@ -21,6 +21,12 @@ class _SurveysListScreenState extends State<SurveysListScreen> {
   String _filterType = 'all';
   String _filterStatus = 'all';
 
+  // Memoización: evita re-filtrar en cada rebuild si los inputs no cambiaron
+  List<Map<String, dynamic>>? _cachedResult;
+  List<Map<String, dynamic>>? _cachedSource;
+  String? _cachedFilterType;
+  String? _cachedFilterStatus;
+
   @override
   void initState() {
     super.initState();
@@ -37,6 +43,12 @@ class _SurveysListScreenState extends State<SurveysListScreen> {
   }
 
   List<Map<String, dynamic>> _filtered(List<Map<String, dynamic>> all) {
+    if (identical(_cachedSource, all) &&
+        _cachedFilterType == _filterType &&
+        _cachedFilterStatus == _filterStatus &&
+        _cachedResult != null) {
+      return _cachedResult!;
+    }
     const typeIdMap = {
       'bdi': 1, 'bai': 2, 'whoqol': 3, 'sf36': 5, 'assist': 6,
       'gds': 7, 'lawton': 8, 'osteoporosis': 9, 'katz': 10,
@@ -48,6 +60,10 @@ class _SurveysListScreenState extends State<SurveysListScreen> {
     }
     if (_filterStatus == 'synced')  result = result.where((s) => s['synced'] == true).toList();
     if (_filterStatus == 'pending') result = result.where((s) => s['synced'] != true).toList();
+    _cachedSource = all;
+    _cachedFilterType = _filterType;
+    _cachedFilterStatus = _filterStatus;
+    _cachedResult = result;
     return result;
   }
 

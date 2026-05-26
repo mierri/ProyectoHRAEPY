@@ -40,6 +40,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (!mounted) return;
     try {
       final patientService = context.read<PatientService>();
+      final surveyService = context.read<SurveyService>();
+
+      await Future.wait([
+        patientService.loadPatients(),
+        surveyService.loadSurveys(),
+      ]);
+
+      if (!mounted) return;
+
       final syncService = SyncService(
         patientService: patientService,
         surveyRepository: SurveyRepository(),
@@ -315,15 +324,20 @@ class StatisticsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final surveyService  = context.watch<SurveyService>();
-    final patientService = context.watch<PatientService>();
-    final stats          = surveyService.getStatistics();
+    // Suscripción estrecha: solo reconstruye cuando cambian los valores concretos,
+    // no en cualquier notifyListeners() de los servicios.
+    final stats = context.select<SurveyService, Map<String, dynamic>>(
+      (s) => s.getStatistics(),
+    );
+    final patientCount = context.select<PatientService, int>(
+      (p) => p.patients.length,
+    );
 
     final items = [
-      _StatData(material.Icons.cloud_done,  '${stats['synced']}',               'Sincronizadas',  const Color(0xFF43A047)),
-      _StatData(material.Icons.people,      '${patientService.patients.length}', 'Pacientes',      LightModeColors.lightPrimary),
-      _StatData(material.Icons.cloud_upload,'${stats['pending']}',               'Pendientes',     const Color(0xFFFB8C00)),
-      _StatData(material.Icons.assessment,  '${stats['total']}',                 'Total Encuestas',LightModeColors.lightSecondary),
+      _StatData(material.Icons.cloud_done,  '${stats['synced']}',  'Sincronizadas',  const Color(0xFF43A047)),
+      _StatData(material.Icons.people,      '$patientCount',        'Pacientes',      LightModeColors.lightPrimary),
+      _StatData(material.Icons.cloud_upload,'${stats['pending']}',  'Pendientes',     const Color(0xFFFB8C00)),
+      _StatData(material.Icons.assessment,  '${stats['total']}',    'Total Encuestas',LightModeColors.lightSecondary),
     ];
 
     return Column(

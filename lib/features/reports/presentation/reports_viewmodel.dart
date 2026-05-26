@@ -30,12 +30,20 @@ class ReportsViewModel extends ChangeNotifier {
   SurveyReportViewModel get activeReportViewModel =>
       resolveReportViewModel(selectedSurveyType);
 
-  Future<void> loadReport(SurveyService surveyService, int surveyType) async {
+  Future<void> loadReport(
+    SurveyService surveyService,
+    int surveyType, {
+    int? investigationId,
+  }) async {
     selectedSurveyType = surveyType;
     isLoading = true;
     notifyListeners();
     try {
-      _surveys = _generateReportUseCase.execute(surveyService, surveyType);
+      _surveys = _generateReportUseCase.execute(
+        surveyService,
+        surveyType,
+        investigationId: investigationId,
+      );
     } catch (e, st) {
       AppLogger.error('Error loading report data', e, st);
       _surveys = [];
@@ -57,7 +65,7 @@ class ReportsViewModel extends ChangeNotifier {
       final keys = activeReportViewModel.chartKeys;
       final images = <Uint8List?>[];
       for (final key in keys) {
-        images.add(await captureChart(key, pixelRatio: 2.5));
+        images.add(await captureChart(key, pixelRatio: 2.0));
       }
 
       final bytes = await activeReportViewModel.generatePdfWithImages(_surveys, images);

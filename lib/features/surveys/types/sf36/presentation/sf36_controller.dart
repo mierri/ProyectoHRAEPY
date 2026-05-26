@@ -3,6 +3,7 @@ import 'package:ssapp/features/surveys/types/sf36/domain/sf36_questions.dart';
 import 'package:ssapp/shared/models/response_model.dart';
 import 'package:ssapp/shared/models/survey_model.dart';
 import 'package:ssapp/features/surveys/domain/survey_service.dart';
+import 'package:ssapp/shared/utils/id_generator.dart';
 
 // Responsabilidad: gestionar estado, cálculo y guardado de la encuesta SF-36.
 class SF36Controller extends BaseSurveyController {
@@ -247,7 +248,7 @@ class SF36Controller extends BaseSurveyController {
         }
 
         final survey = SurveyModel(
-          surveyId: DateTime.now().millisecondsSinceEpoch,
+          surveyId: generateId(),
           surveyType: 5,
           patientId: patientId,
           investigationId: investigationId,
