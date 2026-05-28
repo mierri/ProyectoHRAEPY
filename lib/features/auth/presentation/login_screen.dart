@@ -6,7 +6,6 @@ import 'package:ssapp/shared/widgets/components/login_form.dart';
 import 'package:ssapp/features/auth/provider/auth_service.dart';
 import 'package:ssapp/shared/utils/theme.dart';
 import 'package:ssapp/shared/utils/widgets/info_card.dart';
-
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 

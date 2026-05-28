@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' as material show Icons;
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/shared/utils/theme.dart';
+import 'package:ssapp/shared/widgets/lumi/lumi_widget.dart';
 
 /// Dialog content shown after a survey is saved successfully.
 class SurveyCompletionDialogContent extends StatelessWidget {
@@ -33,12 +34,15 @@ class SurveyCompletionDialogContent extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Icon(material.Icons.celebration, color: LightModeColors.lightPrimary, size: 32),
-              const Gap(12),
-              const Expanded(child: Text('¡Gracias por participar!', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600))),
-            ]),
-            const Gap(16),
+            Center(
+              child: LumiWidget(
+                variant: LumiVariant.caring,
+                size: 100,
+                message: '¡Muchas gracias\npor participar!',
+                bubbleColor: const Color(0xFFFFE8F0),
+              ),
+            ),
+            const Gap(20),
             const Text('La encuesta ha sido completada exitosamente.', style: TextStyle(fontSize: 15)),
             const Gap(16),
             Container(

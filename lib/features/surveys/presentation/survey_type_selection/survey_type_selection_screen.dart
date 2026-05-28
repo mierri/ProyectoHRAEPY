@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' as material show Icons;
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/shared/utils/theme.dart';
+import 'package:ssapp/shared/widgets/lumi/lumi_widget.dart';
 
 enum SurveyType {
   bai,
@@ -219,6 +220,15 @@ class SurveyTypeSelectionScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const Center(
+              child: LumiWidget(
+                variant: LumiVariant.thinking,
+                size: 120,
+                message: '¿Qué evaluación\nhacemos hoy?',
+                bubbleColor: Color(0xFFE6F9F1),
+              ),
+            ),
+            const Gap(24),
             const Text('Tipos de Encuestas Disponibles').textLarge().bold(),
             const Gap(8),
             const Text(

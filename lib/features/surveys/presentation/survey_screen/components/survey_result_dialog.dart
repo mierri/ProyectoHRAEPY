@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' as material show Icons;
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/shared/utils/theme.dart';
+import 'package:ssapp/shared/widgets/lumi/lumi_widget.dart';
 
 /// Dialog content showing the survey score and interpretation.
 class SurveyResultDialogContent extends StatelessWidget {
@@ -27,6 +28,29 @@ class SurveyResultDialogContent extends StatelessWidget {
     this.height,
   });
 
+  LumiVariant _lumiForLevel(String lvl) {
+    final l = lvl.toLowerCase();
+    if (l.contains('mínima') || l.contains('minima') || l.contains('excelente') ||
+        l.contains('muy bueno') || l.contains('normal') ||
+        l.contains('independencia') || l.contains('sin incontinencia')) {
+      return LumiVariant.celebrating;
+    }
+    return LumiVariant.cheering;
+  }
+
+  String _lumiMessageForLevel(String lvl) {
+    final l = lvl.toLowerCase();
+    if (l.contains('mínima') || l.contains('minima') || l.contains('excelente') ||
+        l.contains('muy bueno') || l.contains('normal') ||
+        l.contains('independencia') || l.contains('sin incontinencia')) {
+      return '¡Muy bien!\nEvaluación completada.';
+    }
+    if (l.contains('severa') || l.contains('grave') || l.contains('alto')) {
+      return 'Gracias por completar la evaluación.\nRecuerda que hay apoyo disponible.';
+    }
+    return '¡Listo!\nRevisa los resultados.';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -42,6 +66,15 @@ class SurveyResultDialogContent extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Center(
+                child: LumiWidget(
+                  variant: _lumiForLevel(severityLevel),
+                  size: 100,
+                  message: _lumiMessageForLevel(severityLevel),
+                  bubbleColor: const Color(0xFFEDE9FF),
+                ),
+              ),
+              const Gap(20),
               Row(children: [
                 Icon(material.Icons.analytics, color: LightModeColors.lightPrimary, size: 32),
                 const Gap(12),

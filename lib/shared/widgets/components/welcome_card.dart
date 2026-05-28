@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' as material show BoxDecoration, LinearGradient, Alignment, Colors, Icons;
+import 'package:flutter/material.dart' as material show BoxDecoration, LinearGradient, Alignment, Colors;
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/shared/utils/theme.dart';
 
@@ -6,7 +6,6 @@ import 'package:ssapp/shared/utils/theme.dart';
 class WelcomeCard extends StatelessWidget {
   final String userName;
   final String subtitle;
-  /// When true, shows a side icon for wider screens
   final bool wide;
 
   const WelcomeCard({
@@ -29,19 +28,7 @@ class WelcomeCard extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: wide
-          ? Row(
-              children: [
-                Expanded(child: _textContent()),
-                const Gap(24),
-                Icon(
-                  material.Icons.health_and_safety,
-                  size: 72,
-                  color: material.Colors.white.withValues(alpha: 0.25),
-                ),
-              ],
-            )
-          : _textContent(),
+      child: _textContent(),
     );
   }
 

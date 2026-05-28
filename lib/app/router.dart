@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:ssapp/features/splash/splash_screen.dart';
 import 'package:ssapp/features/surveys/types/assist/presentation/assist_screen.dart';
 import 'package:ssapp/features/surveys/types/bai/presentation/bai_screen.dart';
 import 'package:ssapp/features/surveys/types/bdi/presentation/bdi_screen.dart';
@@ -28,8 +29,12 @@ import 'package:ssapp/features/surveys/presentation/survey_type_selection/survey
 import 'package:ssapp/features/surveys/types/whoqol/presentation/whoqol_screen.dart';
 
 final GoRouter appRouter = GoRouter(
-  initialLocation: '/',
+  initialLocation: '/splash',
   routes: [
+    GoRoute(
+      path: '/splash',
+      builder: (context, state) => const SplashScreen(),
+    ),
     GoRoute(
       path: '/',
       builder: (context, state) => const DashboardScreen(),

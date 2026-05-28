@@ -14,6 +14,7 @@ import 'package:ssapp/shared/utils/theme.dart';
 import 'package:ssapp/shared/widgets/tts/consent_tts_cards.dart';
 import 'package:ssapp/shared/services/tts/survey_tts_text_builder.dart';
 import 'package:ssapp/shared/widgets/tts/tts_button.dart';
+import 'package:ssapp/shared/widgets/lumi/lumi_widget.dart';
 
 // Responsabilidad: renderizar el formulario de consentimiento y delegar su logica al controller.
 class ConsentFormScreen extends StatefulWidget {
@@ -211,6 +212,15 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (!widget.collapseConsent && widget.showConsentSection)
+              Center(
+                child: LumiWidget(
+                  variant: LumiVariant.deciding,
+                  size: 150,
+                ),
+              ),
+            if (!widget.collapseConsent && widget.showConsentSection)
+              const Gap(16),
             if (widget.consentText != null && widget.consentText!.trim().isNotEmpty)
               widget.collapseConsent
                   ? _CollapsibleConsentCard(
@@ -246,7 +256,24 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
             const Gap(24),
 
             if (widget.showPatientSection) ...[
-              const Text('Datos del Paciente').textLarge().bold(),
+              LumiHeaderRow(
+                variant: LumiVariant.consent,
+                lumiSize: 80,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Datos del Paciente').textLarge().bold(),
+                    const Gap(4),
+                    Text(
+                      'Completa los datos antes de iniciar la evaluación',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Theme.of(context).colorScheme.mutedForeground,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               const Gap(16),
 
               const Text('Seleccionar paciente existente o crear nuevo').medium(),

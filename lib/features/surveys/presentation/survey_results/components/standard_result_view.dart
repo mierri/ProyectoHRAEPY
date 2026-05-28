@@ -4,6 +4,7 @@ import 'package:ssapp/features/surveys/presentation/survey_results/components/pa
 import 'package:ssapp/features/surveys/presentation/survey_results/components/recommendations_card.dart';
 import 'package:ssapp/features/surveys/presentation/survey_results/components/response_details_card.dart';
 import 'package:ssapp/features/surveys/presentation/survey_results/components/score_interpretation_card.dart';
+import 'package:ssapp/shared/widgets/lumi/lumi_widget.dart';
 
 /// Standard results layout: gradient score card, interpretation, recommendations, details.
 class StandardResultView extends StatelessWidget {
@@ -36,11 +37,46 @@ class StandardResultView extends StatelessWidget {
     this.responses,
   });
 
+  LumiVariant _lumiForLevel(String lvl) {
+    final l = lvl.toLowerCase();
+    if (l.contains('mínima') || l.contains('minima') || l.contains('excelente') ||
+        l.contains('muy bueno') || l.contains('normal') ||
+        l.contains('independencia') || l.contains('sin incontinencia')) {
+      return LumiVariant.celebrating;
+    }
+    return LumiVariant.cheering;
+  }
+
+  String _lumiMessageForLevel(String lvl) {
+    final l = lvl.toLowerCase();
+    if (l.contains('mínima') || l.contains('minima') || l.contains('excelente') ||
+        l.contains('muy bueno') || l.contains('normal') ||
+        l.contains('independencia') || l.contains('sin incontinencia')) {
+      return '¡Muy bien! Evaluación completada.';
+    }
+    if (l.contains('severa') || l.contains('grave') || l.contains('alto')) {
+      return 'Gracias por completar la evaluación.\nRecuerda que hay apoyo disponible.';
+    }
+    return '¡Listo! Revisa los resultados.';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final lumiVariant = _lumiForLevel(level);
+    final lumiMessage = _lumiMessageForLevel(level);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Center(
+          child: LumiWidget(
+            variant: lumiVariant,
+            size: 130,
+            message: lumiMessage,
+            bubbleColor: const Color(0xFFEDE9FF),
+          ),
+        ),
+        const Gap(20),
         PatientInfoCard(patientName: patientName, createdAt: createdAt),
         const Gap(24),
         _MainScoreCard(score: score, level: level, color: color, levelIcon: levelIcon, surveyFullName: surveyFullName),
