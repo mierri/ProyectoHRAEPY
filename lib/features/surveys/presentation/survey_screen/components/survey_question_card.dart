@@ -1,4 +1,6 @@
+import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
+import 'package:ssapp/shared/providers/font_size_provider.dart';
 
 /// Question header card showing category + context subtitle + question number circle.
 class SurveyQuestionCard extends StatelessWidget {
@@ -28,26 +30,27 @@ class SurveyQuestionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fs = context.watch<FontSizeProvider>();
     return OutlinedContainer(
       backgroundColor: surveyColor.withValues(alpha: 0.1),
       borderRadius: BorderRadius.circular(12),
       padding: const EdgeInsets.all(20),
-      child: Row(children: [
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Container(
           width: 48, height: 48,
           decoration: BoxDecoration(color: surveyColor, shape: BoxShape.circle),
           child: Center(
             child: Text(
               '${questionIndex + 1}',
-              style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(color: Colors.white, fontSize: fs.scaled(20), fontWeight: FontWeight.bold),
             ),
           ),
         ),
         const Gap(16),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(category, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: surveyColor.withValues(alpha: 0.9))),
+          Text(category, style: TextStyle(fontSize: fs.scaled(18), fontWeight: FontWeight.w600, color: surveyColor.withValues(alpha: 0.9))),
           const Gap(4),
-          Text(_contextLabel, style: TextStyle(fontSize: 13, color: surveyColor.withValues(alpha: 0.7))),
+          Text(_contextLabel, style: TextStyle(fontSize: fs.scaled(13), color: surveyColor.withValues(alpha: 0.7))),
         ])),
       ]),
     );

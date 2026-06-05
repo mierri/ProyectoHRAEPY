@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart' as material show Icons;
+import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
+import 'package:ssapp/shared/providers/font_size_provider.dart';
 import 'package:ssapp/shared/utils/theme.dart';
 
 class MultiSelectOptionCard extends StatelessWidget {
@@ -37,7 +39,7 @@ class MultiSelectOptionCard extends StatelessWidget {
             child: Text(
               text,
               style: TextStyle(
-                fontSize: 15,
+                fontSize: context.watch<FontSizeProvider>().scaled(15),
                 height: 1.45,
                 color: isSelected ? surveyColor.withValues(alpha: 0.95) : LightModeColors.lightOnSurface,
               ),

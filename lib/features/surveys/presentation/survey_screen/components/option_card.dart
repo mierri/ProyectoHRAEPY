@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart' as material show Icons;
+import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/features/surveys/types/bdi/domain/bdi_questions.dart';
+import 'package:ssapp/shared/providers/font_size_provider.dart';
 import 'package:ssapp/shared/utils/theme.dart';
 
 class SurveyOptionCard extends StatefulWidget {
@@ -89,7 +91,7 @@ class _SurveyOptionCardState extends State<SurveyOptionCard>
                   child: Text(
                     widget.option.text,
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: context.watch<FontSizeProvider>().scaled(15),
                       height: 1.5,
                       color: widget.isSelected ? widget.surveyColor.withValues(alpha: 0.9) : LightModeColors.lightOnSurface,
                     ),

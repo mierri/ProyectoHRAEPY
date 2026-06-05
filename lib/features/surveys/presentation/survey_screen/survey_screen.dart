@@ -15,8 +15,10 @@ import 'package:ssapp/features/surveys/presentation/survey_screen/components/sur
 import 'package:ssapp/features/surveys/presentation/survey_screen/components/survey_pagination.dart';
 import 'package:ssapp/features/surveys/presentation/survey_screen/components/survey_question_card.dart';
 import 'package:ssapp/features/surveys/presentation/survey_screen/components/survey_result_dialog.dart';
+import 'package:ssapp/shared/providers/font_size_provider.dart';
 import 'package:ssapp/shared/utils/theme.dart';
 import 'package:ssapp/shared/utils/toast_helper.dart';
+import 'package:ssapp/shared/widgets/font_size_button.dart';
 import 'package:ssapp/shared/widgets/tts/survey_question_tts_bar.dart';
 
 class SurveyScreen extends StatefulWidget {
@@ -450,6 +452,9 @@ class _SurveyScreenState extends State<SurveyScreen> {
               variance: ButtonVariance.ghost,
             ),
           ],
+          trailing: [
+            const FontSizeButton(),
+          ],
         ),
       ],
       child: Column(
@@ -486,8 +491,8 @@ class _SurveyScreenState extends State<SurveyScreen> {
                     widget.surveyType == 'iciqsf' && question.number == 4
                         ? 'Seleccione una o varias situaciones:'
                         : 'Seleccione la opción que mejor describa cómo se ha sentido:',
-                    style: const TextStyle(
-                      fontSize: 16,
+                    style: TextStyle(
+                      fontSize: context.watch<FontSizeProvider>().scaled(16),
                       fontWeight: FontWeight.w500,
                     ),
                   ),

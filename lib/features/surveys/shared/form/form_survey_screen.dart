@@ -1,4 +1,5 @@
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/features/surveys/shared/form/form_question.dart';
 import 'package:ssapp/features/surveys/shared/form/form_survey_controller.dart';
@@ -6,8 +7,10 @@ import 'package:ssapp/features/surveys/shared/form/survey_text_field.dart';
 import 'package:ssapp/features/surveys/shared/widgets/survey_form_dialogs.dart';
 import 'package:ssapp/features/surveys/shared/widgets/survey_form_wizard.dart';
 import 'package:ssapp/features/surveys/presentation/survey_controller.dart';
+import 'package:ssapp/shared/providers/font_size_provider.dart';
 import 'package:ssapp/shared/utils/theme.dart';
 import 'package:ssapp/shared/utils/toast_helper.dart';
+import 'package:ssapp/shared/widgets/font_size_button.dart';
 
 class FormSurveyScreen extends StatefulWidget {
   final List<FormQuestion> questions;
@@ -208,6 +211,9 @@ class _FormSurveyScreenState extends State<FormSurveyScreen> {
               variance: ButtonVariance.ghost,
             ),
           ],
+          trailing: [
+            const FontSizeButton(),
+          ],
         ),
         FormStepProgressBar(
           progress: (_currentIndex + 1) / _questions.length,
@@ -286,14 +292,14 @@ class _FormSurveyScreenState extends State<FormSurveyScreen> {
 
   Widget _buildSingleChoice(FormFieldDef f, FormQuestion q) {
     final selected = _c.intAnswer(f.fieldId);
-    // Only show sub-label if compound question has multiple fields
     final showLabel = q.fields.where((ff) => ff is! FormConditionalField).length > 1 ||
         q.fields.any((ff) => ff is FormConditionalField);
+    final fs = context.watch<FontSizeProvider>();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (showLabel && f is! FormConditionalField) ...[
-          Text(f.label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+          Text(f.label, style: TextStyle(fontSize: fs.scaled(14), fontWeight: FontWeight.w500)),
           const Gap(10),
         ],
         ...f.options.map((option) {
@@ -378,10 +384,11 @@ class _FormSurveyScreenState extends State<FormSurveyScreen> {
 
   Widget _buildScale(FormFieldDef f) {
     final selected = _c.intAnswer(f.fieldId);
+    final fs = context.watch<FontSizeProvider>();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(f.label, style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280))),
+        Text(f.label, style: TextStyle(fontSize: fs.scaled(13), color: const Color(0xFF6B7280))),
         const Gap(14),
         Row(
           children: List.generate(5, (i) {
@@ -422,6 +429,7 @@ class _FormQuestionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fs = context.watch<FontSizeProvider>();
     return OutlinedContainer(
       backgroundColor: color.withValues(alpha: 0.08),
       borderRadius: BorderRadius.circular(12),
@@ -436,9 +444,9 @@ class _FormQuestionCard extends StatelessWidget {
             child: Center(
               child: Text(
                 number,
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.white,
-                  fontSize: 18,
+                  fontSize: fs.scaled(18),
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -452,7 +460,7 @@ class _FormQuestionCard extends StatelessWidget {
                 Text(
                   category,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: fs.scaled(13),
                     fontWeight: FontWeight.w500,
                     color: color.withValues(alpha: 0.8),
                   ),
@@ -460,7 +468,7 @@ class _FormQuestionCard extends StatelessWidget {
                 const Gap(6),
                 Text(
                   label,
-                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, height: 1.4),
+                  style: TextStyle(fontSize: fs.scaled(17), fontWeight: FontWeight.w600, height: 1.4),
                 ),
               ],
             ),
@@ -515,6 +523,7 @@ class _FormOptionCardState extends State<_FormOptionCard>
 
   @override
   Widget build(BuildContext context) {
+    final fs = context.watch<FontSizeProvider>();
     return GestureDetector(
       onTapDown: (_) => _anim.forward(),
       onTapUp: (_) {
@@ -539,7 +548,7 @@ class _FormOptionCardState extends State<_FormOptionCard>
                 child: Text(
                   widget.label,
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: fs.scaled(15),
                     height: 1.4,
                     color: widget.isSelected
                         ? widget.color.withValues(alpha: 0.9)
@@ -603,6 +612,7 @@ class _FormMultiOptionCardState extends State<_FormMultiOptionCard>
 
   @override
   Widget build(BuildContext context) {
+    final fs = context.watch<FontSizeProvider>();
     return GestureDetector(
       onTapDown: (_) => _anim.forward(),
       onTapUp: (_) {
@@ -635,7 +645,7 @@ class _FormMultiOptionCardState extends State<_FormMultiOptionCard>
                 child: Text(
                   widget.label,
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: fs.scaled(15),
                     height: 1.4,
                     color: widget.isSelected
                         ? widget.color.withValues(alpha: 0.9)
@@ -668,6 +678,7 @@ class _FormScaleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fs = context.watch<FontSizeProvider>();
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -685,7 +696,7 @@ class _FormScaleButton extends StatelessWidget {
           child: Text(
             '$value',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: fs.scaled(18),
               fontWeight: FontWeight.w600,
               color: isSelected ? color : LightModeColors.lightOnSurface,
             ),
