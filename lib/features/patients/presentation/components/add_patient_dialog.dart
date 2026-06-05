@@ -4,6 +4,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/features/patients/data/patient_repository.dart';
 import 'package:ssapp/shared/utils/theme.dart';
 import 'package:ssapp/shared/utils/toast_helper.dart';
+import 'package:ssapp/shared/widgets/date_text_field.dart';
 
 void showAddPatientDialog(BuildContext context) {
   showDialog(
@@ -96,10 +97,9 @@ class _AddPatientDialogContentState extends State<_AddPatientDialogContent> {
           const Gap(16),
           const Text('Fecha de nacimiento').semiBold(),
           const Gap(8),
-          DatePicker(
-            value: _birthDate,
-            mode: PromptMode.dialog,
-            placeholder: const Text('Seleccionar fecha'),
+          DateTextField(
+            key: ValueKey(_birthDate),
+            initialValue: _birthDate,
             stateBuilder: (date) =>
                 date.isAfter(DateTime.now()) ? DateState.disabled : DateState.enabled,
             onChanged: (date) => setState(() => _birthDate = date),

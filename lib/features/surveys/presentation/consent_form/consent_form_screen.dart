@@ -14,6 +14,7 @@ import 'package:ssapp/shared/utils/theme.dart';
 import 'package:ssapp/shared/widgets/tts/consent_tts_cards.dart';
 import 'package:ssapp/shared/services/tts/survey_tts_text_builder.dart';
 import 'package:ssapp/shared/widgets/tts/tts_button.dart';
+import 'package:ssapp/shared/widgets/date_text_field.dart';
 import 'package:ssapp/shared/widgets/lumi/lumi_widget.dart';
 
 // Responsabilidad: renderizar el formulario de consentimiento y delegar su logica al controller.
@@ -352,19 +353,12 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
 
               const Text('Fecha de Nacimiento').medium(),
               const Gap(5),
-              DatePicker(
-                value: _controller.dateOfBirth,
-                mode: PromptMode.dialog,
-                placeholder: const Text('Seleccione una fecha'),
-                stateBuilder: (date) {
-                  if (date.isAfter(DateTime.now())) {
-                    return DateState.disabled;
-                  }
-                  return DateState.enabled;
-                },
-                onChanged: (value) {
-                  _controller.onDateOfBirthChanged(value);
-                },
+              DateTextField(
+                key: ValueKey(_controller.dateOfBirth),
+                initialValue: _controller.dateOfBirth,
+                stateBuilder: (date) =>
+                    date.isAfter(DateTime.now()) ? DateState.disabled : DateState.enabled,
+                onChanged: _controller.onDateOfBirthChanged,
               ),
               const Gap(16),
 
