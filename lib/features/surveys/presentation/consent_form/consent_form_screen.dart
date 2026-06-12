@@ -20,6 +20,7 @@ import 'package:ssapp/shared/widgets/lumi/lumi_widget.dart';
 // Responsabilidad: renderizar el formulario de consentimiento y delegar su logica al controller.
 class ConsentFormScreen extends StatefulWidget {
   final String? surveyType;
+  final int? customSurveyId;
   // Si se provee, mostrará este texto de consentimiento en lugar del texto por defecto.
   final String? consentText;
   final bool autoNavigate;
@@ -34,6 +35,7 @@ class ConsentFormScreen extends StatefulWidget {
   const ConsentFormScreen({
     super.key,
     this.surveyType,
+    this.customSurveyId,
     this.consentText,
     this.autoNavigate = true,
     this.showPatientSection = true,
@@ -148,6 +150,8 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
           context.push(
             '/survey/$patientId?surveyType=${_controller.resolvedSurveyType}&weight=${_controller.weight ?? ''}&height=${_controller.height ?? ''}&imc=${_controller.imc ?? ''}',
           );
+        } else if (_controller.resolvedSurveyType == 'custom') {
+          context.push('/survey/$patientId?surveyType=custom&customSurveyId=${widget.customSurveyId ?? ''}');
         } else {
           context.push('/survey/$patientId?surveyType=${_controller.resolvedSurveyType}');
         }

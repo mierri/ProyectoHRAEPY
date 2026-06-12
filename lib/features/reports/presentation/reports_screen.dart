@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/features/reports/presentation/reports_viewmodel.dart';
 import 'package:ssapp/features/reports/presentation/viewmodels/survey_report_viewmodels.dart';
+import 'package:ssapp/features/survey_builder/domain/custom_survey_definition.dart';
+import 'package:ssapp/features/survey_builder/domain/custom_survey_service.dart';
 import 'package:ssapp/features/surveys/domain/survey_service.dart';
 
 class ReportsScreen extends StatefulWidget {
@@ -14,6 +16,8 @@ class ReportsScreen extends StatefulWidget {
 
 class _ReportsScreenState extends State<ReportsScreen> {
   late final ReportsViewModel _viewModel;
+  List<CustomSurveyDefinition> _customSurveys = [];
+  int _selectedValue = 1;
 
   static const Map<int, String> _surveyNames = {
     1: 'BDI-II',
@@ -48,13 +52,27 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   Future<void> _loadInitial() async {
     final surveyService = context.read<SurveyService>();
+    final customSurveyService = context.read<CustomSurveyService>();
     await surveyService.loadSurveys();
-    if (mounted) await _loadForType(_viewModel.selectedSurveyType);
+    await customSurveyService.loadAll();
+    if (!mounted) return;
+    setState(() => _customSurveys = customSurveyService.activeSurveys);
+    await _loadForType(_viewModel.selectedSurveyType);
   }
 
-  Future<void> _loadForType(int surveyType) {
+  Future<void> _loadForType(int value) {
+    setState(() => _selectedValue = value);
     final surveyService = context.read<SurveyService>();
-    return _viewModel.loadReport(surveyService, surveyType);
+    if (_surveyNames.containsKey(value)) {
+      return _viewModel.loadReport(surveyService, value);
+    }
+    final definition = context.read<CustomSurveyService>().getById(value);
+    return _viewModel.loadReport(
+      surveyService,
+      100,
+      customSurveyId: definition?.id,
+      customDefinition: definition,
+    );
   }
 
   @override
@@ -85,9 +103,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
             child: Column(
               children: [
                 _HeaderBar(
-                  selectedSurveyType: vm.selectedSurveyType,
+                  selectedValue: _selectedValue,
+                  customSurveys: _customSurveys,
                   isExporting: vm.isExporting,
-                  onSurveyTypeChanged: (surveyType) => _loadForType(surveyType),
+                  onSurveyTypeChanged: (value) => _loadForType(value),
                   onExportCsv: vm.surveys.isEmpty ? null : () => vm.exportCsv(context),
                   onExportPdf: vm.surveys.isEmpty ? null : () => vm.exportPdf(context),
                 ),
@@ -97,7 +116,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       ? const Center(child: CircularProgressIndicator())
                       : _ReportBody(
                           reportViewModel: vm.activeReportViewModel,
-                          surveyName: _surveyNames[vm.selectedSurveyType] ?? 'Encuesta',
+                          surveyName: vm.activeReportViewModel.surveyName,
                           surveys: vm.surveys,
                         ),
                 ),
@@ -111,14 +130,16 @@ class _ReportsScreenState extends State<ReportsScreen> {
 }
 
 class _HeaderBar extends StatelessWidget {
-  final int selectedSurveyType;
+  final int selectedValue;
+  final List<CustomSurveyDefinition> customSurveys;
   final bool isExporting;
   final ValueChanged<int> onSurveyTypeChanged;
   final VoidCallback? onExportCsv;
   final VoidCallback? onExportPdf;
 
   const _HeaderBar({
-    required this.selectedSurveyType,
+    required this.selectedValue,
+    required this.customSurveys,
     required this.isExporting,
     required this.onSurveyTypeChanged,
     required this.onExportCsv,
@@ -137,28 +158,30 @@ class _HeaderBar extends StatelessWidget {
           SizedBox(
             width: 320,
             child: Select<int>(
-              value: selectedSurveyType,
+              value: selectedValue,
               onChanged: (v) {
                 if (v != null) onSurveyTypeChanged(v);
               },
-              itemBuilder: (context, item) => Text(_labelForType(item)),
+              itemBuilder: (context, item) => Text(_labelForType(item, customSurveys)),
               popup: SelectPopup(
                 items: SelectItemList(
-                  children: const [
-                    SelectItemButton(value: 1, child: Text('BDI-II')),
-                    SelectItemButton(value: 2, child: Text('BAI')),
-                    SelectItemButton(value: 3, child: Text('WHOQOL-BREF')),
-                    SelectItemButton(value: 5, child: Text('SF-36')),
-                    SelectItemButton(value: 6, child: Text('ASSIST V3.0')),
-                    SelectItemButton(value: 7, child: Text('GDS-15')),
-                    SelectItemButton(value: 8, child: Text('Lawton AIVD')),
-                    SelectItemButton(value: 9, child: Text('Osteoporosis')),
-                    SelectItemButton(value: 10, child: Text('Katz ABVD')),
-                    SelectItemButton(value: 11, child: Text('ICIQ-SF')),
-                    SelectItemButton(value: 12, child: Text('GHQ-12')),
-                    SelectItemButton(value: 13, child: Text('PHQ-9')),
-                    SelectItemButton(value: 14, child: Text('Sociodemográfico')),
-                    SelectItemButton(value: 15, child: Text('Determinantes Sociales')),
+                  children: [
+                    const SelectItemButton(value: 1, child: Text('BDI-II')),
+                    const SelectItemButton(value: 2, child: Text('BAI')),
+                    const SelectItemButton(value: 3, child: Text('WHOQOL-BREF')),
+                    const SelectItemButton(value: 5, child: Text('SF-36')),
+                    const SelectItemButton(value: 6, child: Text('ASSIST V3.0')),
+                    const SelectItemButton(value: 7, child: Text('GDS-15')),
+                    const SelectItemButton(value: 8, child: Text('Lawton AIVD')),
+                    const SelectItemButton(value: 9, child: Text('Osteoporosis')),
+                    const SelectItemButton(value: 10, child: Text('Katz ABVD')),
+                    const SelectItemButton(value: 11, child: Text('ICIQ-SF')),
+                    const SelectItemButton(value: 12, child: Text('GHQ-12')),
+                    const SelectItemButton(value: 13, child: Text('PHQ-9')),
+                    const SelectItemButton(value: 14, child: Text('Sociodemográfico')),
+                    const SelectItemButton(value: 15, child: Text('Determinantes Sociales')),
+                    for (final def in customSurveys)
+                      SelectItemButton(value: def.id, child: Text('Mis encuestas: ${def.title}')),
                   ],
                 ),
               ).call,
@@ -177,7 +200,7 @@ class _HeaderBar extends StatelessWidget {
     );
   }
 
-  static String _labelForType(int surveyType) {
+  static String _labelForType(int surveyType, List<CustomSurveyDefinition> customSurveys) {
     switch (surveyType) {
       case 1:
         return 'BDI-II';
@@ -208,6 +231,9 @@ class _HeaderBar extends StatelessWidget {
       case 15:
         return 'Determinantes Sociales';
       default:
+        for (final def in customSurveys) {
+          if (def.id == surveyType) return def.title;
+        }
         return 'Encuesta';
     }
   }

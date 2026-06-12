@@ -21,6 +21,8 @@ class SurveyModel extends HiveObject{
   int? score;
   @HiveField(7)
   int? investigationId;
+  @HiveField(8)
+  int? customSurveyId;
 
   SurveyModel({
     required this.surveyId,
@@ -31,6 +33,7 @@ class SurveyModel extends HiveObject{
     this.risk_level,
     this.score,
     this.investigationId,
+    this.customSurveyId,
   });
 
   // Métodos para sincronización con backend
@@ -42,6 +45,7 @@ class SurveyModel extends HiveObject{
     if (investigationId != null) 'investigation_id': investigationId,
     if (risk_level != null) 'risk_level': risk_level,
     if (score != null) 'score': score,
+    if (customSurveyId != null) 'custom_survey_id': customSurveyId,
   };
 
   factory SurveyModel.fromJson(Map<String, dynamic> json, {int? surveyType}) => SurveyModel(
@@ -53,5 +57,6 @@ class SurveyModel extends HiveObject{
     investigationId: json['investigation_id'] as int?,
     risk_level: json['risk_level'] as String?,
     score: json['score'] as int?,
+    customSurveyId: json['custom_survey_id'] as int?,
   );
 }

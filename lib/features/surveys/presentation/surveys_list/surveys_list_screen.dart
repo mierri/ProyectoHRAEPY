@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/features/patients/data/patient_repository.dart';
+import 'package:ssapp/features/survey_builder/domain/custom_survey_definition.dart';
+import 'package:ssapp/features/survey_builder/domain/custom_survey_service.dart';
 import 'package:ssapp/features/surveys/domain/survey_service.dart';
 import 'package:ssapp/features/surveys/presentation/surveys_list/components/filters_section.dart';
 import 'package:ssapp/features/surveys/presentation/surveys_list/components/stats_section.dart';
@@ -38,6 +40,7 @@ class _SurveysListScreenState extends State<SurveysListScreen> {
     await Future.wait([
       context.read<SurveyService>().loadSurveys(),
       context.read<PatientService>().loadPatients(),
+      context.read<CustomSurveyService>().loadAll(),
     ]);
     if (mounted) setState(() => _isLoading = false);
   }
@@ -72,6 +75,7 @@ class _SurveysListScreenState extends State<SurveysListScreen> {
     final surveyService = context.watch<SurveyService>();
     final surveys = _filtered(surveyService.surveys);
     final stats = surveyService.getStatistics();
+    final customSurveys = context.watch<CustomSurveyService>().surveys;
 
     return Scaffold(
       headers: [
@@ -98,6 +102,7 @@ class _SurveysListScreenState extends State<SurveysListScreen> {
           : _SurveysLayout(
               stats: stats,
               surveys: surveys,
+              customSurveys: customSurveys,
               filterType: _filterType,
               filterStatus: _filterStatus,
               onFilterTypeChanged: (v) => setState(() => _filterType = v),
@@ -110,6 +115,7 @@ class _SurveysListScreenState extends State<SurveysListScreen> {
 class _SurveysLayout extends StatelessWidget {
   final Map<String, dynamic> stats;
   final List<Map<String, dynamic>> surveys;
+  final List<CustomSurveyDefinition> customSurveys;
   final String filterType;
   final String filterStatus;
   final ValueChanged<String> onFilterTypeChanged;
@@ -118,6 +124,7 @@ class _SurveysLayout extends StatelessWidget {
   const _SurveysLayout({
     required this.stats,
     required this.surveys,
+    required this.customSurveys,
     required this.filterType,
     required this.filterStatus,
     required this.onFilterTypeChanged,
@@ -144,7 +151,7 @@ class _SurveysLayout extends StatelessWidget {
                 itemCount: surveys.length,
                 itemBuilder: (_, i) => Padding(
                   padding: const EdgeInsets.only(bottom: 12),
-                  child: SurveyListCard(survey: surveys[i]),
+                  child: SurveyListCard(survey: surveys[i], customSurveys: customSurveys),
                 ),
               ),
       ),

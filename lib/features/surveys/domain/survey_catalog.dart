@@ -24,6 +24,7 @@ class SurveyCatalog {
   static const int phq9 = 13;
   static const int sociodemographic = 14;
   static const int socialDeterminants = 15;
+  static const int custom = 100;
 
   static const Map<int, String> namesById = {
     bdi: 'BDI-II',
@@ -40,6 +41,7 @@ class SurveyCatalog {
     phq9: 'PHQ-9',
     sociodemographic: 'Sociodemografico',
     socialDeterminants: 'Determinantes Sociales',
+    custom: 'Encuesta personalizada',
   };
 
   static const Map<int, String> colorsById = {
@@ -57,6 +59,7 @@ class SurveyCatalog {
     phq9: 'secondary',
     sociodemographic: 'secondary',
     socialDeterminants: 'secondary',
+    custom: 'primary',
   };
 
   static const Map<String, int> idsByType = {
@@ -75,6 +78,7 @@ class SurveyCatalog {
     'sociodemographic': sociodemographic,
     'social_determinants': socialDeterminants,
     'socialdeterminants': socialDeterminants,
+    'custom': custom,
   };
 
   static const Map<int, String> typesById = {
@@ -92,6 +96,7 @@ class SurveyCatalog {
     phq9: 'phq9',
     sociodemographic: 'sociodemographic',
     socialDeterminants: 'social_determinants',
+    custom: 'custom',
   };
 
   static int idForType(String surveyType) {

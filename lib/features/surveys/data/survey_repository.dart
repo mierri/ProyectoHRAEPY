@@ -33,7 +33,11 @@ class SurveyRepository implements SurveyRepositoryContract {
     try {
       final box = await Hive.openBox<PatientModel>('patients');
       final patients = box.values.where((p) => p.patientId == patientId).toList();
-      if (patients.isEmpty) return false;
+      if (patients.isEmpty) {
+        AppLogger.warning(
+            'Paciente $patientId no encontrado en Hive local (box tiene ${box.values.length} pacientes: ${box.values.map((p) => p.patientId).toList()})');
+        return false;
+      }
 
       final patient = patients.first;
       final supabase = SupabaseConfig.client;
@@ -112,8 +116,9 @@ class SurveyRepository implements SurveyRepositoryContract {
           'survey_type': survey.surveyType,
           'risk_level': survey.risk_level,
           'score': survey.score,
+          'custom_survey_id': survey.customSurveyId,
           'synced': survey.synced,
-          'created_at': DateTime.fromMillisecondsSinceEpoch(survey.surveyId).toIso8601String(),
+          'created_at': _createdAtFromSurveyId(survey.surveyId).toIso8601String(),
           'responses': survey.responses
               .map((r) => {
                     'question_id': r.questionId,
@@ -126,6 +131,17 @@ class SurveyRepository implements SurveyRepositoryContract {
     } catch (e) {
       AppLogger.error('Error al cargar encuestas locales', e);
       return [];
+    }
+  }
+
+  /// `generateId()` produce IDs como `timestampMs * 10000 + rand`, demasiado
+  /// grandes para `DateTime.fromMillisecondsSinceEpoch`. Recupera el
+  /// timestamp original dividiendo por 10000.
+  DateTime _createdAtFromSurveyId(int surveyId) {
+    try {
+      return DateTime.fromMillisecondsSinceEpoch(surveyId ~/ 10000);
+    } catch (_) {
+      return DateTime.now();
     }
   }
 
@@ -151,21 +167,22 @@ class SurveyRepository implements SurveyRepositoryContract {
         'survey_type': survey.surveyType,
         'risk_level': survey.risk_level,
         'score': survey.score,
+        'custom_survey_id': survey.customSurveyId,
         'synced': true,
       };
 
       try {
         await NetworkExecutor.runWithRetry(
-          () => supabase.from('surveys').insert(surveyData),
-          operationName: 'insert survey',
+          () => supabase.from('surveys').upsert(surveyData, onConflict: 'survey_id'),
+          operationName: 'upsert survey',
         );
       } catch (e) {
         if (_isForeignKeyPatientError(e)) {
           final patientSynced = await _syncPatientFromLocalIfNeeded(survey.patientId);
           if (patientSynced) {
             await NetworkExecutor.runWithRetry(
-              () => supabase.from('surveys').insert(surveyData),
-              operationName: 'insert survey after patient sync',
+              () => supabase.from('surveys').upsert(surveyData, onConflict: 'survey_id'),
+              operationName: 'upsert survey after patient sync',
             );
           } else {
             rethrow;
@@ -185,6 +202,10 @@ class SurveyRepository implements SurveyRepositoryContract {
           .toList();
 
       if (responsesData.isNotEmpty) {
+        await NetworkExecutor.runWithRetry(
+          () => supabase.from('responses').delete().eq('survey_id', survey.surveyId),
+          operationName: 'delete previous survey responses',
+        );
         await NetworkExecutor.runWithRetry(
           () => supabase.from('responses').insert(responsesData),
           operationName: 'insert survey responses',
@@ -293,6 +314,7 @@ class SurveyRepository implements SurveyRepositoryContract {
           synced: true,
           risk_level: surveyData['risk_level'] as String?,
           score: surveyData['score'] as int?,
+          customSurveyId: surveyData['custom_survey_id'] as int?,
         );
 
         await box.add(newSurvey);

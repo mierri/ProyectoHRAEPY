@@ -2,11 +2,53 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:ssapp/features/reports/domain/stats_calculator.dart';
+import 'package:ssapp/features/survey_builder/domain/custom_survey_definition.dart';
 import 'package:ssapp/features/surveys/domain/survey_rules.dart';
 
 class SurveyCsvExporter {
-  Future<Uint8List> export(int surveyType, List<Map<String, dynamic>> surveys) async {
+  Future<Uint8List> export(
+    int surveyType,
+    List<Map<String, dynamic>> surveys, {
+    CustomSurveyDefinition? customDefinition,
+  }) async {
     final rows = <List<String>>[];
+    if (surveyType == 100 && customDefinition != null) {
+      rows.add([
+        'survey_id',
+        'patient_id',
+        'created_at',
+        'score',
+        'level',
+        ...customDefinition.questions.map((q) => q.label),
+        'synced',
+      ]);
+      for (final survey in surveys) {
+        final score = survey['score'] as int? ?? SurveyStatsCalculator.calculateSurveyScore(survey);
+        final responses = (survey['responses'] as List?) ?? const [];
+        final answerByQuestion = <int, dynamic>{};
+        for (final r in responses) {
+          final qId = r['question_id'] as int?;
+          if (qId != null) answerByQuestion[qId] = r;
+        }
+        rows.add([
+          '${survey['survey_id'] ?? ''}',
+          '${survey['patient_id'] ?? ''}',
+          '${survey['created_at'] ?? ''}',
+          '$score',
+          '${survey['risk_level'] ?? ''}',
+          ...customDefinition.questions.map((q) {
+            final r = answerByQuestion[q.fieldId];
+            final answerValue = r?['answer_value'] as int?;
+            final matchingOptions = q.options.where((o) => o.value == answerValue);
+            return matchingOptions.isNotEmpty
+                ? matchingOptions.first.label
+                : (r?['answer_text'] as String? ?? '');
+          }),
+          '${survey['synced'] == true}',
+        ]);
+      }
+      return Uint8List.fromList(utf8.encode(rows.map((r) => r.map(_escape).join(',')).join('\n')));
+    }
     switch (surveyType) {
       case 1:
       case 2:

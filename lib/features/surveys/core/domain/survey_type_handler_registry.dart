@@ -10,6 +10,7 @@ import 'package:ssapp/features/surveys/types/osteoporosis/domain/osteoporosis_su
 import 'package:ssapp/features/surveys/types/phq9/domain/phq9_survey_handler.dart';
 import 'package:ssapp/features/surveys/types/sociodemographic/domain/sociodemographic_survey_handler.dart';
 import 'package:ssapp/features/surveys/types/social_determinants/domain/social_determinants_survey_handler.dart';
+import 'package:ssapp/features/surveys/types/custom/domain/custom_survey_handler.dart';
 
 class SurveyTypeHandlerRegistry {
   SurveyTypeHandlerRegistry._();
@@ -28,6 +29,7 @@ class SurveyTypeHandlerRegistry {
     'phq9': Phq9SurveyHandler(),
     'sociodemographic': SociodemographicSurveyHandler(),
     'social_determinants': SocialDeterminantsSurveyHandler(),
+    'custom': CustomSurveyHandler(),
   };
 
   static SurveyTypeHandler resolve(String surveyType) {

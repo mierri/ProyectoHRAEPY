@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart' as material show Icons;
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
+import 'package:ssapp/features/survey_builder/domain/custom_survey_definition.dart';
+import 'package:ssapp/features/survey_builder/domain/custom_survey_service.dart';
 import 'package:ssapp/shared/utils/theme.dart';
 import 'package:ssapp/shared/widgets/lumi/lumi_widget.dart';
+
+Color _parseCustomColor(String hex) {
+  var value = hex.replaceFirst('#', '');
+  if (value.length == 6) value = 'FF$value';
+  return Color(int.parse(value, radix: 16));
+}
 
 enum SurveyType {
   bai,
@@ -197,8 +206,19 @@ extension SurveyTypeExtension on SurveyType {
   }
 }
 
-class SurveyTypeSelectionScreen extends StatelessWidget {
+class SurveyTypeSelectionScreen extends StatefulWidget {
   const SurveyTypeSelectionScreen({super.key});
+
+  @override
+  State<SurveyTypeSelectionScreen> createState() => _SurveyTypeSelectionScreenState();
+}
+
+class _SurveyTypeSelectionScreenState extends State<SurveyTypeSelectionScreen> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<CustomSurveyService>().loadAll();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -242,7 +262,90 @@ class SurveyTypeSelectionScreen extends StatelessWidget {
                 onTap: () => context.push('/consent-form?surveyType=${type.routeType}'),
               ),
             )),
+            Consumer<CustomSurveyService>(
+              builder: (context, service, _) {
+                final customSurveys = service.activeSurveys;
+                if (customSurveys.isEmpty) return const SizedBox.shrink();
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Gap(16),
+                    const Text('Mis encuestas').textLarge().bold(),
+                    const Gap(8),
+                    const Text(
+                      'Encuestas personalizadas creadas por tu equipo',
+                    ).muted(),
+                    const Gap(16),
+                    ...customSurveys.map((def) => Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _CustomSurveyTypeCard(
+                        definition: def,
+                        onTap: () => context
+                            .push('/consent-form?surveyType=custom&customSurveyId=${def.id}'),
+                      ),
+                    )),
+                  ],
+                );
+              },
+            ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CustomSurveyTypeCard extends StatelessWidget {
+  final CustomSurveyDefinition definition;
+  final VoidCallback onTap;
+
+  const _CustomSurveyTypeCard({required this.definition, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _parseCustomColor(definition.colorHex);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.6), width: 2.0),
+        ),
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Row(
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(material.Icons.assignment_outlined, size: 32, color: color),
+                ),
+                const Gap(16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        definition.title,
+                        style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      if (definition.description.isNotEmpty) ...[
+                        const Gap(4),
+                        Text(definition.description).small().muted(),
+                      ],
+                    ],
+                  ),
+                ),
+                Icon(Icons.arrow_forward_ios, color: color, size: 20),
+              ],
+            ),
+          ),
         ),
       ),
     );

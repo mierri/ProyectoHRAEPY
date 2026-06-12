@@ -17,6 +17,7 @@ enum SurveyInstructionVariant {
   osteoporosis,
   sociodemographic,
   socialDeterminants,
+  custom,
 }
 
 class SurveyInstructionContent {
@@ -85,6 +86,8 @@ class SurveyTypeConfig {
         return const Color(0xFF4F46E5);
       case 'social_determinants':
         return const Color(0xFF0F766E);
+      case 'custom':
+        return const Color(0xFF0D9488);
       case 'bdi':
       default:
         return LightModeColors.lightPrimary;
@@ -119,6 +122,8 @@ class SurveyTypeConfig {
         return 'Este cuestionario recoge datos sociodemográficos del participante. No genera puntaje clínico; la información es para caracterización y análisis del contexto.';
       case 'social_determinants':
         return 'Este cuestionario recoge determinantes sociales del hogar (educación, vivienda, servicios y apoyo social). No genera puntaje clínico; la información es para análisis del contexto.';
+      case 'custom':
+        return 'Esta es una encuesta personalizada creada por su equipo de salud. Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de seguimiento.';
       case 'bdi':
       default:
         return 'Este cuestionario evalúa síntomas de depresión mediante el Inventario de Depresión de Beck (BDI-II). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
@@ -221,6 +226,13 @@ class SurveyTypeConfig {
           instructions:
               'Responda cada apartado con la información del hogar. Marque todas las opciones que apliquen cuando se solicite.',
           variant: SurveyInstructionVariant.socialDeterminants,
+        );
+      case 'custom':
+        return const SurveyInstructionContent(
+          title: 'Encuesta personalizada',
+          instructions:
+              'Responda cada pregunta con sinceridad. Esta encuesta fue diseñada por su equipo de salud para este seguimiento.',
+          variant: SurveyInstructionVariant.custom,
         );
       case 'bdi':
       default:

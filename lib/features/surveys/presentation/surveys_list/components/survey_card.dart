@@ -3,14 +3,33 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/features/patients/data/patient_repository.dart';
+import 'package:ssapp/features/survey_builder/domain/custom_survey_definition.dart';
 import 'package:ssapp/shared/utils/theme.dart';
 import 'package:ssapp/shared/utils/toast_helper.dart';
 
+Color _parseDefinitionColor(String hex) {
+  var value = hex.replaceFirst('#', '');
+  if (value.length == 6) value = 'FF$value';
+  return Color(int.parse(value, radix: 16));
+}
+
 class SurveyListCard extends StatelessWidget {
   final Map<String, dynamic> survey;
-  const SurveyListCard({super.key, required this.survey});
+  final List<CustomSurveyDefinition> customSurveys;
+  const SurveyListCard({super.key, required this.survey, this.customSurveys = const []});
+
+  CustomSurveyDefinition? get _customDefinition {
+    final id = survey['custom_survey_id'] as int?;
+    if (id == null) return null;
+    final match = customSurveys.where((d) => d.id == id);
+    return match.isEmpty ? null : match.first;
+  }
 
   Color get _surveyColor {
+    if ((survey['survey_type'] as int?) == 100) {
+      final definition = _customDefinition;
+      return definition != null ? _parseDefinitionColor(definition.colorHex) : LightModeColors.lightPrimary;
+    }
     switch (survey['survey_type'] as int? ?? 1) {
       case 1:  return LightModeColors.lightPrimary;
       case 2:  return LightModeColors.lightTertiary;
@@ -31,6 +50,9 @@ class SurveyListCard extends StatelessWidget {
   }
 
   String get _typeName {
+    if ((survey['survey_type'] as int?) == 100) {
+      return _customDefinition?.title ?? 'Encuesta personalizada';
+    }
     switch (survey['survey_type'] as int? ?? 1) {
       case 1:  return 'BDI-II';
       case 2:  return 'BAI';
@@ -52,10 +74,14 @@ class SurveyListCard extends StatelessWidget {
 
   bool get _hasScore {
     final type = survey['survey_type'] as int? ?? 1;
+    if (type == 100) return _customDefinition?.levels.isNotEmpty ?? false;
     return type != 14 && type != 15;
   }
 
   int get _expectedResponses {
+    if ((survey['survey_type'] as int?) == 100) {
+      return _customDefinition?.questions.length ?? 0;
+    }
     switch (survey['survey_type'] as int? ?? 1) {
       case 3:  return 26;
       case 5:  return 36;
@@ -85,6 +111,7 @@ class SurveyListCard extends StatelessWidget {
   }
 
   String _level(int score, int type) {
+    if (type == 100) return _customDefinition?.levelForScore(score)?.label ?? (survey['risk_level'] as String? ?? '');
     if (type == 1)  { if (score <= 13) return 'Mínima'; if (score <= 19) return 'Leve'; if (score <= 28) return 'Moderada'; return 'Grave'; }
     if (type == 2)  { if (score <= 7)  return 'Mínima'; if (score <= 15) return 'Leve'; if (score <= 25) return 'Moderada'; return 'Severa'; }
     if (type == 3)  return 'WHOQOL';
@@ -100,6 +127,7 @@ class SurveyListCard extends StatelessWidget {
   }
 
   Color _levelColor(int score, int type) {
+    if (type == 100) return _surveyColor;
     if (type == 1) { if (score <= 13) return LightModeColors.lightTertiary; if (score <= 19) return const Color(0xFFFFA726); if (score <= 28) return const Color(0xFFFF7043); return LightModeColors.lightError; }
     if (type == 2) { if (score <= 7) return LightModeColors.lightTertiary; if (score <= 15) return const Color(0xFFFFA726); if (score <= 25) return const Color(0xFFFF7043); return LightModeColors.lightError; }
     if (type == 3) return const Color(0xFF7C3AED);

@@ -9,6 +9,7 @@ import 'package:ssapp/features/reports/domain/use_cases/export_data_use_case.dar
 import 'package:ssapp/features/reports/domain/use_cases/generate_report_use_case.dart';
 import 'package:ssapp/features/reports/infrastructure/pdf/chart_image_capture.dart';
 import 'package:ssapp/features/reports/presentation/viewmodels/survey_report_viewmodels.dart';
+import 'package:ssapp/features/survey_builder/domain/custom_survey_definition.dart';
 import 'package:ssapp/features/surveys/domain/survey_service.dart';
 
 class ReportsViewModel extends ChangeNotifier {
@@ -22,20 +23,24 @@ class ReportsViewModel extends ChangeNotifier {
         _exportDataUseCase = exportDataUseCase ?? ExportDataUseCase();
 
   int selectedSurveyType = 1;
+  CustomSurveyDefinition? selectedCustomDefinition;
   bool isLoading = false;
   bool isExporting = false;
   List<Map<String, dynamic>> _surveys = [];
 
   List<Map<String, dynamic>> get surveys => List.unmodifiable(_surveys);
   SurveyReportViewModel get activeReportViewModel =>
-      resolveReportViewModel(selectedSurveyType);
+      resolveReportViewModel(selectedSurveyType, customDefinition: selectedCustomDefinition);
 
   Future<void> loadReport(
     SurveyService surveyService,
     int surveyType, {
     int? investigationId,
+    int? customSurveyId,
+    CustomSurveyDefinition? customDefinition,
   }) async {
     selectedSurveyType = surveyType;
+    selectedCustomDefinition = customDefinition;
     isLoading = true;
     notifyListeners();
     try {
@@ -43,6 +48,7 @@ class ReportsViewModel extends ChangeNotifier {
         surveyService,
         surveyType,
         investigationId: investigationId,
+        customSurveyId: customSurveyId,
       );
     } catch (e, st) {
       AppLogger.error('Error loading report data', e, st);
@@ -82,7 +88,11 @@ class ReportsViewModel extends ChangeNotifier {
     isExporting = true;
     notifyListeners();
     try {
-      final bytes = await _exportDataUseCase.exportCsv(selectedSurveyType, _surveys);
+      final bytes = await _exportDataUseCase.exportCsv(
+        selectedSurveyType,
+        _surveys,
+        customDefinition: selectedCustomDefinition,
+      );
       await _shareBytes(bytes, 'reporte_$selectedSurveyType.csv', 'text/csv');
     } catch (e, st) {
       AppLogger.error('Error exporting CSV', e, st);

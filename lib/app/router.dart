@@ -26,7 +26,10 @@ import 'package:ssapp/features/surveys/types/social_determinants/presentation/so
 import 'package:ssapp/features/surveys/presentation/survey_results/survey_results_screen.dart';
 import 'package:ssapp/features/surveys/presentation/surveys_list/surveys_list_screen.dart';
 import 'package:ssapp/features/surveys/presentation/survey_type_selection/survey_type_selection_screen.dart';
+import 'package:ssapp/features/surveys/presentation/dynamic_survey/dynamic_survey_screen.dart';
 import 'package:ssapp/features/surveys/types/whoqol/presentation/whoqol_screen.dart';
+import 'package:ssapp/features/survey_builder/presentation/custom_surveys_list_screen.dart';
+import 'package:ssapp/features/survey_builder/presentation/custom_survey_editor_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/splash',
@@ -47,7 +50,8 @@ final GoRouter appRouter = GoRouter(
       path: '/consent-form',
       builder: (context, state) {
         final surveyType = state.uri.queryParameters['surveyType'];
-        return ConsentFormScreen(surveyType: surveyType);
+        final customSurveyId = int.tryParse(state.uri.queryParameters['customSurveyId'] ?? '');
+        return ConsentFormScreen(surveyType: surveyType, customSurveyId: customSurveyId);
       },
     ),
     GoRoute(
@@ -115,6 +119,16 @@ final GoRouter appRouter = GoRouter(
 
         if (surveyType == 'osteoporosis') {
           return OsteoporosisScreen(patientId: patientId);
+        }
+
+        if (surveyType == 'custom') {
+          final customSurveyId = int.tryParse(state.uri.queryParameters['customSurveyId'] ?? '') ?? 0;
+          final fromInvestigation = state.uri.queryParameters['fromInvestigation'];
+          return DynamicSurveyScreen(
+            patientId: patientId,
+            customSurveyId: customSurveyId,
+            investigationId: int.tryParse(fromInvestigation ?? ''),
+          );
         }
 
         return BdiScreen(patientId: patientId);
@@ -198,6 +212,21 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/settings',
       builder: (context, state) => const SettingsScreen(),
+    ),
+    GoRoute(
+      path: '/survey-builder',
+      builder: (context, state) => const CustomSurveysListScreen(),
+    ),
+    GoRoute(
+      path: '/survey-builder/new',
+      builder: (context, state) => const CustomSurveyEditorScreen(),
+    ),
+    GoRoute(
+      path: '/survey-builder/:id/edit',
+      builder: (context, state) {
+        final id = int.tryParse(state.pathParameters['id'] ?? '');
+        return CustomSurveyEditorScreen(customSurveyId: id);
+      },
     ),
   ],
 );

@@ -8,7 +8,9 @@ import 'package:ssapp/features/reports/infrastructure/pdf/osteoporosis_pdf_gener
 import 'package:ssapp/features/reports/infrastructure/pdf/sf36_pdf_generator.dart';
 import 'package:ssapp/features/reports/infrastructure/pdf/generic_pdf_generator.dart';
 import 'package:ssapp/features/reports/infrastructure/pdf/whoqol_pdf_generator.dart';
+import 'package:ssapp/features/survey_builder/domain/custom_survey_definition.dart';
 import 'package:ssapp/features/reports/presentation/widgets/sections/assist_report_section.dart';
+import 'package:ssapp/features/reports/presentation/widgets/sections/custom_survey_report_section.dart';
 import 'package:ssapp/features/reports/presentation/widgets/sections/bai_report_section.dart';
 import 'package:ssapp/features/reports/presentation/widgets/sections/bdi_report_section.dart';
 import 'package:ssapp/features/reports/presentation/widgets/sections/gds_report_section.dart';
@@ -229,9 +231,28 @@ class SocialDeterminantsReportViewModel extends SurveyReportViewModel {
       BdiBaiPdfGenerator(surveyType: 15).generate(surveys);
 }
 
+// ── Encuesta personalizada ───────────────────────────────────────────────────
+
+class CustomSurveyReportViewModel extends SurveyReportViewModel {
+  final CustomSurveyDefinition definition;
+
+  const CustomSurveyReportViewModel(this.definition);
+
+  @override int get surveyType => 100;
+  @override String get surveyName => definition.title;
+  @override List<GlobalKey> get chartKeys => const [];
+  @override Widget buildSection(List<Map<String, dynamic>> surveys) =>
+      CustomSurveyReportSection(definition: definition, surveys: surveys);
+  @override Future<Uint8List> generatePdf(List<Map<String, dynamic>> surveys) =>
+      GenericPdfReportGenerator(surveyName: surveyName, surveys: surveys, chartImages: const []).generate();
+}
+
 // ── Router ────────────────────────────────────────────────────────────────────
 
-SurveyReportViewModel resolveReportViewModel(int surveyType) {
+SurveyReportViewModel resolveReportViewModel(int surveyType, {CustomSurveyDefinition? customDefinition}) {
+  if (surveyType == 100 && customDefinition != null) {
+    return CustomSurveyReportViewModel(customDefinition);
+  }
   return switch (surveyType) {
     1  => const BdiReportViewModel(),
     2  => const BaiReportViewModel(),

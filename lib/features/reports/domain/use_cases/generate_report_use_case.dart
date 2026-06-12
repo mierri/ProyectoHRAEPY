@@ -11,11 +11,13 @@ class GenerateReportUseCase {
 		SurveyService surveyService,
 		int surveyType, {
 		int? investigationId,
+		int? customSurveyId,
 	}) {
 		return _repository.getCompletedSurveysByType(
 			surveyService,
 			surveyType,
 			investigationId: investigationId,
+			customSurveyId: customSurveyId,
 		);
 	}
 }

@@ -1,6 +1,6 @@
 import 'package:ssapp/features/surveys/shared/form/survey_choice.dart';
 
-enum FormFieldType { singleChoice, multiChoice, text, numeric, scale }
+enum FormFieldType { singleChoice, multiChoice, text, numeric, scale, emojiScale }
 
 class FormFieldDef {
   final int fieldId;

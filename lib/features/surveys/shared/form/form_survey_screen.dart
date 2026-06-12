@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
+import 'package:ssapp/features/surveys/shared/form/face_icon.dart';
 import 'package:ssapp/features/surveys/shared/form/form_question.dart';
 import 'package:ssapp/features/surveys/shared/form/form_survey_controller.dart';
 import 'package:ssapp/features/surveys/shared/form/survey_text_field.dart';
@@ -285,6 +286,8 @@ class _FormSurveyScreenState extends State<FormSurveyScreen> {
         return _buildTextField(f, numeric: true);
       case FormFieldType.scale:
         return _buildScale(f);
+      case FormFieldType.emojiScale:
+        return _buildEmojiScale(f);
     }
   }
 
@@ -308,6 +311,7 @@ class _FormSurveyScreenState extends State<FormSurveyScreen> {
             padding: const EdgeInsets.only(bottom: 10),
             child: _FormOptionCard(
               label: option.label,
+              emoji: option.emoji,
               isSelected: isSelected,
               color: _color,
               onTap: () {
@@ -373,6 +377,7 @@ class _FormSurveyScreenState extends State<FormSurveyScreen> {
       onChanged: (v) {
         if (numeric) {
           _c.setIntAnswer(f.fieldId, int.tryParse(v.trim()));
+          _c.setTextAnswer(f.fieldId, v.trim());
         } else {
           _c.setTextAnswer(f.fieldId, v);
         }
@@ -401,7 +406,44 @@ class _FormSurveyScreenState extends State<FormSurveyScreen> {
                   value: value,
                   isSelected: isSelected,
                   color: _color,
-                  onTap: () => setState(() => _c.setIntAnswer(f.fieldId, value)),
+                  onTap: () => setState(() {
+                    _c.setIntAnswer(f.fieldId, value);
+                    _c.setTextAnswer(f.fieldId, value.toString());
+                  }),
+                ),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+
+  // ── Escala de caritas/emoji ──────────────────────────────────────────────
+
+  Widget _buildEmojiScale(FormFieldDef f) {
+    final selected = _c.intAnswer(f.fieldId);
+    final fs = context.watch<FontSizeProvider>();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(f.label, style: TextStyle(fontSize: fs.scaled(13), color: const Color(0xFF6B7280))),
+        const Gap(14),
+        Row(
+          children: List.generate(f.options.length, (i) {
+            final option = f.options[i];
+            final isSelected = selected == option.value;
+            return Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(right: i < f.options.length - 1 ? 8 : 0),
+                child: _FormEmojiScaleButton(
+                  emoji: option.label,
+                  isSelected: isSelected,
+                  color: _color,
+                  onTap: () {
+                    _c.setIntAnswer(f.fieldId, option.value);
+                    _tryAutoAdvance();
+                  },
                 ),
               ),
             );
@@ -483,12 +525,14 @@ class _FormQuestionCard extends StatelessWidget {
 
 class _FormOptionCard extends StatefulWidget {
   final String label;
+  final String? emoji;
   final bool isSelected;
   final Color color;
   final VoidCallback onTap;
 
   const _FormOptionCard({
     required this.label,
+    this.emoji,
     required this.isSelected,
     required this.color,
     required this.onTap,
@@ -544,6 +588,10 @@ class _FormOptionCardState extends State<_FormOptionCard>
           borderWidth: widget.isSelected ? 2.5 : 1.5,
           child: Row(
             children: [
+              if (faceIconForKey(widget.emoji) != null) ...[
+                Icon(faceIconForKey(widget.emoji), size: fs.scaled(22), color: faceColorForKey(widget.emoji)),
+                const Gap(12),
+              ],
               Expanded(
                 child: Text(
                   widget.label,
@@ -700,6 +748,48 @@ class _FormScaleButton extends StatelessWidget {
               fontWeight: FontWeight.w600,
               color: isSelected ? color : LightModeColors.lightOnSurface,
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── _FormEmojiScaleButton ──────────────────────────────────────────────────────
+
+class _FormEmojiScaleButton extends StatelessWidget {
+  final String emoji;
+  final bool isSelected;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _FormEmojiScaleButton({
+    required this.emoji,
+    required this.isSelected,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fs = context.watch<FontSizeProvider>();
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        height: 56,
+        decoration: BoxDecoration(
+          color: isSelected ? color.withValues(alpha: 0.12) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? color : LightModeColors.lightOutline.withValues(alpha: 0.5),
+            width: isSelected ? 2.5 : 1.5,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            emoji,
+            style: TextStyle(fontSize: fs.scaled(26)),
           ),
         ),
       ),

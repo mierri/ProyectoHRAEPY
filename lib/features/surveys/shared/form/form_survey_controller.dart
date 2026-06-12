@@ -92,6 +92,17 @@ abstract class FormSurveyController extends BaseSurveyController {
 
   int get surveyTypeId => SurveyCatalog.idForType(surveyType);
 
+  /// ID de la encuesta personalizada (si aplica). Sobrescrito por
+  /// DynamicSurveyController para encuestas creadas por la doctora.
+  int? get customSurveyId => null;
+
+  /// Calcula el puntaje total a partir de las respuestas. Por defecto no
+  /// calcula puntaje (las encuestas sin score lo dejan en null).
+  int? computeScore(List<ResponseModel> responses) => null;
+
+  /// Calcula el nivel de riesgo/interpretacion a partir del puntaje.
+  String? computeRiskLevel(int? score) => null;
+
   List<ResponseModel> buildResponseModelsWithText() {
     final ids = <int>{..._intAnswers.keys, ..._textAnswers.keys}.toList()..sort();
     return ids
@@ -128,15 +139,19 @@ abstract class FormSurveyController extends BaseSurveyController {
           throw Exception('No hay respuestas para guardar.');
         }
 
+        final score = computeScore(responses);
+        final riskLevel = computeRiskLevel(score);
+
         final survey = SurveyModel(
           surveyId: generateId(),
           surveyType: surveyTypeId,
           patientId: patientId,
           investigationId: investigationId,
+          customSurveyId: customSurveyId,
           responses: responses,
           synced: false,
-          risk_level: null,
-          score: null,
+          risk_level: riskLevel,
+          score: score,
         );
 
         final saveResult = await surveyService.saveSurvey(survey);
@@ -144,9 +159,9 @@ abstract class FormSurveyController extends BaseSurveyController {
         return SurveySaveResult(
           success: true,
           wasSynced: saveResult.wasSynced,
-          totalScore: null,
+          totalScore: score,
           interpretation: null,
-          severityLevel: null,
+          severityLevel: riskLevel,
           riskResult: null,
           weight: null,
           height: null,

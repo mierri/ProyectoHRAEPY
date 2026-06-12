@@ -10,7 +10,9 @@ import 'package:ssapp/features/surveys/domain/survey_rules.dart';
 import 'package:ssapp/features/surveys/types/assist/domain/assist_questions.dart';
 import 'package:ssapp/features/surveys/types/iciq_sf/domain/iciq_sf_questions.dart';
 import 'package:ssapp/features/surveys/types/katz/domain/katz_questions.dart';
+import 'package:ssapp/features/survey_builder/domain/custom_survey_service.dart';
 import 'package:ssapp/features/surveys/presentation/survey_results/components/assist_result_view.dart';
+import 'package:ssapp/features/surveys/presentation/survey_results/components/custom_result_view.dart';
 import 'package:ssapp/features/surveys/presentation/survey_results/components/standard_result_view.dart';
 import 'package:ssapp/shared/utils/theme.dart';
 import 'package:ssapp/shared/utils/toast_helper.dart';
@@ -48,6 +50,14 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
       (s) => s['survey_id'] == widget.surveyId,
       orElse: () => {},
     );
+
+    if (survey.isNotEmpty && survey['survey_type'] == SurveyCatalog.custom) {
+      final customService = context.read<CustomSurveyService>();
+      final customSurveyId = survey['custom_survey_id'] as int?;
+      if (customSurveyId == null || customService.getById(customSurveyId) == null) {
+        await customService.loadAll();
+      }
+    }
 
     if (mounted) {
       setState(() {
@@ -475,6 +485,39 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
       } catch (e) {
         patientName = 'Paciente no encontrado';
       }
+    }
+
+    if (surveyType == SurveyCatalog.custom) {
+      final customSurveyId = _survey!['custom_survey_id'] as int?;
+      final definition = customSurveyId != null
+          ? context.watch<CustomSurveyService>().getById(customSurveyId)
+          : null;
+
+      if (definition == null) {
+        return Scaffold(
+          headers: [AppBar(
+            title: const Text('Resultados'),
+            leading: [IconButton(icon: const Icon(material.Icons.arrow_back), onPressed: () => context.pop(), variance: ButtonVariance.ghost)],
+          )],
+          child: const Center(child: Text('No se encontró la definición de esta encuesta personalizada.')),
+        );
+      }
+
+      return Scaffold(
+        headers: [AppBar(
+          title: Text('Resultados ${definition.title}'),
+          leading: [IconButton(icon: const Icon(material.Icons.arrow_back), onPressed: () => context.pop(), variance: ButtonVariance.ghost)],
+        )],
+        child: CustomSurveyResultView(
+          patientName: patientName,
+          createdAt: createdAt,
+          score: score,
+          definition: definition,
+          responses: responses ?? [],
+          onBack: () => context.pop(),
+          onHome: () => context.go('/'),
+        ),
+      );
     }
 
     if (surveyType == 6) {

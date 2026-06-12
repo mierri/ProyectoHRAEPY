@@ -175,8 +175,15 @@ class QuickActionsGrid extends StatelessWidget {
         description: 'Acceso a investigaciones relacionadas',
         color: LightModeColors.lightPrimary,
         onTap: () => context.push('/investigations'),
+      ),
+      _ActionData(
+        icon: material.Icons.edit_note,
+        title: 'Crear Encuestas',
+        description: 'Diseña tus propias encuestas',
+        color: LightModeColors.lightTertiary,
+        onTap: () => context.push('/survey-builder'),
         mobileSpan: 2,
-      )
+      ),
     ];
 
     // Desktop: 4 en fila | Mobile/Tablet: 2 en fila.

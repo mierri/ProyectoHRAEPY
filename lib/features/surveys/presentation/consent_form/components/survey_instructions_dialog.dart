@@ -150,6 +150,7 @@ class SurveyInstructionsDialog extends StatelessWidget {
       item(Symbols.rule, 'Puntaje por sustancia', 'Se suma P2+P3+P4+P5+P6+P7 (tabaco no incluye P5).', const Color(0xFF0284C7)), g,
       item(Symbols.warning, 'Vía inyectada', 'Se registra aparte como advertencia clínica, no suma al puntaje por sustancia.', const Color(0xFFDC2626)),
     ];
+    if (variant == SurveyInstructionVariant.custom) return [];
     // BDI default
     return [
       item(Symbols.sentiment_very_satisfied, 'Opción 1', 'No lo experimento o no me aplica en este momento.', const Color(0xFF16A34A)), g,
