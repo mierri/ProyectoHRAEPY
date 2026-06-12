@@ -12,13 +12,18 @@ import 'package:ssapp/features/reports/presentation/widgets/section_header.dart'
 const _kAguaPotable = 13, _kDrenaje = 14, _kEnergia = 15;
 const _kTipoVivienda = 4, _kProgramasSociales = 11, _kBienesDurables = 19;
 const _kIngresoMensual = 3, _kEscolaridad = 1, _kSeguridadSocial = 10;
+const _kEdLevels = [
+  'Sin escolaridad', 'Preescolar', 'Primaria', 'Secundaria',
+  'Preparatoria', 'Técnica', 'Licenciatura', 'Posgrado',
+];
 
 class SocialDeterminantsReportSection extends StatelessWidget {
   final List<Map<String, dynamic>> surveys;
   static final k1 = GlobalKey(debugLabel: 'socdeter_k1');
   static final k2 = GlobalKey(debugLabel: 'socdeter_k2');
   static final k3 = GlobalKey(debugLabel: 'socdeter_k3');
-  static List<GlobalKey> get chartKeys => [k1, k2, k3];
+  static final k4 = GlobalKey(debugLabel: 'socdeter_k4');
+  static List<GlobalKey> get chartKeys => [k1, k2, k3, k4];
 
   const SocialDeterminantsReportSection({super.key, required this.surveys});
 
@@ -36,12 +41,19 @@ class SocialDeterminantsReportSection extends StatelessWidget {
 
     // Access to basic services (0=Sí, 1=No)
     int aguaYes = 0, drenYes = 0, energYes = 0;
+    final edCounts = List<int>.filled(_kEdLevels.length, 0);
     for (final s in surveys) {
       if (getField(s, _kAguaPotable) == 0) aguaYes++;
       if (getField(s, _kDrenaje) == 0) drenYes++;
       if (getField(s, _kEnergia) == 0) energYes++;
+      final esc = getField(s, _kEscolaridad);
+      if (esc != null && esc < edCounts.length) edCounts[esc]++;
     }
     final n = surveys.isEmpty ? 1 : surveys.length;
+
+    final edMax = edCounts.reduce((a, b) => a > b ? a : b).toDouble();
+    final edItems = List.generate(_kEdLevels.length, (i) =>
+      (label: _kEdLevels[i], value: edCounts[i].toDouble()));
 
     final serviceItems = [
       (label: 'Agua potable', value: aguaYes / n * 100),
@@ -129,6 +141,18 @@ class SocialDeterminantsReportSection extends StatelessWidget {
           maxValue: 100,
           color: _color,
           valueUnit: '%',
+        ),
+      ),
+      const Gap(12),
+      ChartCard(
+        title: 'Escolaridad máxima alcanzada',
+        boundaryKey: k4,
+        height: _kEdLevels.length * 36.0 + 20,
+        chart: HorizontalBarChart(
+          items: edItems,
+          maxValue: edMax == 0 ? 1 : edMax,
+          color: _color,
+          valueUnit: ' pac.',
         ),
       ),
     ]);

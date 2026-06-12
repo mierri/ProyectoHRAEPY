@@ -94,32 +94,6 @@ const sociodemographicQuestions = <FormQuestion>[
   ),
   FormQuestion(
     number: '6',
-    label: '¿Cuál es su escolaridad máxima alcanzada?',
-    category: 'Educación y trabajo',
-    fields: [
-      FormFieldDef(
-        fieldId: SociodemographicFieldIds.escolaridad,
-        label: 'Escolaridad',
-        type: FormFieldType.singleChoice,
-        options: SociodemographicChoices.escolaridad,
-      ),
-    ],
-  ),
-  FormQuestion(
-    number: '7',
-    label: '¿Cuál es su ocupación principal actual?',
-    category: 'Educación y trabajo',
-    fields: [
-      FormFieldDef(
-        fieldId: SociodemographicFieldIds.ocupacionPrincipal,
-        label: 'Ocupación principal',
-        type: FormFieldType.singleChoice,
-        options: SociodemographicChoices.ocupacionPrincipal,
-      ),
-    ],
-  ),
-  FormQuestion(
-    number: '8',
     label: '¿Cuál es su situación laboral actual?',
     category: 'Educación y trabajo',
     fields: [
@@ -132,19 +106,7 @@ const sociodemographicQuestions = <FormQuestion>[
     ],
   ),
   FormQuestion(
-    number: '9',
-    label: '¿Cuántas personas viven en su hogar?',
-    category: 'Hogar',
-    fields: [
-      FormFieldDef(
-        fieldId: SociodemographicFieldIds.personasHogar,
-        label: 'Número total de personas',
-        type: FormFieldType.numeric,
-      ),
-    ],
-  ),
-  FormQuestion(
-    number: '10',
+    number: '7',
     label: '¿Cuántos menores de 18 años viven en su hogar?',
     category: 'Hogar',
     fields: [
@@ -156,7 +118,7 @@ const sociodemographicQuestions = <FormQuestion>[
     ],
   ),
   FormQuestion(
-    number: '11',
+    number: '8',
     label: '¿Quién es el jefe o jefa del hogar?',
     category: 'Hogar',
     fields: [
@@ -169,34 +131,7 @@ const sociodemographicQuestions = <FormQuestion>[
     ],
   ),
   FormQuestion(
-    number: '12',
-    label: '¿A qué seguridad social está afiliado? (marque todas las que apliquen)',
-    category: 'Seguridad social e ingreso',
-    fields: [
-      FormFieldDef(
-        fieldId: SociodemographicFieldIds.seguridadSocial,
-        label: 'Seguridad social',
-        type: FormFieldType.multiChoice,
-        options: SociodemographicChoices.seguridadSocial,
-        exclusiveValue: 5,
-      ),
-    ],
-  ),
-  FormQuestion(
-    number: '13',
-    label: '¿Cuál es el ingreso económico aproximado de su hogar al mes?',
-    category: 'Seguridad social e ingreso',
-    fields: [
-      FormFieldDef(
-        fieldId: SociodemographicFieldIds.ingresoMensual,
-        label: 'Ingreso mensual',
-        type: FormFieldType.singleChoice,
-        options: SociodemographicChoices.ingresoMensual,
-      ),
-    ],
-  ),
-  FormQuestion(
-    number: '14',
+    number: '9',
     label: '¿Cuál es su nivel socioeconómico? (opcional)',
     category: 'Seguridad social e ingreso',
     fields: [
@@ -210,7 +145,7 @@ const sociodemographicQuestions = <FormQuestion>[
     ],
   ),
   FormQuestion(
-    number: '15',
+    number: '10',
     label: '¿Pertenece a algún grupo étnico o indígena?',
     category: 'Identidad cultural',
     fields: [
