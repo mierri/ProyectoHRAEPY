@@ -178,12 +178,17 @@ const socialDeterminantsQuestions = <FormQuestion>[
   ),
   FormQuestion(
     number: '11',
-    label: '¿Cuántas personas viven en su hogar?',
+    label: 'Media de personas que viven en el hogar',
     category: 'Composición del hogar',
     fields: [
       FormFieldDef(
         fieldId: SocialDeterminantsFieldIds.personasTotal,
         label: 'Número total de personas',
+        type: FormFieldType.numeric,
+      ),
+      FormFieldDef(
+        fieldId: SocialDeterminantsFieldIds.menores18,
+        label: 'Número de menores de 18 años',
         type: FormFieldType.numeric,
       ),
       FormFieldDef(

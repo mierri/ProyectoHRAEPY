@@ -107,18 +107,6 @@ const sociodemographicQuestions = <FormQuestion>[
   ),
   FormQuestion(
     number: '7',
-    label: '¿Cuántos menores de 18 años viven en su hogar?',
-    category: 'Hogar',
-    fields: [
-      FormFieldDef(
-        fieldId: SociodemographicFieldIds.menoresHogar,
-        label: 'Número de menores de 18 años',
-        type: FormFieldType.numeric,
-      ),
-    ],
-  ),
-  FormQuestion(
-    number: '8',
     label: '¿Quién es el jefe o jefa del hogar?',
     category: 'Hogar',
     fields: [
@@ -131,7 +119,7 @@ const sociodemographicQuestions = <FormQuestion>[
     ],
   ),
   FormQuestion(
-    number: '9',
+    number: '8',
     label: '¿Cuál es su nivel socioeconómico? (opcional)',
     category: 'Seguridad social e ingreso',
     fields: [
@@ -145,7 +133,7 @@ const sociodemographicQuestions = <FormQuestion>[
     ],
   ),
   FormQuestion(
-    number: '10',
+    number: '9',
     label: '¿Pertenece a algún grupo étnico o indígena?',
     category: 'Identidad cultural',
     fields: [
