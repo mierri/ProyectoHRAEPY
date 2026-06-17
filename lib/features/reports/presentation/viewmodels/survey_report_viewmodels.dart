@@ -5,8 +5,10 @@ import 'package:ssapp/features/reports/domain/osteoporosis_report_service.dart';
 import 'package:ssapp/features/reports/domain/stats_calculator.dart';
 import 'package:ssapp/features/reports/infrastructure/pdf/bdi_bai_pdf_generator.dart';
 import 'package:ssapp/features/reports/infrastructure/pdf/osteoporosis_pdf_generator.dart';
+import 'package:ssapp/features/reports/infrastructure/pdf/perceived_attendance_barriers_pdf_generator.dart';
 import 'package:ssapp/features/reports/infrastructure/pdf/sf36_pdf_generator.dart';
 import 'package:ssapp/features/reports/infrastructure/pdf/generic_pdf_generator.dart';
+import 'package:ssapp/features/reports/infrastructure/pdf/specialty_consultation_attendance_pdf_generator.dart';
 import 'package:ssapp/features/reports/infrastructure/pdf/whoqol_pdf_generator.dart';
 import 'package:ssapp/features/survey_builder/domain/custom_survey_definition.dart';
 import 'package:ssapp/features/reports/presentation/widgets/sections/assist_report_section.dart';
@@ -19,10 +21,12 @@ import 'package:ssapp/features/reports/presentation/widgets/sections/iciqsf_repo
 import 'package:ssapp/features/reports/presentation/widgets/sections/katz_report_section.dart';
 import 'package:ssapp/features/reports/presentation/widgets/sections/lawton_report_section.dart';
 import 'package:ssapp/features/reports/presentation/widgets/sections/osteoporosis_report_section.dart';
+import 'package:ssapp/features/reports/presentation/widgets/sections/perceived_attendance_barriers_report_section.dart';
 import 'package:ssapp/features/reports/presentation/widgets/sections/phq9_report_section.dart';
 import 'package:ssapp/features/reports/presentation/widgets/sections/sf36_report_section.dart';
 import 'package:ssapp/features/reports/presentation/widgets/sections/social_determinants_report_section.dart';
 import 'package:ssapp/features/reports/presentation/widgets/sections/sociodemographic_report_section.dart';
+import 'package:ssapp/features/reports/presentation/widgets/sections/specialty_consultation_attendance_report_section.dart';
 import 'package:ssapp/features/reports/presentation/widgets/sections/whoqol_report_section.dart';
 
 abstract class SurveyReportViewModel {
@@ -233,6 +237,42 @@ class SocialDeterminantsReportViewModel extends SurveyReportViewModel {
 
 // ── Encuesta personalizada ───────────────────────────────────────────────────
 
+class SpecialtyConsultationAttendanceReportViewModel extends SurveyReportViewModel {
+  const SpecialtyConsultationAttendanceReportViewModel();
+  @override int get surveyType => 16;
+  @override String get surveyName => 'Asistencia en Consulta de Especialidad';
+  @override List<GlobalKey> get chartKeys =>
+      SpecialtyConsultationAttendanceReportSection.chartKeys;
+  @override Widget buildSection(List<Map<String, dynamic>> surveys) =>
+      SpecialtyConsultationAttendanceReportSection(surveys: surveys);
+  @override Future<Uint8List> generatePdf(List<Map<String, dynamic>> surveys) =>
+      SpecialtyConsultationAttendancePdfGenerator().generate(surveys);
+  @override Future<Uint8List> generatePdfWithImages(
+    List<Map<String, dynamic>> surveys,
+    List<Uint8List?> chartImages,
+  ) =>
+      SpecialtyConsultationAttendancePdfGenerator(chartImages: chartImages)
+          .generate(surveys);
+}
+
+class PerceivedAttendanceBarriersReportViewModel extends SurveyReportViewModel {
+  const PerceivedAttendanceBarriersReportViewModel();
+  @override int get surveyType => 17;
+  @override String get surveyName => 'Barreras Percibidas para la Asistencia';
+  @override List<GlobalKey> get chartKeys =>
+      PerceivedAttendanceBarriersReportSection.chartKeys;
+  @override Widget buildSection(List<Map<String, dynamic>> surveys) =>
+      PerceivedAttendanceBarriersReportSection(surveys: surveys);
+  @override Future<Uint8List> generatePdf(List<Map<String, dynamic>> surveys) =>
+      PerceivedAttendanceBarriersPdfGenerator().generate(surveys);
+  @override Future<Uint8List> generatePdfWithImages(
+    List<Map<String, dynamic>> surveys,
+    List<Uint8List?> chartImages,
+  ) =>
+      PerceivedAttendanceBarriersPdfGenerator(chartImages: chartImages)
+          .generate(surveys);
+}
+
 class CustomSurveyReportViewModel extends SurveyReportViewModel {
   final CustomSurveyDefinition definition;
 
@@ -268,6 +308,8 @@ SurveyReportViewModel resolveReportViewModel(int surveyType, {CustomSurveyDefini
     13 => const Phq9ReportViewModel(),
     14 => const SociodemographicReportViewModel(),
     15 => const SocialDeterminantsReportViewModel(),
+    16 => const SpecialtyConsultationAttendanceReportViewModel(),
+    17 => const PerceivedAttendanceBarriersReportViewModel(),
     _  => const BdiReportViewModel(),
   };
 }

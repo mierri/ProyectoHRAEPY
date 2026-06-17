@@ -7,7 +7,9 @@ import 'package:ssapp/features/surveys/types/iciq_sf/domain/iciq_sf_survey_handl
 import 'package:ssapp/features/surveys/types/katz/domain/katz_survey_handler.dart';
 import 'package:ssapp/features/surveys/types/lawton/domain/lawton_survey_handler.dart';
 import 'package:ssapp/features/surveys/types/osteoporosis/domain/osteoporosis_survey_handler.dart';
+import 'package:ssapp/features/surveys/types/perceived_attendance_barriers/domain/perceived_attendance_barriers_survey_handler.dart';
 import 'package:ssapp/features/surveys/types/phq9/domain/phq9_survey_handler.dart';
+import 'package:ssapp/features/surveys/types/specialty_consultation_attendance/domain/specialty_consultation_attendance_survey_handler.dart';
 import 'package:ssapp/features/surveys/types/sociodemographic/domain/sociodemographic_survey_handler.dart';
 import 'package:ssapp/features/surveys/types/social_determinants/domain/social_determinants_survey_handler.dart';
 import 'package:ssapp/features/surveys/types/custom/domain/custom_survey_handler.dart';
@@ -29,6 +31,8 @@ class SurveyTypeHandlerRegistry {
     'phq9': Phq9SurveyHandler(),
     'sociodemographic': SociodemographicSurveyHandler(),
     'social_determinants': SocialDeterminantsSurveyHandler(),
+    'specialty_consultation_attendance': SpecialtyConsultationAttendanceSurveyHandler(),
+    'perceived_attendance_barriers': PerceivedAttendanceBarriersSurveyHandler(),
     'custom': CustomSurveyHandler(),
   };
 

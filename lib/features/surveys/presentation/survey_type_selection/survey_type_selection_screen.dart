@@ -28,6 +28,8 @@ enum SurveyType {
   assist,
   sociodemographic,
   socialDeterminants,
+  specialtyConsultationAttendance,
+  perceivedAttendanceBarriers,
 }
 
 extension SurveyTypeExtension on SurveyType {
@@ -35,6 +37,10 @@ extension SurveyTypeExtension on SurveyType {
     switch (this) {
       case SurveyType.socialDeterminants:
         return 'social_determinants';
+      case SurveyType.specialtyConsultationAttendance:
+        return 'specialty_consultation_attendance';
+      case SurveyType.perceivedAttendanceBarriers:
+        return 'perceived_attendance_barriers';
       default:
         return name;
     }
@@ -70,6 +76,10 @@ extension SurveyTypeExtension on SurveyType {
         return 'Sociodemografico';
       case SurveyType.socialDeterminants:
         return 'Determinantes Sociales';
+      case SurveyType.specialtyConsultationAttendance:
+        return 'Asistencia en Consulta';
+      case SurveyType.perceivedAttendanceBarriers:
+        return 'Barreras Percibidas';
     }
   }
 
@@ -103,6 +113,10 @@ extension SurveyTypeExtension on SurveyType {
         return 'Sociodemographic Questionnaire';
       case SurveyType.socialDeterminants:
         return 'Social Determinants Questionnaire';
+      case SurveyType.specialtyConsultationAttendance:
+        return 'Specialty Consultation Attendance';
+      case SurveyType.perceivedAttendanceBarriers:
+        return 'Perceived Attendance Barriers';
     }
   }
 
@@ -136,6 +150,10 @@ extension SurveyTypeExtension on SurveyType {
         return 'Cuestionario Sociodemográfico';
       case SurveyType.socialDeterminants:
         return 'Cuestionario de Determinantes Sociales';
+      case SurveyType.specialtyConsultationAttendance:
+        return 'Asistencia en Consulta de Especialidad';
+      case SurveyType.perceivedAttendanceBarriers:
+        return 'Barreras Percibidas para la Asistencia a Consultas Médicas Programadas';
     }
   }
 
@@ -169,6 +187,10 @@ extension SurveyTypeExtension on SurveyType {
         return material.Icons.assignment_ind_outlined;
       case SurveyType.socialDeterminants:
         return material.Icons.diversity_3_outlined;
+      case SurveyType.specialtyConsultationAttendance:
+        return material.Icons.event_available_outlined;
+      case SurveyType.perceivedAttendanceBarriers:
+        return material.Icons.route_outlined;
     }
   }
 
@@ -202,6 +224,10 @@ extension SurveyTypeExtension on SurveyType {
         return const Color(0xFF4F46E5);
       case SurveyType.socialDeterminants:
         return const Color(0xFF0F766E);
+      case SurveyType.specialtyConsultationAttendance:
+        return const Color(0xFFB45309);
+      case SurveyType.perceivedAttendanceBarriers:
+        return const Color(0xFFBE123C);
     }
   }
 }

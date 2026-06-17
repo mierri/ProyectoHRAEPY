@@ -15,18 +15,21 @@ import 'package:ssapp/features/surveys/types/iciq_sf/presentation/iciq_sf_screen
 import 'package:ssapp/features/surveys/types/katz/presentation/katz_screen.dart';
 import 'package:ssapp/features/surveys/types/lawton/presentation/lawton_screen.dart';
 import 'package:ssapp/features/surveys/types/osteoporosis/presentation/osteoporosis_screen.dart';
+import 'package:ssapp/features/surveys/types/perceived_attendance_barriers/presentation/perceived_attendance_barriers_screen.dart';
 import 'package:ssapp/features/patients/presentation/screens/patients_screen.dart';
 import 'package:ssapp/shared/widgets/placeholder_screen.dart';
 import 'package:ssapp/features/reports/presentation/reports_screen.dart';
 import 'package:ssapp/features/settings/settings_screen.dart';
 import 'package:ssapp/features/surveys/types/sf36/presentation/sf36_screen.dart';
 import 'package:ssapp/features/surveys/types/phq9/presentation/phq9_screen.dart';
+import 'package:ssapp/features/surveys/types/specialty_consultation_attendance/presentation/specialty_consultation_attendance_screen.dart';
 import 'package:ssapp/features/surveys/types/sociodemographic/presentation/sociodemographic_screen.dart';
 import 'package:ssapp/features/surveys/types/social_determinants/presentation/social_determinants_screen.dart';
 import 'package:ssapp/features/surveys/presentation/survey_results/survey_results_screen.dart';
 import 'package:ssapp/features/surveys/presentation/surveys_list/surveys_list_screen.dart';
 import 'package:ssapp/features/surveys/presentation/survey_type_selection/survey_type_selection_screen.dart';
 import 'package:ssapp/features/surveys/presentation/dynamic_survey/dynamic_survey_screen.dart';
+import 'package:ssapp/features/surveys/domain/survey_type_config.dart';
 import 'package:ssapp/features/surveys/types/whoqol/presentation/whoqol_screen.dart';
 import 'package:ssapp/features/survey_builder/presentation/custom_surveys_list_screen.dart';
 import 'package:ssapp/features/survey_builder/presentation/custom_survey_editor_screen.dart';
@@ -67,7 +70,9 @@ final GoRouter appRouter = GoRouter(
           );
         }
 
-        final surveyType = state.uri.queryParameters['surveyType'] ?? 'bdi';
+        final surveyType = SurveyTypeConfig.normalizeType(
+          state.uri.queryParameters['surveyType'],
+        );
 
         if (surveyType == 'whoqol') {
           return WhoqolScreen(patientId: patientId);
@@ -103,6 +108,14 @@ final GoRouter appRouter = GoRouter(
 
         if (surveyType == 'social_determinants') {
           return SocialDeterminantsScreen(patientId: patientId);
+        }
+
+        if (surveyType == 'specialty_consultation_attendance') {
+          return SpecialtyConsultationAttendanceScreen(patientId: patientId);
+        }
+
+        if (surveyType == 'perceived_attendance_barriers') {
+          return PerceivedAttendanceBarriersScreen(patientId: patientId);
         }
 
         if (surveyType == 'lawton') {

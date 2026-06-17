@@ -36,6 +36,8 @@ class SurveysFiltersSection extends StatelessWidget {
     SurveyFilterOption(value: 'osteoporosis',       label: 'Osteoporosis'),
     SurveyFilterOption(value: 'sociodemographic',   label: 'Sociodemografico'),
     SurveyFilterOption(value: 'social_determinants',label: 'Determinantes Sociales'),
+    SurveyFilterOption(value: 'specialty_consultation_attendance',label: 'Asistencia en Consulta'),
+    SurveyFilterOption(value: 'perceived_attendance_barriers',label: 'Barreras Percibidas'),
   ];
 
   static const _statusOptions = [

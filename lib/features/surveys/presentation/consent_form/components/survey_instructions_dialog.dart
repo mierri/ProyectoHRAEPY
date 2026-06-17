@@ -150,6 +150,16 @@ class SurveyInstructionsDialog extends StatelessWidget {
       item(Symbols.rule, 'Puntaje por sustancia', 'Se suma P2+P3+P4+P5+P6+P7 (tabaco no incluye P5).', const Color(0xFF0284C7)), g,
       item(Symbols.warning, 'Vía inyectada', 'Se registra aparte como advertencia clínica, no suma al puntaje por sustancia.', const Color(0xFFDC2626)),
     ];
+    if (variant == SurveyInstructionVariant.specialtyConsultationAttendance) return [
+      item(Symbols.person, 'Datos generales', 'Complete nombre, expediente, fecha de nacimiento y localidad de residencia.', const Color(0xFFB45309)), g,
+      item(Symbols.local_taxi, 'Transporte y especialidad', 'Registre si cuenta con transporte privado y la especialidad médica correspondiente.', const Color(0xFFD97706)), g,
+      item(Symbols.event_busy, 'Inasistencia reciente', 'Si faltó a citas en los últimos tres meses, indique cuántas perdió.', const Color(0xFF92400E)),
+    ];
+    if (variant == SurveyInstructionVariant.perceivedAttendanceBarriers) return [
+      item(Symbols.history, 'Antecedente reciente', 'Si el paciente reportó inasistencia reciente, se capturará el principal motivo de la falta más reciente.', const Color(0xFFBE123C)), g,
+      item(Symbols.format_list_numbered, 'Tres motivos distintos', 'Seleccione tres motivos diferentes para la asistencia futura en orden 1, 2 y 3.', const Color(0xFFE11D48)), g,
+      item(Symbols.edit_note, 'Especifique "otro"', 'Si elige "Otro motivo", capture la descripción correspondiente.', const Color(0xFF9F1239)),
+    ];
     if (variant == SurveyInstructionVariant.custom) return [];
     // BDI default
     return [

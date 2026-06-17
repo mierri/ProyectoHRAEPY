@@ -34,6 +34,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
     13: 'PHQ-9',
     14: 'Sociodemográfico',
     15: 'Determinantes Sociales',
+    16: 'Asistencia en Consulta de Especialidad',
+    17: 'Barreras Percibidas para la Asistencia',
   };
 
   @override
@@ -180,6 +182,8 @@ class _HeaderBar extends StatelessWidget {
                     const SelectItemButton(value: 13, child: Text('PHQ-9')),
                     const SelectItemButton(value: 14, child: Text('Sociodemográfico')),
                     const SelectItemButton(value: 15, child: Text('Determinantes Sociales')),
+                    const SelectItemButton(value: 16, child: Text('Asistencia en Consulta de Especialidad')),
+                    const SelectItemButton(value: 17, child: Text('Barreras Percibidas para la Asistencia')),
                     for (final def in customSurveys)
                       SelectItemButton(value: def.id, child: Text('Mis encuestas: ${def.title}')),
                   ],
@@ -230,6 +234,10 @@ class _HeaderBar extends StatelessWidget {
         return 'Sociodemográfico';
       case 15:
         return 'Determinantes Sociales';
+      case 16:
+        return 'Asistencia en Consulta de Especialidad';
+      case 17:
+        return 'Barreras Percibidas para la Asistencia';
       default:
         for (final def in customSurveys) {
           if (def.id == surveyType) return def.title;

@@ -56,6 +56,9 @@ class _SurveysListScreenState extends State<SurveysListScreen> {
       'bdi': 1, 'bai': 2, 'whoqol': 3, 'sf36': 5, 'assist': 6,
       'gds': 7, 'lawton': 8, 'osteoporosis': 9, 'katz': 10,
       'iciqsf': 11, 'ghq12': 12, 'phq9': 13,
+      'sociodemographic': 14, 'social_determinants': 15,
+      'specialty_consultation_attendance': 16,
+      'perceived_attendance_barriers': 17,
     };
     var result = all;
     if (typeIdMap.containsKey(_filterType)) {

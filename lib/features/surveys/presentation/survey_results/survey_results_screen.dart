@@ -235,6 +235,8 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         return 'Grave';
       case 14: // Sociodemográfico
       case 15: // Determinantes sociales
+      case 16: // Asistencia en Consulta de Especialidad
+      case 17: // Barreras percibidas para la asistencia
         return 'Sin puntuación';
       default:
         return 'Resultado';
@@ -374,6 +376,10 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         return 'El cuestionario sociodeomográfico no tiene una interpretación de puntajes. Se recomienda utilizar la información recopilada para contextualizar la situación del paciente.';
       case 15: // Determinantes Sociales
         return 'El cuestionario de determinantes sociales no tiene una interpretación de puntajes. Se recomienda utilizar la información recopilada para contextualizar la situación del paciente.';
+      case 16: // Asistencia en Consulta de Especialidad
+        return 'Este cuestionario no tiene una interpretación de puntajes. Se recomienda revisar la especialidad médica, disponibilidad de transporte y antecedentes de inasistencia para apoyar el seguimiento del paciente.';
+      case 17: // Barreras percibidas para la asistencia
+        return 'Este cuestionario no tiene una interpretación de puntajes. Se recomienda revisar los motivos de inasistencia reciente y los tres principales riesgos percibidos de falta futura para planear apoyos y seguimiento.';
       default:
         return 'Se recomienda consultar con un profesional de salud para una evaluación completa.';
     }
@@ -457,6 +463,8 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         case 13: return 'Cuestionario sobre la Salud del Paciente';
         case 14: return 'Cuestionario Sociodemográfico';
         case 15: return 'Cuestionario de Determinantes Sociales';
+        case 16: return 'Asistencia en Consulta de Especialidad';
+        case 17: return 'Cuestionario de Barreras Percibidas para la Asistencia a Consultas Médicas Programadas';
         default: return 'Encuesta';
       }
     }

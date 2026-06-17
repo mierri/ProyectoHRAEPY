@@ -20,6 +20,8 @@ const Map<int, String> _surveyNames = {
   13: 'PHQ-9',
   14: 'Sociodemográfico',
   15: 'Determinantes Sociales',
+  16: 'Asistencia en Consulta de Especialidad',
+  17: 'Barreras Percibidas para la Asistencia',
 };
 
 class InvestigationReportsSection extends StatefulWidget {

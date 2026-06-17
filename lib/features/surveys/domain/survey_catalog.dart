@@ -5,7 +5,9 @@ import 'package:ssapp/features/surveys/types/iciq_sf/domain/iciq_sf_questions.da
 import 'package:ssapp/features/surveys/types/katz/domain/katz_questions.dart';
 import 'package:ssapp/features/surveys/types/lawton/domain/lawton_questions.dart';
 import 'package:ssapp/features/surveys/types/osteoporosis/domain/osteoporosis_questions.dart';
+import 'package:ssapp/features/surveys/types/perceived_attendance_barriers/domain/perceived_attendance_barriers_questions.dart';
 import 'package:ssapp/features/surveys/types/phq9/domain/phq9_questions.dart';
+import 'package:ssapp/features/surveys/types/specialty_consultation_attendance/domain/specialty_consultation_attendance_questions.dart';
 import 'package:ssapp/features/surveys/types/sociodemographic/domain/sociodemographic_questions.dart';
 import 'package:ssapp/features/surveys/types/social_determinants/domain/social_determinants_questions.dart';
 
@@ -24,6 +26,8 @@ class SurveyCatalog {
   static const int phq9 = 13;
   static const int sociodemographic = 14;
   static const int socialDeterminants = 15;
+  static const int specialtyConsultationAttendance = 16;
+  static const int perceivedAttendanceBarriers = 17;
   static const int custom = 100;
 
   static const Map<int, String> namesById = {
@@ -41,6 +45,8 @@ class SurveyCatalog {
     phq9: 'PHQ-9',
     sociodemographic: 'Sociodemografico',
     socialDeterminants: 'Determinantes Sociales',
+    specialtyConsultationAttendance: 'Asistencia en Consulta de Especialidad',
+    perceivedAttendanceBarriers: 'Barreras Percibidas para la Asistencia',
     custom: 'Encuesta personalizada',
   };
 
@@ -59,6 +65,8 @@ class SurveyCatalog {
     phq9: 'secondary',
     sociodemographic: 'secondary',
     socialDeterminants: 'secondary',
+    specialtyConsultationAttendance: 'secondary',
+    perceivedAttendanceBarriers: 'secondary',
     custom: 'primary',
   };
 
@@ -78,6 +86,8 @@ class SurveyCatalog {
     'sociodemographic': sociodemographic,
     'social_determinants': socialDeterminants,
     'socialdeterminants': socialDeterminants,
+    'specialty_consultation_attendance': specialtyConsultationAttendance,
+    'perceived_attendance_barriers': perceivedAttendanceBarriers,
     'custom': custom,
   };
 
@@ -96,6 +106,8 @@ class SurveyCatalog {
     phq9: 'phq9',
     sociodemographic: 'sociodemographic',
     socialDeterminants: 'social_determinants',
+    specialtyConsultationAttendance: 'specialty_consultation_attendance',
+    perceivedAttendanceBarriers: 'perceived_attendance_barriers',
     custom: 'custom',
   };
 
@@ -141,6 +153,10 @@ class SurveyCatalog {
         return SociodemographicQuestions.questions;
       case socialDeterminants:
         return SocialDeterminantsQuestions.questions;
+      case specialtyConsultationAttendance:
+        return SpecialtyConsultationAttendanceQuestions.questions;
+      case perceivedAttendanceBarriers:
+        return PerceivedAttendanceBarriersQuestions.questions;
       case whoqol:
       case sf36:
       case assist:
