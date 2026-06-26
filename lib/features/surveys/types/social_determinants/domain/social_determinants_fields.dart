@@ -23,6 +23,7 @@ class SocialDeterminantsFieldIds {
   static const int satisfaccionVivienda = 20;
   static const int satisfaccionIngreso = 21;
   static const int apoyoSocial = 22;
+  static const int menores18 = 23;
 }
 
 class SocialDeterminantsChoices {
@@ -139,6 +140,7 @@ class SocialDeterminantsRequiredFields {
     SocialDeterminantsFieldIds.drenaje: 'Drenaje',
     SocialDeterminantsFieldIds.energiaElectrica: 'Energía eléctrica',
     SocialDeterminantsFieldIds.personasTotal: 'Personas en el hogar',
+    SocialDeterminantsFieldIds.menores18: 'Menores de 18 años',
     SocialDeterminantsFieldIds.ninosMenores5: 'Niños menores de 5 años',
     SocialDeterminantsFieldIds.mayores65: 'Personas mayores de 65 años',
     SocialDeterminantsFieldIds.bienesDurables: 'Bienes durables',

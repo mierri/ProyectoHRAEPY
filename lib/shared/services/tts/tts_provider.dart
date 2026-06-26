@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:ssapp/core/logger/app_logger.dart';
-import 'package:ssapp/shared/services/tts/native_tts_service.dart';
+import 'package:ssapp/shared/services/tts/native_tts_service_stub.dart'
+    if (dart.library.io) 'package:ssapp/shared/services/tts/native_tts_service.dart';
 
 enum TtsState { idle, loading, playing, error }
 

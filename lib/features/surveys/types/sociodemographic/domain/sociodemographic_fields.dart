@@ -75,7 +75,6 @@ class SociodemographicRequiredFields {
     SociodemographicFieldIds.residenciaCiudad: 'Residencia actual (ciudad o localidad)',
     SociodemographicFieldIds.residenciaEstado: 'Residencia actual (estado)',
     SociodemographicFieldIds.residenciaTipoLocalidad: 'Tipo de localidad',
-    SociodemographicFieldIds.menoresHogar: 'Menores en el hogar',
     SociodemographicFieldIds.jefaturaHogar: 'Jefatura del hogar',
     SociodemographicFieldIds.grupoEtnico: 'Grupo étnico',
   };

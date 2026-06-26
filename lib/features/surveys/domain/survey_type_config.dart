@@ -17,6 +17,8 @@ enum SurveyInstructionVariant {
   osteoporosis,
   sociodemographic,
   socialDeterminants,
+  specialtyConsultationAttendance,
+  perceivedAttendanceBarriers,
   custom,
 }
 
@@ -48,12 +50,29 @@ class SurveyTypeConfig {
     'osteoporosis': 7,
     'sociodemographic': 15,
     'social_determinants': 15,
+    'specialty_consultation_attendance': 7,
+    'perceived_attendance_barriers': 4,
   };
 
   static String normalizeType(String? surveyType) {
     final normalized = (surveyType ?? 'bdi').toLowerCase();
     if (normalized == 'socialdeterminants') {
       return 'social_determinants';
+    }
+    if (normalized == 'specialtyconsultationattendance' ||
+        normalized == 'asistencia en consulta de especialidad' ||
+        normalized == 'asistencia en consultas de especialidad' ||
+        normalized == 'anexo 1' ||
+        normalized == '16') {
+      return 'specialty_consultation_attendance';
+    }
+    if (normalized == 'perceivedattendancebarriers' ||
+        normalized == 'barreras percibidas para la asistencia' ||
+        normalized == 'barreras percibidas para asistencia' ||
+        normalized == 'barreras percibidas para la asistencia a consultas médicas programadas' ||
+        normalized == 'barreras percibidas para la asistencia a consultas medicas programadas' ||
+        normalized == '17') {
+      return 'perceived_attendance_barriers';
     }
     return normalized.isEmpty ? 'bdi' : normalized;
   }
@@ -86,6 +105,10 @@ class SurveyTypeConfig {
         return const Color(0xFF4F46E5);
       case 'social_determinants':
         return const Color(0xFF0F766E);
+      case 'specialty_consultation_attendance':
+        return const Color(0xFFB45309);
+      case 'perceived_attendance_barriers':
+        return const Color(0xFFBE123C);
       case 'custom':
         return const Color(0xFF0D9488);
       case 'bdi':
@@ -122,6 +145,10 @@ class SurveyTypeConfig {
         return 'Este cuestionario recoge datos sociodemográficos del participante. No genera puntaje clínico; la información es para caracterización y análisis del contexto.';
       case 'social_determinants':
         return 'Este cuestionario recoge determinantes sociales del hogar (educación, vivienda, servicios y apoyo social). No genera puntaje clínico; la información es para análisis del contexto.';
+      case 'specialty_consultation_attendance':
+        return 'Este cuestionario recoge datos generales del usuario y antecedentes recientes de asistencia a consulta de especialidad. No genera puntaje clínico; la información sirve para seguimiento de barreras y adherencia a la atención.';
+      case 'perceived_attendance_barriers':
+        return 'Este cuestionario identifica barreras percibidas para la asistencia a consultas médicas programadas. No genera puntaje clínico; la información sirve para explorar motivos de inasistencia reciente y riesgos de inasistencia futura.';
       case 'custom':
         return 'Esta es una encuesta personalizada creada por su equipo de salud. Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de seguimiento.';
       case 'bdi':
@@ -226,6 +253,20 @@ class SurveyTypeConfig {
           instructions:
               'Responda cada apartado con la información del hogar. Marque todas las opciones que apliquen cuando se solicite.',
           variant: SurveyInstructionVariant.socialDeterminants,
+        );
+      case 'specialty_consultation_attendance':
+        return const SurveyInstructionContent(
+          title: 'Asistencia en Consulta de Especialidad',
+          instructions:
+              'Capture los datos generales del usuario y registre la especialidad, disponibilidad de transporte y antecedentes de inasistencia a citas durante los últimos tres meses.',
+          variant: SurveyInstructionVariant.specialtyConsultationAttendance,
+        );
+      case 'perceived_attendance_barriers':
+        return const SurveyInstructionContent(
+          title: 'Barreras Percibidas para la Asistencia',
+          instructions:
+              'Si existe antecedente reciente de inasistencia, primero se registrará el principal motivo de la falta más reciente. Después, seleccione tres motivos distintos en orden de importancia sobre por qué podría faltar a una consulta médica programada en el futuro.',
+          variant: SurveyInstructionVariant.perceivedAttendanceBarriers,
         );
       case 'custom':
         return const SurveyInstructionContent(

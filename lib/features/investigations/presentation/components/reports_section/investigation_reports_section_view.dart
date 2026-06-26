@@ -20,6 +20,8 @@ const Map<int, String> _surveyNames = {
   13: 'PHQ-9',
   14: 'Sociodemográfico',
   15: 'Determinantes Sociales',
+  16: 'Asistencia en Consulta de Especialidad',
+  17: 'Barreras Percibidas para la Asistencia',
 };
 
 class InvestigationReportsSection extends StatefulWidget {
@@ -113,6 +115,8 @@ class _InvestigationReportsSectionState
                     vm.surveys.isEmpty ? null : () => vm.exportCsv(context),
                 onExportPdf:
                     vm.surveys.isEmpty ? null : () => vm.exportPdf(context),
+                onPrintPdf:
+                    vm.surveys.isEmpty ? null : () => vm.printPdf(context),
               ),
               const Divider(height: 1),
               const Gap(16),
@@ -156,6 +160,7 @@ class _ControlBar extends StatelessWidget {
   final ValueChanged<int> onSurveyTypeChanged;
   final VoidCallback? onExportCsv;
   final VoidCallback? onExportPdf;
+  final VoidCallback? onPrintPdf;
 
   const _ControlBar({
     required this.selectedSurveyType,
@@ -164,6 +169,7 @@ class _ControlBar extends StatelessWidget {
     required this.onSurveyTypeChanged,
     required this.onExportCsv,
     required this.onExportPdf,
+    required this.onPrintPdf,
   });
 
   @override
@@ -199,9 +205,13 @@ class _ControlBar extends StatelessWidget {
           onPressed: isExporting ? null : onExportCsv,
           child: const Text('Exportar CSV'),
         ),
+        OutlineButton(
+          onPressed: isExporting ? null : onPrintPdf,
+          child: const Text('Imprimir PDF'),
+        ),
         PrimaryButton(
           onPressed: isExporting ? null : onExportPdf,
-          child: Text(isExporting ? 'Exportando...' : 'Exportar PDF'),
+          child: Text(isExporting ? 'Procesando...' : 'Descargar PDF'),
         ),
       ],
     );

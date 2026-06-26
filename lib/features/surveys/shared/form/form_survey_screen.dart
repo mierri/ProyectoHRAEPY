@@ -33,6 +33,7 @@ class FormSurveyScreen extends StatefulWidget {
 
 class _FormSurveyScreenState extends State<FormSurveyScreen> {
   int _currentIndex = 0;
+  int _autoAdvanceToken = 0;
   final Map<int, TextEditingController> _textControllers = {};
 
   FormSurveyController get _c => widget.controller;
@@ -48,10 +49,17 @@ class _FormSurveyScreenState extends State<FormSurveyScreen> {
   }
 
   TextEditingController _tcFor(int fieldId, {String initial = ''}) {
-    return _textControllers.putIfAbsent(
-      fieldId,
-      () => TextEditingController(text: initial),
-    );
+    final existing = _textControllers[fieldId];
+    if (existing != null) {
+      if (initial.isNotEmpty && existing.text != initial) {
+        existing.text = initial;
+      }
+      return existing;
+    }
+
+    final controller = TextEditingController(text: initial);
+    _textControllers[fieldId] = controller;
+    return controller;
   }
 
   // ── Visibility ──────────────────────────────────────────────────────────────
@@ -84,29 +92,45 @@ class _FormSurveyScreenState extends State<FormSurveyScreen> {
 
   void _tryAutoAdvance() {
     final q = _questions[_currentIndex];
+    final originIndex = _currentIndex;
     final isSimple = q.fields.length == 1 &&
         q.fields[0].type == FormFieldType.singleChoice;
     final noConditionalVisible = !q.fields.any(
       (f) => f is FormConditionalField && _isVisible(f) && f.isRequired,
     );
     if (isSimple && noConditionalVisible && _currentIndex < _questions.length - 1) {
+      final token = ++_autoAdvanceToken;
       Future.delayed(const Duration(milliseconds: 600), () {
-        if (mounted) setState(() => _currentIndex++);
+        if (!mounted) return;
+        if (token != _autoAdvanceToken) return;
+        if (_currentIndex != originIndex) return;
+        setState(() => _currentIndex++);
       });
     }
   }
 
   // ── Navigation ───────────────────────────────────────────────────────────────
 
-  void _goToQuestion(int i) => setState(() => _currentIndex = i);
+  void _goToQuestion(int i) => setState(() {
+        _autoAdvanceToken++;
+        _currentIndex = i;
+      });
 
   void _goToPrevious() {
-    if (_currentIndex > 0) setState(() => _currentIndex--);
+    if (_currentIndex > 0) {
+      setState(() {
+        _autoAdvanceToken++;
+        _currentIndex--;
+      });
+    }
   }
 
   void _goToNextOrSave() {
     if (_currentIndex < _questions.length - 1) {
-      setState(() => _currentIndex++);
+      setState(() {
+        _autoAdvanceToken++;
+        _currentIndex++;
+      });
     } else {
       _saveSurvey();
     }
@@ -198,13 +222,17 @@ class _FormSurveyScreenState extends State<FormSurveyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final q = _questions[_currentIndex];
-    final isLast = _currentIndex == _questions.length - 1;
+    final safeIndex = _currentIndex.clamp(0, _questions.length - 1);
+    if (safeIndex != _currentIndex) {
+      _currentIndex = safeIndex;
+    }
+    final q = _questions[safeIndex];
+    final isLast = safeIndex == _questions.length - 1;
 
     return Scaffold(
       headers: [
         AppBar(
-          title: Text('Pregunta ${_currentIndex + 1} de ${_questions.length}'),
+          title: Text('Pregunta ${safeIndex + 1} de ${_questions.length}'),
           leading: [
             IconButton(
               icon: const Icon(Icons.arrow_back),
@@ -239,7 +267,7 @@ class _FormSurveyScreenState extends State<FormSurveyScreen> {
                   ..._buildFields(q),
                   const Gap(28),
                   FormStepPagination(
-                    currentStep: _currentIndex,
+                    currentStep: safeIndex,
                     totalSteps: _questions.length,
                     isStepAnswered: _isQuestionAnswered,
                     onStepTapped: _goToQuestion,
@@ -250,7 +278,7 @@ class _FormSurveyScreenState extends State<FormSurveyScreen> {
             ),
           ),
           FormStepNavBar(
-            canGoPrevious: _currentIndex > 0,
+            canGoPrevious: safeIndex > 0,
             canGoNext: _canGoNext,
             isLastStep: isLast,
             isSaving: _c.isSaving,
@@ -301,7 +329,7 @@ class _FormSurveyScreenState extends State<FormSurveyScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (showLabel && f is! FormConditionalField) ...[
+        if (showLabel) ...[
           Text(f.label, style: TextStyle(fontSize: fs.scaled(14), fontWeight: FontWeight.w500)),
           const Gap(10),
         ],

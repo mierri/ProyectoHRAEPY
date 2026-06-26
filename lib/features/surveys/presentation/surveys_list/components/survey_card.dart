@@ -45,6 +45,8 @@ class SurveyListCard extends StatelessWidget {
       case 13: return const Color(0xFF9333EA);
       case 14: return const Color(0xFF4F46E5);
       case 15: return const Color(0xFF0F766E);
+      case 16: return const Color(0xFFB45309);
+      case 17: return const Color(0xFFBE123C);
       default: return LightModeColors.lightPrimary;
     }
   }
@@ -68,6 +70,8 @@ class SurveyListCard extends StatelessWidget {
       case 13: return 'PHQ-9';
       case 14: return 'Sociodemografico';
       case 15: return 'Determinantes Sociales';
+      case 16: return 'Asistencia en Consulta';
+      case 17: return 'Barreras Percibidas';
       default: return 'Encuesta';
     }
   }
@@ -75,7 +79,7 @@ class SurveyListCard extends StatelessWidget {
   bool get _hasScore {
     final type = survey['survey_type'] as int? ?? 1;
     if (type == 100) return _customDefinition?.levels.isNotEmpty ?? false;
-    return type != 14 && type != 15;
+    return type != 14 && type != 15 && type != 16 && type != 17;
   }
 
   int get _expectedResponses {
@@ -94,6 +98,13 @@ class SurveyListCard extends StatelessWidget {
       case 13: return 9;
       case 14: return 15;
       case 15: return 15;
+      case 16: return 7;
+      case 17:
+        final responses = survey['responses'] as List? ?? const [];
+        final includesAntecedents = responses.any(
+          (response) => response['question_id'] == 1,
+        );
+        return includesAntecedents ? 4 : 3;
       default: return 21;
     }
   }
@@ -141,6 +152,8 @@ class SurveyListCard extends StatelessWidget {
     if (type == 13) { if (score <= 4) return LightModeColors.lightTertiary; if (score <= 9) return const Color(0xFFFBBF24); if (score <= 14) return const Color(0xFFF97316); if (score <= 19) return const Color(0xFFDC2626); return const Color(0xFFB91C1C); }
     if (type == 14) return const Color(0xFF4F46E5);
     if (type == 15) return const Color(0xFF0F766E);
+    if (type == 16) return const Color(0xFFB45309);
+    if (type == 17) return const Color(0xFFBE123C);
     return LightModeColors.lightPrimary;
   }
 

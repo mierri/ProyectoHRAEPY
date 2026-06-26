@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:ssapp/features/reports/domain/perceived_attendance_barriers_report_support.dart';
+import 'package:ssapp/features/reports/domain/specialty_consultation_attendance_report_support.dart';
 import 'package:ssapp/features/reports/domain/stats_calculator.dart';
 import 'package:ssapp/features/survey_builder/domain/custom_survey_definition.dart';
 import 'package:ssapp/features/surveys/domain/survey_rules.dart';
@@ -166,6 +168,65 @@ class SurveyCsvExporter {
             '$score',
             '${survey['risk_level'] ?? ''}',
             '${(survey['responses'] as List?)?.length ?? 0}',
+            '${survey['synced'] == true}',
+          ]);
+        }
+        break;
+      case 16:
+        rows.add([
+          'survey_id',
+          'patient_id',
+          'created_at',
+          'nombre_completo',
+          'numero_expediente',
+          'fecha_nacimiento',
+          'localidad_residencia',
+          'transporte_privado',
+          'especialidad',
+          'falto_cita',
+          'citas_perdidas',
+          'synced',
+        ]);
+        for (final survey in surveys) {
+          final record =
+              SpecialtyConsultationAttendanceRecord.fromSurvey(survey);
+          rows.add([
+            record.surveyId,
+            record.patientId,
+            record.createdAt,
+            record.nombreCompleto,
+            record.numeroExpediente,
+            record.fechaNacimiento,
+            record.localidadResidencia,
+            record.transportePrivadoLabel,
+            record.especialidad,
+            record.faltoCitaLabel,
+            record.citasPerdidasLabel,
+            '${survey['synced'] == true}',
+          ]);
+        }
+        break;
+      case 17:
+        rows.add([
+          'survey_id',
+          'patient_id',
+          'created_at',
+          'motivo_reciente',
+          'motivo_futuro_1',
+          'motivo_futuro_2',
+          'motivo_futuro_3',
+          'synced',
+        ]);
+        for (final survey in surveys) {
+          final record = PerceivedAttendanceBarriersRecord.fromSurvey(survey);
+          rows.add([
+            record.surveyId,
+            record.patientId,
+            record.createdAt,
+            record.recentReason?.resolvedLabel ?? '',
+            record.primaryFutureReason?.resolvedLabel ?? '',
+            record.secondaryFutureReason?.resolvedLabel ?? '',
+            record.tertiaryFutureReason?.resolvedLabel ?? '',
             '${survey['synced'] == true}',
           ]);
         }

@@ -67,7 +67,7 @@ class WhoqolQuestions {
       scaleType: WhoqolScaleType.intensity,
     ),
     WhoqolQuestion(
-      number: 9,
+      number: 9,  
       text: '¿Cuán saludable es el ambiente físico de su alrededor?',
       scaleType: WhoqolScaleType.intensity,
     ),

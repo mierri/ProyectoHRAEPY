@@ -22,6 +22,8 @@ class ScoreInterpretationCard extends StatelessWidget {
       case 13: return [{'range': '0-4', 'label': 'Depresión mínima', 'color': LightModeColors.lightTertiary}, {'range': '5-9', 'label': 'Leve', 'color': const Color(0xFFFBBF24)}, {'range': '10-14', 'label': 'Moderada', 'color': const Color(0xFFF97316)}, {'range': '15-19', 'label': 'Moderadamente grave', 'color': const Color(0xFFDC2626)}, {'range': '20-27', 'label': 'Grave', 'color': const Color(0xFFB91C1C)}];
       case 14: return [{'range': 'N/A', 'label': 'Sociodemográfico', 'color': const Color(0xFF4F46E5)}];
       case 15: return [{'range': 'N/A', 'label': 'Determinantes Sociales', 'color': const Color(0xFF0F766E)}];
+      case 16: return [{'range': 'N/A', 'label': 'Asistencia en Consulta de Especialidad', 'color': const Color(0xFFB45309)}];
+      case 17: return [{'range': 'N/A', 'label': 'Barreras Percibidas para la Asistencia', 'color': const Color(0xFFBE123C)}];
       default: return [];
     }
   }

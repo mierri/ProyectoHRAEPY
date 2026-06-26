@@ -115,7 +115,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const Gap(28),
                 const Text('Acciones rápidas').textLarge().bold(),
                 const Gap(16),
-                QuickActionsGrid(isDesktop: isDesktop, isTablet: isTablet),
+                const QuickActionsGrid(),
                 const Gap(32),
                 StatisticsSection(isTablet: isTablet),
               ],
@@ -129,14 +129,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
 // ─── Quick actions grid ───────────────────────────────────────────────────────
 class QuickActionsGrid extends StatelessWidget {
-  final bool isDesktop;
-  final bool isTablet;
-
-  const QuickActionsGrid({
-    super.key,
-    required this.isDesktop,
-    required this.isTablet,
-  });
+  const QuickActionsGrid({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -182,18 +175,18 @@ class QuickActionsGrid extends StatelessWidget {
         description: 'Diseña tus propias encuestas',
         color: LightModeColors.lightTertiary,
         onTap: () => context.push('/survey-builder'),
-        mobileSpan: 2,
       ),
     ];
 
     // Desktop: 4 en fila | Mobile/Tablet: 2 en fila.
     // Permite que algunas tarjetas ocupen más columnas en pantallas compactas.
+    // Mantiene 2 columnas consistentes para distribuir las 6 acciones en 3 filas.
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth <= 0) {
           return const SizedBox.shrink();
         }
-        final cols = isDesktop ? 4 : 2;
+        const cols = 2;
         const spacing = 16.0;
         final cardWidth = (constraints.maxWidth - spacing * (cols - 1)) / cols;
 
@@ -202,9 +195,7 @@ class QuickActionsGrid extends StatelessWidget {
         var usedCols = 0;
 
         for (final action in actions) {
-          final span = isDesktop
-              ? 1
-              : action.mobileSpan.clamp(1, cols);
+          final span = action.mobileSpan.clamp(1, cols);
 
           if (usedCols + span > cols) {
             rows.add(currentRow);

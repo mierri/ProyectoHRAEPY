@@ -10,7 +10,7 @@ import 'package:ssapp/features/reports/presentation/widgets/section_header.dart'
 
 /// Field IDs from social_determinants_fields.dart
 const _kAguaPotable = 13, _kDrenaje = 14, _kEnergia = 15;
-const _kTipoVivienda = 4, _kProgramasSociales = 11, _kBienesDurables = 19;
+const _kTipoVivienda = 4;
 const _kIngresoMensual = 3, _kEscolaridad = 1, _kSeguridadSocial = 10;
 const _kEdLevels = [
   'Sin escolaridad', 'Preescolar', 'Primaria', 'Secundaria',
@@ -23,7 +23,8 @@ class SocialDeterminantsReportSection extends StatelessWidget {
   static final k2 = GlobalKey(debugLabel: 'socdeter_k2');
   static final k3 = GlobalKey(debugLabel: 'socdeter_k3');
   static final k4 = GlobalKey(debugLabel: 'socdeter_k4');
-  static List<GlobalKey> get chartKeys => [k1, k2, k3, k4];
+  static final k5 = GlobalKey(debugLabel: 'socdeter_k5');
+  static List<GlobalKey> get chartKeys => [k1, k2, k3, k4, k5];
 
   const SocialDeterminantsReportSection({super.key, required this.surveys});
 
@@ -50,6 +51,27 @@ class SocialDeterminantsReportSection extends StatelessWidget {
       if (esc != null && esc < edCounts.length) edCounts[esc]++;
     }
     final n = surveys.isEmpty ? 1 : surveys.length;
+
+    // Household composition averages
+    const kPersonasTotal = 16, kMenores18 = 23, kNinosMenores5 = 17, kMayores65 = 18;
+    double totalSum = 0, menores18Sum = 0, ninos5Sum = 0, mayores65Sum = 0;
+    int totalCount = 0, menores18Count = 0, ninos5Count = 0, mayores65Count = 0;
+
+    for (final s in surveys) {
+      final t = getField(s, kPersonasTotal);
+      if (t != null) { totalSum += t; totalCount++; }
+      final m18 = getField(s, kMenores18);
+      if (m18 != null) { menores18Sum += m18; menores18Count++; }
+      final n5 = getField(s, kNinosMenores5);
+      if (n5 != null) { ninos5Sum += n5; ninos5Count++; }
+      final m65 = getField(s, kMayores65);
+      if (m65 != null) { mayores65Sum += m65; mayores65Count++; }
+    }
+
+    final avgTotal = totalCount > 0 ? totalSum / totalCount : 0.0;
+    final avgMenores18 = menores18Count > 0 ? menores18Sum / menores18Count : 0.0;
+    final avgNinos5 = ninos5Count > 0 ? ninos5Sum / ninos5Count : 0.0;
+    final avgMayores65 = mayores65Count > 0 ? mayores65Sum / mayores65Count : 0.0;
 
     final edMax = edCounts.reduce((a, b) => a > b ? a : b).toDouble();
     final edItems = List.generate(_kEdLevels.length, (i) =>
@@ -155,7 +177,63 @@ class SocialDeterminantsReportSection extends StatelessWidget {
           valueUnit: ' pac.',
         ),
       ),
+      const Gap(12),
+      ChartCard(
+        title: 'Composición promedio del hogar (personas)',
+        boundaryKey: k5,
+        chart: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          child: Column(
+            children: [
+              _buildCompositionRow('Número total de personas', avgTotal, const Color(0xFF3B82F6)),
+              const Gap(12),
+              _buildCompositionRow('Número de menores de 18 años', avgMenores18, const Color(0xFFF97316)),
+              const Gap(12),
+              _buildCompositionRow('Número de niños menores de 5 años', avgNinos5, const Color(0xFF10B981)),
+              const Gap(12),
+              _buildCompositionRow('Número de personas mayores de 65 años', avgMayores65, const Color(0xFFEF4444)),
+            ],
+          ),
+        ),
+      ),
     ]);
+  }
+
+  Widget _buildCompositionRow(String label, double value, Color barColor) {
+    return Row(
+      children: [
+        Expanded(
+          flex: 4,
+          child: Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+        ),
+        const Gap(8),
+        Expanded(
+          flex: 5,
+          child: Container(
+            height: 12,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF3F4F6),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            alignment: Alignment.centerLeft,
+            child: FractionallySizedBox(
+              widthFactor: (value / 10.0).clamp(0.0, 1.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: barColor,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+            ),
+          ),
+        ),
+        const Gap(12),
+        SizedBox(
+          width: 40,
+          child: Text(value.toStringAsFixed(1), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold), textAlign: TextAlign.right),
+        ),
+      ],
+    );
   }
 
   static BarChartGroupData _makeStackedBar(int x, double yes, double no) {
