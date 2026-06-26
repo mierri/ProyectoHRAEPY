@@ -111,6 +111,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   onSurveyTypeChanged: (value) => _loadForType(value),
                   onExportCsv: vm.surveys.isEmpty ? null : () => vm.exportCsv(context),
                   onExportPdf: vm.surveys.isEmpty ? null : () => vm.exportPdf(context),
+                  onPrintPdf: vm.surveys.isEmpty ? null : () => vm.printPdf(context),
                 ),
                 const Divider(height: 1),
                 Expanded(
@@ -138,6 +139,7 @@ class _HeaderBar extends StatelessWidget {
   final ValueChanged<int> onSurveyTypeChanged;
   final VoidCallback? onExportCsv;
   final VoidCallback? onExportPdf;
+  final VoidCallback? onPrintPdf;
 
   const _HeaderBar({
     required this.selectedValue,
@@ -146,6 +148,7 @@ class _HeaderBar extends StatelessWidget {
     required this.onSurveyTypeChanged,
     required this.onExportCsv,
     required this.onExportPdf,
+    required this.onPrintPdf,
   });
 
   @override
@@ -195,9 +198,13 @@ class _HeaderBar extends StatelessWidget {
             onPressed: isExporting ? null : onExportCsv,
             child: const Text('Exportar CSV'),
           ),
+          OutlineButton(
+            onPressed: isExporting ? null : onPrintPdf,
+            child: const Text('Imprimir PDF'),
+          ),
           PrimaryButton(
             onPressed: isExporting ? null : onExportPdf,
-            child: Text(isExporting ? 'Exportando...' : 'Exportar PDF'),
+            child: Text(isExporting ? 'Procesando...' : 'Descargar PDF'),
           ),
         ],
       ),

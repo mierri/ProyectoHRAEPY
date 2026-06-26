@@ -1,12 +1,12 @@
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:printing/printing.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:ssapp/core/logger/app_logger.dart';
 import 'package:ssapp/features/reports/domain/use_cases/export_data_use_case.dart';
 import 'package:ssapp/features/reports/domain/use_cases/generate_report_use_case.dart';
+import 'package:ssapp/features/reports/infrastructure/export/report_file_exporter.dart';
 import 'package:ssapp/features/reports/infrastructure/pdf/chart_image_capture.dart';
 import 'package:ssapp/features/reports/presentation/viewmodels/survey_report_viewmodels.dart';
 import 'package:ssapp/features/survey_builder/domain/custom_survey_definition.dart';
@@ -65,17 +65,12 @@ class ReportsViewModel extends ChangeNotifier {
     isExporting = true;
     notifyListeners();
     try {
-      // Wait for any pending frame so RepaintBoundary contents are up to date
-      await WidgetsBinding.instance.endOfFrame;
-
-      final keys = activeReportViewModel.chartKeys;
-      final images = <Uint8List?>[];
-      for (final key in keys) {
-        images.add(await captureChart(key, pixelRatio: 2.0));
-      }
-
-      final bytes = await activeReportViewModel.generatePdfWithImages(_surveys, images);
-      await _shareBytes(bytes, 'reporte_$selectedSurveyType.pdf', 'application/pdf');
+      final bytes = await _buildPdfBytes();
+      await saveReportFile(
+        bytes: bytes,
+        filename: 'reporte_$selectedSurveyType.pdf',
+        mimeType: 'application/pdf',
+      );
     } catch (e, st) {
       AppLogger.error('Error exporting PDF', e, st);
     } finally {
@@ -93,7 +88,11 @@ class ReportsViewModel extends ChangeNotifier {
         _surveys,
         customDefinition: selectedCustomDefinition,
       );
-      await _shareBytes(bytes, 'reporte_$selectedSurveyType.csv', 'text/csv');
+      await saveReportFile(
+        bytes: bytes,
+        filename: 'reporte_$selectedSurveyType.csv',
+        mimeType: 'text/csv',
+      );
     } catch (e, st) {
       AppLogger.error('Error exporting CSV', e, st);
     } finally {
@@ -102,16 +101,31 @@ class ReportsViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> _shareBytes(Uint8List bytes, String filename, String mimeType) async {
-    if (kIsWeb) {
-      await SharePlus.instance.share(
-        ShareParams(files: [XFile.fromData(bytes, mimeType: mimeType, name: filename)]),
-      );
-      return;
+  Future<void> printPdf(BuildContext context) async {
+    isExporting = true;
+    notifyListeners();
+    try {
+      final bytes = await _buildPdfBytes();
+      await Printing.layoutPdf(onLayout: (_) async => bytes);
+    } catch (e, st) {
+      AppLogger.error('Error printing PDF', e, st);
+    } finally {
+      isExporting = false;
+      notifyListeners();
     }
-    final dir = await getTemporaryDirectory();
-    final file = File('${dir.path}/$filename');
-    await file.writeAsBytes(bytes, flush: true);
-    await SharePlus.instance.share(ShareParams(files: [XFile(file.path)]));
+  }
+
+  Future<Uint8List> _buildPdfBytes() async {
+    if (!kIsWeb) {
+      await WidgetsBinding.instance.endOfFrame;
+    }
+
+    final keys = activeReportViewModel.chartKeys;
+    final images = <Uint8List?>[];
+    for (final key in keys) {
+      images.add(await captureChart(key, pixelRatio: 2.0));
+    }
+
+    return activeReportViewModel.generatePdfWithImages(_surveys, images);
   }
 }
