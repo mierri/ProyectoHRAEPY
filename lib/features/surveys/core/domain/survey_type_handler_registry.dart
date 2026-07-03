@@ -6,6 +6,8 @@ import 'package:ssapp/features/surveys/types/ghq12/domain/ghq12_survey_handler.d
 import 'package:ssapp/features/surveys/types/iciq_sf/domain/iciq_sf_survey_handler.dart';
 import 'package:ssapp/features/surveys/types/katz/domain/katz_survey_handler.dart';
 import 'package:ssapp/features/surveys/types/lawton/domain/lawton_survey_handler.dart';
+import 'package:ssapp/features/surveys/types/moca_basic/domain/moca_basic_survey_handler.dart';
+import 'package:ssapp/features/surveys/types/moca_blind/domain/moca_blind_survey_handler.dart';
 import 'package:ssapp/features/surveys/types/osteoporosis/domain/osteoporosis_survey_handler.dart';
 import 'package:ssapp/features/surveys/types/perceived_attendance_barriers/domain/perceived_attendance_barriers_survey_handler.dart';
 import 'package:ssapp/features/surveys/types/phq9/domain/phq9_survey_handler.dart';
@@ -33,6 +35,8 @@ class SurveyTypeHandlerRegistry {
     'social_determinants': SocialDeterminantsSurveyHandler(),
     'specialty_consultation_attendance': SpecialtyConsultationAttendanceSurveyHandler(),
     'perceived_attendance_barriers': PerceivedAttendanceBarriersSurveyHandler(),
+    'moca_basic': MocaBasicSurveyHandler(),
+    'moca_blind': MocaBlindSurveyHandler(),
     'custom': CustomSurveyHandler(),
   };
 

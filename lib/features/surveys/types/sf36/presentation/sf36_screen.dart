@@ -6,8 +6,10 @@ import 'package:provider/provider.dart';
 import 'package:ssapp/features/surveys/types/sf36/presentation/sf36_controller.dart';
 import 'package:ssapp/features/surveys/types/sf36/domain/sf36_questions.dart';
 import 'package:ssapp/features/surveys/domain/survey_service.dart';
+import 'package:ssapp/shared/providers/font_size_provider.dart';
 import 'package:ssapp/shared/utils/theme.dart';
 import 'package:ssapp/shared/utils/toast_helper.dart';
+import 'package:ssapp/shared/widgets/font_size_button.dart';
 
 class SF36Screen extends StatefulWidget {
   final int patientId;
@@ -497,6 +499,7 @@ class _SF36ScreenState extends State<SF36Screen> {
   Widget build(BuildContext context) {
     final question = _controller.currentQuestion;
     final progress = _controller.progress;
+    final fs = context.watch<FontSizeProvider>();
 
     return Scaffold(
       headers: [
@@ -536,6 +539,9 @@ class _SF36ScreenState extends State<SF36Screen> {
               },
               variance: ButtonVariance.ghost,
             ),
+          ],
+          trailing: const [
+            FontSizeButton(),
           ],
         ),
       ],
@@ -642,8 +648,8 @@ class _SF36ScreenState extends State<SF36Screen> {
                   const Gap(32),
                   Text(
                     question.text,
-                    style: const TextStyle(
-                      fontSize: 16,
+                    style: TextStyle(
+                      fontSize: fs.scaled(16),
                       fontWeight: FontWeight.w400,
                       height: 1.5,
                     ),
@@ -1187,6 +1193,7 @@ class _OptionCardState extends State<_OptionCard> with SingleTickerProviderState
 
   @override
   Widget build(BuildContext context) {
+    final fs = context.watch<FontSizeProvider>();
     return GestureDetector(
       onTapDown: _handleTapDown,
       onTapUp: _handleTapUp,
@@ -1238,7 +1245,7 @@ class _OptionCardState extends State<_OptionCard> with SingleTickerProviderState
                   child: Text(
                     widget.option,
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: fs.scaled(15),
                       height: 1.5,
                       color: widget.isSelected
                           ? widget.surveyColor.withValues(alpha: 0.9)

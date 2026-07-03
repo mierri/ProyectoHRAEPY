@@ -22,6 +22,8 @@ class InvestigationService extends ChangeNotifier {
     15: 'Determinantes Sociales',
     16: 'Asistencia en Consulta de Especialidad',
     17: 'Barreras Percibidas para la Asistencia',
+    18: 'MoCA 8.1',
+    19: 'MoCA Blind',
   };
 
   static const Map<int, String> surveyTypeToRouteCode = {
@@ -41,6 +43,8 @@ class InvestigationService extends ChangeNotifier {
     15: 'social_determinants',
     16: 'specialty_consultation_attendance',
     17: 'perceived_attendance_barriers',
+    18: 'moca_basic',
+    19: 'moca_blind',
   };
 
   List<InvestigationModel> _investigations = [];

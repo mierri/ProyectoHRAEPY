@@ -38,11 +38,12 @@ abstract class FormSurveyController extends BaseSurveyController {
   }
 
   void setTextAnswer(int id, String? value) {
-    final trimmed = value?.trim() ?? '';
+    final raw = value ?? '';
+    final trimmed = raw.trim();
     if (trimmed.isEmpty) {
       _textAnswers.remove(id);
     } else {
-      _textAnswers[id] = trimmed;
+      _textAnswers[id] = raw;
     }
     notifyListeners();
   }

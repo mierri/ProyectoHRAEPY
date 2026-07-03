@@ -14,6 +14,8 @@ import 'package:ssapp/features/surveys/types/ghq12/presentation/ghq12_screen.dar
 import 'package:ssapp/features/surveys/types/iciq_sf/presentation/iciq_sf_screen.dart';
 import 'package:ssapp/features/surveys/types/katz/presentation/katz_screen.dart';
 import 'package:ssapp/features/surveys/types/lawton/presentation/lawton_screen.dart';
+import 'package:ssapp/features/surveys/types/moca_basic/presentation/moca_basic_screen.dart';
+import 'package:ssapp/features/surveys/types/moca_blind/presentation/moca_blind_screen.dart';
 import 'package:ssapp/features/surveys/types/osteoporosis/presentation/osteoporosis_screen.dart';
 import 'package:ssapp/features/surveys/types/perceived_attendance_barriers/presentation/perceived_attendance_barriers_screen.dart';
 import 'package:ssapp/features/patients/presentation/screens/patients_screen.dart';
@@ -116,6 +118,14 @@ final GoRouter appRouter = GoRouter(
 
         if (surveyType == 'perceived_attendance_barriers') {
           return PerceivedAttendanceBarriersScreen(patientId: patientId);
+        }
+
+        if (surveyType == 'moca_basic') {
+          return MocaBasicScreen(patientId: patientId);
+        }
+
+        if (surveyType == 'moca_blind') {
+          return MocaBlindScreen(patientId: patientId);
         }
 
         if (surveyType == 'lawton') {

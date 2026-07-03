@@ -61,6 +61,8 @@ class SurveyCsvExporter {
       case 11:
       case 12:
       case 13:
+      case 18:
+      case 19:
         rows.add([
           'survey_id',
           'patient_id',
@@ -267,6 +269,8 @@ class SurveyCsvExporter {
       11 => SurveyStatsCalculator.iciqsfLevel(score),
       12 => SurveyStatsCalculator.ghq12Level(score),
       13 => SurveyStatsCalculator.phq9Level(score),
+      18 => score >= 26 ? 'Normal' : 'Interpretacion clinica',
+      19 => score >= 19 ? 'Normal' : 'Bajo esperado',
       _ => 'N/A',
     };
   }

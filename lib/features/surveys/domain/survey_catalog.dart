@@ -28,6 +28,8 @@ class SurveyCatalog {
   static const int socialDeterminants = 15;
   static const int specialtyConsultationAttendance = 16;
   static const int perceivedAttendanceBarriers = 17;
+  static const int mocaBasic = 18;
+  static const int mocaBlind = 19;
   static const int custom = 100;
 
   static const Map<int, String> namesById = {
@@ -47,6 +49,8 @@ class SurveyCatalog {
     socialDeterminants: 'Determinantes Sociales',
     specialtyConsultationAttendance: 'Asistencia en Consulta de Especialidad',
     perceivedAttendanceBarriers: 'Barreras Percibidas para la Asistencia',
+    mocaBasic: 'MoCA 8.1',
+    mocaBlind: 'MoCA Blind',
     custom: 'Encuesta personalizada',
   };
 
@@ -67,6 +71,8 @@ class SurveyCatalog {
     socialDeterminants: 'secondary',
     specialtyConsultationAttendance: 'secondary',
     perceivedAttendanceBarriers: 'secondary',
+    mocaBasic: 'secondary',
+    mocaBlind: 'secondary',
     custom: 'primary',
   };
 
@@ -88,6 +94,10 @@ class SurveyCatalog {
     'socialdeterminants': socialDeterminants,
     'specialty_consultation_attendance': specialtyConsultationAttendance,
     'perceived_attendance_barriers': perceivedAttendanceBarriers,
+    'moca_basic': mocaBasic,
+    'mocabasic': mocaBasic,
+    'moca_blind': mocaBlind,
+    'mocablind': mocaBlind,
     'custom': custom,
   };
 
@@ -108,6 +118,8 @@ class SurveyCatalog {
     socialDeterminants: 'social_determinants',
     specialtyConsultationAttendance: 'specialty_consultation_attendance',
     perceivedAttendanceBarriers: 'perceived_attendance_barriers',
+    mocaBasic: 'moca_basic',
+    mocaBlind: 'moca_blind',
     custom: 'custom',
   };
 

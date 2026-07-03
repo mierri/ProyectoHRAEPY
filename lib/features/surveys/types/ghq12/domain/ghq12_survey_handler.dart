@@ -31,15 +31,9 @@ class Ghq12SurveyHandler extends SurveyTypeHandler {
     required int questionsCount,
   }) {
     if (score <= 11) {
-      return 'Malestar psicologico bajo en las ultimas dos semanas.';
+      return 'Rango bajo por metodo Likert. Seguimiento rutinario; reevaluar si persisten quejas.';
     }
-    if (score <= 20) {
-      return 'Malestar psicologico leve. Conviene seguimiento clinico.';
-    }
-    if (score <= 27) {
-      return 'Malestar psicologico moderado. Se recomienda valoracion profesional.';
-    }
-    return 'Malestar psicologico alto. Se recomienda atencion profesional prioritaria.';
+    return 'Rango elevado por metodo Likert. Derivar a evaluacion psicologica especializada.';
   }
 
   @override
@@ -48,10 +42,8 @@ class Ghq12SurveyHandler extends SurveyTypeHandler {
     required Map<int, int> responses,
     required int questionsCount,
   }) {
-    if (score <= 11) return 'Bajo';
-    if (score <= 20) return 'Leve';
-    if (score <= 27) return 'Moderado';
-    return 'Alto';
+    if (score <= 11) return 'Rango bajo (metodo Likert)';
+    return 'Rango elevado (metodo Likert)';
   }
 }
 

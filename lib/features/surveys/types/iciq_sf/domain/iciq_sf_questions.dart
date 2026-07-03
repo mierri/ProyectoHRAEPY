@@ -79,9 +79,9 @@ class IciqSfQuestions {
     ),
     SurveyQuestion(
       number: 3,
-      category: 'Impacto en la vida diaria',
+      category: 'Impacto de la perdida de orina en la vida diaria',
       options: [
-        SurveyOption(score: 0, text: '0'),
+        SurveyOption(score: 0, text: '0 - No me impacto en nada.'),
         SurveyOption(score: 1, text: '1'),
         SurveyOption(score: 2, text: '2'),
         SurveyOption(score: 3, text: '3'),
@@ -91,7 +91,7 @@ class IciqSfQuestions {
         SurveyOption(score: 7, text: '7'),
         SurveyOption(score: 8, text: '8'),
         SurveyOption(score: 9, text: '9'),
-        SurveyOption(score: 10, text: '10'),
+        SurveyOption(score: 10, text: '10 - Afecta gravemente en la vida diaria.'),
       ],
     ),
     SurveyQuestion(
@@ -105,7 +105,7 @@ class IciqSfQuestions {
         SurveyOption(score: 0, text: 'Al hacer ejercicio'),
         SurveyOption(score: 0, text: 'Al terminar de orinar'),
         SurveyOption(score: 0, text: 'Sin motivo evidente'),
-        SurveyOption(score: 0, text: 'Continua'),
+        SurveyOption(score: 0, text: 'Continuamente'),
       ],
     ),
   ];
@@ -275,6 +275,7 @@ class IciqSfQuestions {
     if (score == 0) return 'sin incontinencia';
     if (score <= 5) return 'leve';
     if (score <= 12) return 'moderado';
-    return 'severo';
+    if (score <= 18) return 'severo';
+    return 'muy severo';
   }
 }

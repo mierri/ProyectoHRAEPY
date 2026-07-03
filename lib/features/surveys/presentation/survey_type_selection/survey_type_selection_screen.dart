@@ -30,6 +30,8 @@ enum SurveyType {
   socialDeterminants,
   specialtyConsultationAttendance,
   perceivedAttendanceBarriers,
+  mocaBasic,
+  mocaBlind,
 }
 
 extension SurveyTypeExtension on SurveyType {
@@ -41,6 +43,10 @@ extension SurveyTypeExtension on SurveyType {
         return 'specialty_consultation_attendance';
       case SurveyType.perceivedAttendanceBarriers:
         return 'perceived_attendance_barriers';
+      case SurveyType.mocaBasic:
+        return 'moca_basic';
+      case SurveyType.mocaBlind:
+        return 'moca_blind';
       default:
         return name;
     }
@@ -80,6 +86,10 @@ extension SurveyTypeExtension on SurveyType {
         return 'Asistencia en Consulta';
       case SurveyType.perceivedAttendanceBarriers:
         return 'Barreras Percibidas';
+      case SurveyType.mocaBasic:
+        return 'MoCA 8.1';
+      case SurveyType.mocaBlind:
+        return 'MoCA Blind';
     }
   }
 
@@ -88,13 +98,13 @@ extension SurveyTypeExtension on SurveyType {
       case SurveyType.bai:
         return 'Beck Anxiety Inventory';
       case SurveyType.bdi:
-        return 'Beck Depression Inventory — Segunda Edición';
+        return 'Beck Depression Inventory - Segunda Edicion';
       case SurveyType.gds:
-        return 'Geriatric Depression Scale — 15 Items';
+        return 'Geriatric Depression Scale - 15 Items';
       case SurveyType.ghq12:
-        return 'General Health Questionnaire — 12 Items';
+        return 'General Health Questionnaire - 12 Items';
       case SurveyType.phq9:
-        return 'Patient Health Questionnaire — 9 Items';
+        return 'Patient Health Questionnaire - 9 Items';
       case SurveyType.lawton:
         return 'Lawton Instrumental Activities of Daily Living';
       case SurveyType.katz:
@@ -117,6 +127,10 @@ extension SurveyTypeExtension on SurveyType {
         return 'Specialty Consultation Attendance';
       case SurveyType.perceivedAttendanceBarriers:
         return 'Perceived Attendance Barriers';
+      case SurveyType.mocaBasic:
+        return 'Montreal Cognitive Assessment 8.1';
+      case SurveyType.mocaBlind:
+        return 'Montreal Cognitive Assessment - Blind';
     }
   }
 
@@ -125,9 +139,9 @@ extension SurveyTypeExtension on SurveyType {
       case SurveyType.bai:
         return 'Inventario de Ansiedad de Beck';
       case SurveyType.bdi:
-        return 'Inventario de Depresión de Beck';
+        return 'Inventario de Depresion de Beck';
       case SurveyType.gds:
-        return 'Escala de Depresión Geriátrica';
+        return 'Escala de Depresion Geriatrica';
       case SurveyType.ghq12:
         return 'Cuestionario de Salud General de Goldberg';
       case SurveyType.phq9:
@@ -147,13 +161,17 @@ extension SurveyTypeExtension on SurveyType {
       case SurveyType.assist:
         return 'Cribado de Consumo de Sustancias OMS';
       case SurveyType.sociodemographic:
-        return 'Cuestionario Sociodemográfico';
+        return 'Cuestionario Sociodemografico';
       case SurveyType.socialDeterminants:
         return 'Cuestionario de Determinantes Sociales';
       case SurveyType.specialtyConsultationAttendance:
         return 'Asistencia en Consulta de Especialidad';
       case SurveyType.perceivedAttendanceBarriers:
-        return 'Barreras Percibidas para la Asistencia a Consultas Médicas Programadas';
+        return 'Barreras Percibidas para la Asistencia a Consultas Medicas Programadas';
+      case SurveyType.mocaBasic:
+        return 'Evaluacion Cognitiva Montreal 8.1';
+      case SurveyType.mocaBlind:
+        return 'Evaluacion Cognitiva Montreal para Discapacidad Visual';
     }
   }
 
@@ -176,7 +194,7 @@ extension SurveyTypeExtension on SurveyType {
       case SurveyType.iciqsf:
         return material.Icons.water_drop_outlined;
       case SurveyType.osteoporosis:
-        return material.Icons.medical_services_outlined; // Use a visible icon (bone icon if available)
+        return material.Icons.medical_services_outlined;
       case SurveyType.whoqol:
         return material.Icons.self_improvement_outlined;
       case SurveyType.sf36:
@@ -191,6 +209,10 @@ extension SurveyTypeExtension on SurveyType {
         return material.Icons.event_available_outlined;
       case SurveyType.perceivedAttendanceBarriers:
         return material.Icons.route_outlined;
+      case SurveyType.mocaBasic:
+        return material.Icons.psychology_alt_outlined;
+      case SurveyType.mocaBlind:
+        return material.Icons.visibility_off_outlined;
     }
   }
 
@@ -213,7 +235,7 @@ extension SurveyTypeExtension on SurveyType {
       case SurveyType.iciqsf:
         return const Color(0xFF2563EB);
       case SurveyType.osteoporosis:
-        return const Color(0xFF145374); // Azul petróleo
+        return const Color(0xFF145374);
       case SurveyType.whoqol:
         return const Color(0xFF7C3AED);
       case SurveyType.sf36:
@@ -228,6 +250,10 @@ extension SurveyTypeExtension on SurveyType {
         return const Color(0xFFB45309);
       case SurveyType.perceivedAttendanceBarriers:
         return const Color(0xFFBE123C);
+      case SurveyType.mocaBasic:
+        return const Color(0xFF0F766E);
+      case SurveyType.mocaBlind:
+        return const Color(0xFF1D4ED8);
     }
   }
 }
@@ -270,7 +296,7 @@ class _SurveyTypeSelectionScreenState extends State<SurveyTypeSelectionScreen> {
               child: LumiWidget(
                 variant: LumiVariant.thinking,
                 size: 120,
-                message: '¿Qué evaluación\nhacemos hoy?',
+                message: 'Que evaluacion\nhacemos hoy?',
                 bubbleColor: Color(0xFFE6F9F1),
               ),
             ),
@@ -278,7 +304,7 @@ class _SurveyTypeSelectionScreenState extends State<SurveyTypeSelectionScreen> {
             const Text('Tipos de Encuestas Disponibles').textLarge().bold(),
             const Gap(8),
             const Text(
-              'Selecciona el tipo de evaluación que deseas aplicar',
+              'Selecciona el tipo de evaluacion que deseas aplicar',
             ).muted(),
             const Gap(32),
             ...SurveyType.values.map((type) => Padding(

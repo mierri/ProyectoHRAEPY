@@ -4,10 +4,12 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/features/surveys/shared/form/face_icon.dart';
 import 'package:ssapp/features/surveys/shared/form/form_question.dart';
 import 'package:ssapp/features/surveys/shared/form/form_survey_controller.dart';
+import 'package:ssapp/features/surveys/shared/form/survey_choice.dart';
 import 'package:ssapp/features/surveys/shared/form/survey_text_field.dart';
 import 'package:ssapp/features/surveys/shared/widgets/survey_form_dialogs.dart';
 import 'package:ssapp/features/surveys/shared/widgets/survey_form_wizard.dart';
 import 'package:ssapp/features/surveys/presentation/survey_controller.dart';
+import 'package:ssapp/features/surveys/types/perceived_attendance_barriers/domain/perceived_attendance_barriers_fields.dart';
 import 'package:ssapp/shared/providers/font_size_provider.dart';
 import 'package:ssapp/shared/utils/theme.dart';
 import 'package:ssapp/shared/utils/toast_helper.dart';
@@ -41,7 +43,27 @@ class _FormSurveyScreenState extends State<FormSurveyScreen> {
   Color get _color => widget.color;
 
   @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onControllerChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant FormSurveyScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_onControllerChanged);
+      widget.controller.addListener(_onControllerChanged);
+    }
+  }
+
+  void _onControllerChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   void dispose() {
+    widget.controller.removeListener(_onControllerChanged);
     for (final tc in _textControllers.values) {
       tc.dispose();
     }
@@ -93,17 +115,21 @@ class _FormSurveyScreenState extends State<FormSurveyScreen> {
   void _tryAutoAdvance() {
     final q = _questions[_currentIndex];
     final originIndex = _currentIndex;
-    final isSimple = q.fields.length == 1 &&
-        q.fields[0].type == FormFieldType.singleChoice;
-    final noConditionalVisible = !q.fields.any(
-      (f) => f is FormConditionalField && _isVisible(f) && f.isRequired,
-    );
-    if (isSimple && noConditionalVisible && _currentIndex < _questions.length - 1) {
+    final visibleRequiredFields = q.fields
+        .where((f) => _isVisible(f) && f.isRequired)
+        .toList();
+    final fieldType = visibleRequiredFields.isEmpty ? null : visibleRequiredFields[0].type;
+    final isSimple = visibleRequiredFields.length == 1 &&
+        (fieldType == FormFieldType.singleChoice ||
+            fieldType == FormFieldType.scale ||
+            fieldType == FormFieldType.emojiScale);
+    if (isSimple && _currentIndex < _questions.length - 1) {
       final token = ++_autoAdvanceToken;
       Future.delayed(const Duration(milliseconds: 600), () {
         if (!mounted) return;
         if (token != _autoAdvanceToken) return;
         if (_currentIndex != originIndex) return;
+        if (!_isQuestionAnswered(originIndex)) return;
         setState(() => _currentIndex++);
       });
     }
@@ -333,7 +359,7 @@ class _FormSurveyScreenState extends State<FormSurveyScreen> {
           Text(f.label, style: TextStyle(fontSize: fs.scaled(14), fontWeight: FontWeight.w500)),
           const Gap(10),
         ],
-        ...f.options.map((option) {
+        ..._filteredOptions(f).map((option) {
           final isSelected = selected == option.value;
           return Padding(
             padding: const EdgeInsets.only(bottom: 10),
@@ -434,10 +460,13 @@ class _FormSurveyScreenState extends State<FormSurveyScreen> {
                   value: value,
                   isSelected: isSelected,
                   color: _color,
-                  onTap: () => setState(() {
+                  onTap: () {
+                    setState(() {
                     _c.setIntAnswer(f.fieldId, value);
                     _c.setTextAnswer(f.fieldId, value.toString());
-                  }),
+                    });
+                    _tryAutoAdvance();
+                  },
                 ),
               ),
             );
@@ -479,6 +508,32 @@ class _FormSurveyScreenState extends State<FormSurveyScreen> {
         ),
       ],
     );
+  }
+
+  List<SurveyChoice> _filteredOptions(FormFieldDef f) {
+    const principal = PerceivedAttendanceBarriersFieldIds.motivoFuturoPrincipal;
+    const secundario = PerceivedAttendanceBarriersFieldIds.motivoFuturoSecundario;
+    const terciario = PerceivedAttendanceBarriersFieldIds.motivoFuturoTerciario;
+
+    final blocked = <int>{};
+    if (f.fieldId == secundario) {
+      final first = _c.intAnswer(principal);
+      if (first != null && first != PerceivedAttendanceBarriersChoices.otroMotivoValue) {
+        blocked.add(first);
+      }
+    } else if (f.fieldId == terciario) {
+      final first = _c.intAnswer(principal);
+      final second = _c.intAnswer(secundario);
+      if (first != null && first != PerceivedAttendanceBarriersChoices.otroMotivoValue) {
+        blocked.add(first);
+      }
+      if (second != null && second != PerceivedAttendanceBarriersChoices.otroMotivoValue) {
+        blocked.add(second);
+      }
+    }
+
+    if (blocked.isEmpty) return f.options;
+    return f.options.where((option) => !blocked.contains(option.value)).toList();
   }
 }
 

@@ -59,6 +59,7 @@ class _SurveysListScreenState extends State<SurveysListScreen> {
       'sociodemographic': 14, 'social_determinants': 15,
       'specialty_consultation_attendance': 16,
       'perceived_attendance_barriers': 17,
+      'moca_basic': 18, 'moca_blind': 19,
     };
     var result = all;
     if (typeIdMap.containsKey(_filterType)) {

@@ -16,6 +16,7 @@ import 'package:ssapp/features/reports/presentation/widgets/sections/custom_surv
 import 'package:ssapp/features/reports/presentation/widgets/sections/bai_report_section.dart';
 import 'package:ssapp/features/reports/presentation/widgets/sections/bdi_report_section.dart';
 import 'package:ssapp/features/reports/presentation/widgets/sections/gds_report_section.dart';
+import 'package:ssapp/features/reports/presentation/widgets/sections/generic_report_section.dart';
 import 'package:ssapp/features/reports/presentation/widgets/sections/ghq12_report_section.dart';
 import 'package:ssapp/features/reports/presentation/widgets/sections/iciqsf_report_section.dart';
 import 'package:ssapp/features/reports/presentation/widgets/sections/katz_report_section.dart';
@@ -287,6 +288,28 @@ class CustomSurveyReportViewModel extends SurveyReportViewModel {
       GenericPdfReportGenerator(surveyName: surveyName, surveys: surveys, chartImages: const []).generate();
 }
 
+class GenericScoredReportViewModel extends SurveyReportViewModel {
+  final int type;
+  final String name;
+  final String subtitle;
+  final Color color;
+
+  const GenericScoredReportViewModel({
+    required this.type,
+    required this.name,
+    required this.subtitle,
+    required this.color,
+  });
+
+  @override int get surveyType => type;
+  @override String get surveyName => name;
+  @override List<GlobalKey> get chartKeys => const [];
+  @override Widget buildSection(List<Map<String, dynamic>> surveys) =>
+      GenericReportSection(title: name, subtitle: subtitle, color: color, surveys: surveys);
+  @override Future<Uint8List> generatePdf(List<Map<String, dynamic>> surveys) =>
+      GenericPdfReportGenerator(surveyName: surveyName, surveys: surveys, chartImages: const []).generate();
+}
+
 // ── Router ────────────────────────────────────────────────────────────────────
 
 SurveyReportViewModel resolveReportViewModel(int surveyType, {CustomSurveyDefinition? customDefinition}) {
@@ -310,6 +333,18 @@ SurveyReportViewModel resolveReportViewModel(int surveyType, {CustomSurveyDefini
     15 => const SocialDeterminantsReportViewModel(),
     16 => const SpecialtyConsultationAttendanceReportViewModel(),
     17 => const PerceivedAttendanceBarriersReportViewModel(),
+    18 => const GenericScoredReportViewModel(
+      type: 18,
+      name: 'MoCA 8.1',
+      subtitle: 'Tamiz cognitivo estandar con tareas visuales en tableta y puntuacion ajustada sobre 30.',
+      color: Color(0xFF0F766E),
+    ),
+    19 => const GenericScoredReportViewModel(
+      type: 19,
+      name: 'MoCA Blind',
+      subtitle: 'Tamiz cognitivo para discapacidad visual con puntaje ajustado sobre 22.',
+      color: Color(0xFF1D4ED8),
+    ),
     _  => const BdiReportViewModel(),
   };
 }

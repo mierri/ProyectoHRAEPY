@@ -5,8 +5,10 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/features/surveys/domain/survey_service.dart';
 import 'package:ssapp/features/surveys/types/assist/presentation/assist_controller.dart';
 import 'package:ssapp/features/surveys/types/assist/domain/assist_questions.dart';
+import 'package:ssapp/shared/providers/font_size_provider.dart';
 import 'package:ssapp/shared/utils/theme.dart';
 import 'package:ssapp/shared/utils/toast_helper.dart';
+import 'package:ssapp/shared/widgets/font_size_button.dart';
 import 'package:ssapp/shared/widgets/tts/assist_question_tts_bar.dart';
 
 class AssistScreen extends StatefulWidget {
@@ -600,6 +602,7 @@ class _AssistScreenState extends State<AssistScreen> {
   @override
   Widget build(BuildContext context) {
     final questionNumber = _controller.currentQuestionNumber;
+    final fs = context.watch<FontSizeProvider>();
 
     return Scaffold(
       headers: [
@@ -637,6 +640,9 @@ class _AssistScreenState extends State<AssistScreen> {
               },
               variance: ButtonVariance.ghost,
             ),
+          ],
+          trailing: const [
+            FontSizeButton(),
           ],
         ),
       ],
@@ -692,12 +698,12 @@ class _AssistScreenState extends State<AssistScreen> {
                                 children: [
                                   Text(
                                     _questionTitle(questionNumber),
-                                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, height: 1.35),
+                                    style: TextStyle(fontSize: fs.scaled(17), fontWeight: FontWeight.w600, height: 1.35),
                                   ),
                                   const Gap(6),
                                   Text(
                                     _questionSubtitle(questionNumber),
-                                    style: const TextStyle(fontSize: 13, color: Color(0xFF4B5563)),
+                                    style: TextStyle(fontSize: fs.scaled(13), color: const Color(0xFF4B5563)),
                                   ),
                                 ],
                               ),
@@ -945,6 +951,7 @@ class _AssistAnswerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fs = context.watch<FontSizeProvider>();
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -965,6 +972,7 @@ class _AssistAnswerCard extends StatelessWidget {
               child: Text(
                 label,
                 style: TextStyle(
+                  fontSize: fs.scaled(14),
                   fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),

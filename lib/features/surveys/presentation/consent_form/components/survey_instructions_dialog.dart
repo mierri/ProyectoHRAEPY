@@ -23,6 +23,7 @@ class SurveyInstructionsDialog extends StatelessWidget {
     final instruction = SurveyTypeConfig.instructionFor(surveyType);
     final variant     = instruction.variant;
     final items       = _buildScaleItems(variant);
+    final nonEvaluative = _isNonEvaluativeVariant(variant);
 
     return Center(
       child: Container(
@@ -70,10 +71,12 @@ class SurveyInstructionsDialog extends StatelessWidget {
             Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Icon(material.Icons.lightbulb_outline, color: surveyColor, size: 20),
               const Gap(8),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'No hay respuestas correctas o incorrectas. Responda lo más honestamente posible según cómo se ha sentido.',
-                  style: TextStyle(fontSize: 13, fontStyle: FontStyle.italic, height: 1.4),
+                  nonEvaluative
+                      ? 'Este cuestionario es descriptivo y no genera una escala clinica. Registre la informacion solicitada de forma completa y precisa.'
+                      : 'No hay respuestas correctas o incorrectas. Responda lo mas honestamente posible segun como se ha sentido.',
+                  style: const TextStyle(fontSize: 13, fontStyle: FontStyle.italic, height: 1.4),
                 ),
               ),
             ]),
@@ -93,10 +96,21 @@ class SurveyInstructionsDialog extends StatelessWidget {
     );
   }
 
+  bool _isNonEvaluativeVariant(SurveyInstructionVariant variant) {
+    return variant == SurveyInstructionVariant.sociodemographic ||
+        variant == SurveyInstructionVariant.socialDeterminants ||
+        variant == SurveyInstructionVariant.specialtyConsultationAttendance ||
+        variant == SurveyInstructionVariant.perceivedAttendanceBarriers;
+  }
   List<Widget> _buildScaleItems(SurveyInstructionVariant variant) {
     Widget item(IconData icon, String label, String desc, Color color) =>
         ScaleItem(icon: icon, label: label, description: desc, color: color);
     const g = Gap(8);
+
+    if (variant == SurveyInstructionVariant.sociodemographic ||
+        variant == SurveyInstructionVariant.socialDeterminants) {
+      return [];
+    }
 
     if (variant == SurveyInstructionVariant.bai) return [
       item(Symbols.sentiment_very_satisfied, 'En absoluto', 'No me ha afectado nada o casi nada.', const Color(0xFF16A34A)), g,
@@ -159,6 +173,16 @@ class SurveyInstructionsDialog extends StatelessWidget {
       item(Symbols.history, 'Antecedente reciente', 'Si el paciente reportó inasistencia reciente, se capturará el principal motivo de la falta más reciente.', const Color(0xFFBE123C)), g,
       item(Symbols.format_list_numbered, 'Tres motivos distintos', 'Seleccione tres motivos diferentes para la asistencia futura en orden 1, 2 y 3.', const Color(0xFFE11D48)), g,
       item(Symbols.edit_note, 'Especifique "otro"', 'Si elige "Otro motivo", capture la descripción correspondiente.', const Color(0xFF9F1239)),
+    ];
+    if (variant == SurveyInstructionVariant.mocaBasic) return [
+      item(Symbols.touch_app, 'Paciente + doctor', 'Las tareas visoespaciales pueden hacerse en la tableta mientras el doctor captura el resto del examen.', const Color(0xFF0F766E)), g,
+      item(Symbols.calculate, 'Puntaje total (0-30)', 'La app suma automaticamente los dominios del MoCA 8.1 y agrega +1 si tiene 12 anos o menos de estudios.', const Color(0xFF115E59)), g,
+      item(Symbols.rule, 'Uso clinico', 'La memoria inmediata se registra como referencia clinica, pero no suma al puntaje total.', const Color(0xFF134E4A)),
+    ];
+    if (variant == SurveyInstructionVariant.mocaBlind) return [
+      item(Symbols.visibility_off, 'Version para discapacidad visual', 'La tableta muestra las consignas y permite registrar todo el desempeno dentro del mismo instrumento.', const Color(0xFF1D4ED8)), g,
+      item(Symbols.calculate, 'Puntaje total (0-22)', 'La app suma automaticamente atencion, lenguaje, abstraccion, memoria y orientacion.', const Color(0xFF1E40AF)), g,
+      item(Symbols.rule, 'Punto de corte', 'En esta version, 19 o mas se considera normal. Se agrega +1 si tiene 12 anos o menos de estudios.', const Color(0xFF1E3A8A)),
     ];
     if (variant == SurveyInstructionVariant.custom) return [];
     // BDI default

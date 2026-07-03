@@ -7,8 +7,10 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/features/surveys/types/whoqol/presentation/whoqol_controller.dart';
 import 'package:ssapp/features/surveys/types/whoqol/domain/whoqol_questions.dart';
 import 'package:ssapp/features/surveys/domain/survey_service.dart';
+import 'package:ssapp/shared/providers/font_size_provider.dart';
 import 'package:ssapp/shared/utils/theme.dart';
 import 'package:ssapp/shared/utils/toast_helper.dart';
+import 'package:ssapp/shared/widgets/font_size_button.dart';
 
 const _kWhoqolColor = Color(0xFF7C3AED);
 
@@ -429,6 +431,9 @@ class _WhoqolScreenState extends State<WhoqolScreen> {
               variance: ButtonVariance.ghost,
             ),
           ],
+          trailing: const [
+            FontSizeButton(),
+          ],
         ),
       ],
       child: Column(
@@ -467,7 +472,7 @@ class _WhoqolScreenState extends State<WhoqolScreen> {
                           ),
                         ),
                         const Gap(14),
-                        Expanded(child: Text(_current.text, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, height: 1.5))),
+                        Expanded(child: Text(_current.text, style: TextStyle(fontSize: context.watch<FontSizeProvider>().scaled(16), fontWeight: FontWeight.w500, height: 1.5))),
                       ],
                     ),
                   ),
@@ -652,6 +657,7 @@ class _WhoqolOptionCardState extends State<_WhoqolOptionCard> with SingleTickerP
   @override
   Widget build(BuildContext context) {
     final color = _optionColor;
+    final fs = context.watch<FontSizeProvider>();
     return GestureDetector(
       onTapDown: (_) => _ctrl.forward(),
       onTapUp: (_) { _ctrl.reverse(); widget.onTap(); },
@@ -677,7 +683,7 @@ class _WhoqolOptionCardState extends State<_WhoqolOptionCard> with SingleTickerP
               ),
               const Gap(10),
               Expanded(
-                child: Text(widget.label, style: TextStyle(fontSize: 15, height: 1.4, fontWeight: widget.isSelected ? FontWeight.w600 : FontWeight.normal, color: widget.isSelected ? _kWhoqolColor : LightModeColors.lightOnSurface)),
+                child: Text(widget.label, style: TextStyle(fontSize: fs.scaled(15), height: 1.4, fontWeight: widget.isSelected ? FontWeight.w600 : FontWeight.normal, color: widget.isSelected ? _kWhoqolColor : LightModeColors.lightOnSurface)),
               ),
               if (widget.isSelected) const Padding(padding: EdgeInsets.only(left: 8), child: Icon(material.Icons.check_circle, color: _kWhoqolColor, size: 22)),
             ],

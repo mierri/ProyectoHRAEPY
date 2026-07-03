@@ -12,7 +12,7 @@ class OsteoporosisQuestions {
     ),
     SurveyQuestion(
       number: 2,
-      category: '¿Alguno de sus padres ha tenido fractura de cadera?',
+      category: '¿Alguno de sus padres ha tenido o tuvo fractura de cadera?',
       options: [
         SurveyOption(score: 1, text: 'Sí'),
         SurveyOption(score: 0, text: 'No'),
@@ -28,7 +28,7 @@ class OsteoporosisQuestions {
     ),
     SurveyQuestion(
       number: 4,
-      category: '¿Utiliza glucocorticoides o los ha tomado por más de 3 meses?',
+      category: '¿Utiliza glucocorticoides (medicamentos antiinflamatorios esteroideos, por ejemplo prednisona, dexametasona o hidrocortisona) o los ha tomado por m¿s de 3 meses?',
       options: [
         SurveyOption(score: 1, text: 'Sí'),
         SurveyOption(score: 0, text: 'No'),

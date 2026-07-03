@@ -242,9 +242,14 @@ class _SurveyScreenState extends State<SurveyScreen> {
   }
 
   void _toggleIciqSituation(int index) {
+    if (_iciqSelectedIndices.contains(0) && index != 0) return;
+
     if (_iciqSelectedIndices.contains(index)) {
       _iciqSelectedIndices.remove(index);
     } else {
+      if (index == 0) {
+        _iciqSelectedIndices.clear();
+      }
       _iciqSelectedIndices.add(index);
     }
 
@@ -303,11 +308,9 @@ class _SurveyScreenState extends State<SurveyScreen> {
 
     if (widget.surveyType == 'bai') {
       // BAI levels
-      if (totalScore <= 7) {
+      if (totalScore <= 21) {
         levelColor = LightModeColors.lightTertiary;
-      } else if (totalScore <= 15) {
-        levelColor = const Color(0xFFFFA726);
-      } else if (totalScore <= 25) {
+      } else if (totalScore <= 35) {
         levelColor = const Color(0xFFFF7043);
       } else {
         levelColor = LightModeColors.lightError;
@@ -315,16 +318,16 @@ class _SurveyScreenState extends State<SurveyScreen> {
     } else if (widget.surveyType == 'gds') {
       if (totalScore <= 4) {
         levelColor = LightModeColors.lightTertiary;
+      } else if (totalScore <= 8) {
+        levelColor = const Color(0xFFFBBF24);
+      } else if (totalScore <= 11) {
+        levelColor = const Color(0xFFF97316);
       } else {
         levelColor = LightModeColors.lightError;
       }
     } else if (widget.surveyType == 'ghq12') {
       if (totalScore <= 11) {
         levelColor = LightModeColors.lightTertiary;
-      } else if (totalScore <= 20) {
-        levelColor = const Color(0xFFF59E0B);
-      } else if (totalScore <= 27) {
-        levelColor = const Color(0xFFF97316);
       } else {
         levelColor = LightModeColors.lightError;
       }
@@ -511,11 +514,13 @@ class _SurveyScreenState extends State<SurveyScreen> {
                       final index = entry.key;
                       final option = entry.value;
                       final isSelected = _iciqSelectedIndices.contains(index);
+                      final isDisabled = _iciqSelectedIndices.contains(0) && index != 0;
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: MultiSelectOptionCard(
                           text: option.text,
                           isSelected: isSelected,
+                          isEnabled: !isDisabled,
                           surveyColor: _surveyColor,
                           onTap: () => _toggleIciqSituation(index),
                         ),
@@ -529,7 +534,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
                       IconData faceIcon;
                       Color faceColor;
 
-                      if (widget.surveyType == 'osteoporosis') {
+                      if (widget.surveyType == 'osteoporosis' || widget.surveyType == 'gds') {
                         if (option.score == 1) {
                           faceIcon = Symbols.sentiment_very_dissatisfied;
                           faceColor = const Color(0xFFDC2626);

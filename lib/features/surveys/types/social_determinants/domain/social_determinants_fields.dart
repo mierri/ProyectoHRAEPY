@@ -85,7 +85,7 @@ class SocialDeterminantsChoices {
   static const List<SurveyChoice> seguridadSocial = [
     SurveyChoice(value: 0, label: 'IMSS'),
     SurveyChoice(value: 1, label: 'ISSSTE'),
-    SurveyChoice(value: 2, label: 'Seguro popular / INSABI'),
+    SurveyChoice(value: 2, label: 'IMSS Bienestar'),
     SurveyChoice(value: 3, label: 'Pemex / Defensa / Marina'),
     SurveyChoice(value: 4, label: 'Seguro privado'),
     SurveyChoice(value: 5, label: 'Ninguno'),

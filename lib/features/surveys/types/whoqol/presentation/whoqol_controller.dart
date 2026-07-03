@@ -215,21 +215,28 @@ class WhoqolResults {
 
   String domain1Display() {
     if (domain1Score == null) return 'Incompleto';
-    return '$domain1Score / ${WhoqolQuestions.domain1Questions.length * 5}';
+    return '$domain1Score / ${WhoqolQuestions.domain1Questions.length * 5} - ${_domainInterpretation(domain1Score!, WhoqolQuestions.domain1Questions.length * 5)}';
   }
 
   String domain2Display() {
     if (domain2Score == null) return 'Incompleto';
-    return '$domain2Score / ${WhoqolQuestions.domain2Questions.length * 5}';
+    return '$domain2Score / ${WhoqolQuestions.domain2Questions.length * 5} - ${_domainInterpretation(domain2Score!, WhoqolQuestions.domain2Questions.length * 5)}';
   }
 
   String domain3Display() {
     if (domain3Score == null) return 'Incompleto';
-    return '$domain3Score / ${WhoqolQuestions.domain3Questions.length * 5}';
+    return '$domain3Score / ${WhoqolQuestions.domain3Questions.length * 5} - ${_domainInterpretation(domain3Score!, WhoqolQuestions.domain3Questions.length * 5)}';
   }
 
   String domain4Display() {
     if (domain4Score == null) return 'Incompleto';
-    return '$domain4Score / ${WhoqolQuestions.domain4Questions.length * 5}';
+    return '$domain4Score / ${WhoqolQuestions.domain4Questions.length * 5} - ${_domainInterpretation(domain4Score!, WhoqolQuestions.domain4Questions.length * 5)}';
+  }
+
+  String _domainInterpretation(int score, int maxScore) {
+    final pct = score / maxScore * 100;
+    if (pct >= 75) return 'Alta calidad de vida';
+    if (pct >= 50) return 'Calidad de vida media';
+    return 'Calidad de vida baja';
   }
 }

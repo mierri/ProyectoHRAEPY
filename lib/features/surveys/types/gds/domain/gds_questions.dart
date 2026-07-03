@@ -33,7 +33,7 @@ class GDSQuestions {
     '¿Prefiere usted quedarse en casa, más que salir y hacer cosas nuevas?',
     '¿Cree que tiene más problemas de memoria que la mayoría de la gente?',
     '¿En estos momentos, piensa que es estupendo estar vivo(a)?',
-    '¿Actualmente se siente un(a) inútil?',
+    '¿Actualmente se siente inútil?',
     '¿Se siente lleno(a) de energía?',
     '¿Se siente sin esperanza en este momento?',
     '¿Piensa que la mayoría de la gente está en mejor situación que usted?',

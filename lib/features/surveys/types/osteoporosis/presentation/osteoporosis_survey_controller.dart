@@ -75,8 +75,8 @@ class OsteoporosisSurveyController extends SurveyController {
           success: true,
           wasSynced: saveResult.wasSynced,
           totalScore: totalScore,
-          interpretation: getInterpretation(),
-          severityLevel: getSeverityLevel(),
+          interpretation: _riskInterpretation(),
+          severityLevel: _riskSeverityLevel(),
           riskResult: osteoporosisRiskResult,
           weight: weight,
           height: height,
@@ -91,5 +91,23 @@ class OsteoporosisSurveyController extends SurveyController {
       },
       operation: 'guardar encuesta de osteoporosis',
     );
+  }
+
+  String _riskSeverityLevel() {
+    final result = osteoporosisRiskResult;
+    if (result == null) return getSeverityLevel();
+    return result.isHighRisk ? 'Alto riesgo' : 'Bajo riesgo';
+  }
+
+  String _riskInterpretation() {
+    final result = osteoporosisRiskResult;
+    if (result == null) return getInterpretation();
+    final riskText = result.isHighRisk ? 'alto riesgo' : 'bajo riesgo';
+    final action = result.isHighRisk
+        ? 'Se recomienda valoracion clinica prioritaria y considerar densitometria/abordaje especializado segun criterio medico.'
+        : 'Mantener seguimiento preventivo y reevaluar si cambian los factores de riesgo.';
+    return 'Resultado segun osteoporosis_risk_service: $riskText. '
+        'Puntaje normalizado ${result.score}/6, grupo de edad ${result.ageGroup}, categoria de IMC ${result.bmiCategory}, IMC ${result.bmi.toStringAsFixed(2)}. '
+        '$action';
   }
 }

@@ -90,6 +90,10 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         return LightModeColors.lightError;
       case 'normal':
         return LightModeColors.lightTertiary;
+      case 'bajo esperado':
+        return const Color(0xFF1D4ED8);
+      case 'interpretacion clinica':
+        return LightModeColors.lightSecondary;
       case 'síntomas depresivos':
       case 'sintomas depresivos':
         return LightModeColors.lightError;
@@ -138,6 +142,10 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         return material.Icons.sentiment_very_dissatisfied;
       case 'normal':
         return material.Icons.sentiment_very_satisfied;
+      case 'bajo esperado':
+        return material.Icons.warning_amber_outlined;
+      case 'interpretacion clinica':
+        return material.Icons.info_outline;
       case 'síntomas depresivos':
       case 'sintomas depresivos':
         return material.Icons.sentiment_dissatisfied;
@@ -238,6 +246,10 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
       case 16: // Asistencia en Consulta de Especialidad
       case 17: // Barreras percibidas para la asistencia
         return 'Sin puntuación';
+      case 18: // MoCA 8.1
+        return score >= 26 ? 'Normal' : 'Interpretacion clinica';
+      case 19: // MoCA Blind
+        return score >= 19 ? 'Normal' : 'Bajo esperado';
       default:
         return 'Resultado';
     }
@@ -380,6 +392,10 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         return 'Este cuestionario no tiene una interpretación de puntajes. Se recomienda revisar la especialidad médica, disponibilidad de transporte y antecedentes de inasistencia para apoyar el seguimiento del paciente.';
       case 17: // Barreras percibidas para la asistencia
         return 'Este cuestionario no tiene una interpretación de puntajes. Se recomienda revisar los motivos de inasistencia reciente y los tres principales riesgos percibidos de falta futura para planear apoyos y seguimiento.';
+      case 18: // MoCA 8.1
+        return 'El MoCA 8.1 funciona como tamiz cognitivo general. Revise el puntaje ajustado, los dibujos del paciente y los dominios con menor desempeno para orientar una valoracion cognitiva mas amplia.';
+      case 19: // MoCA Blind
+        return 'El MoCA Blind funciona como tamiz cognitivo para personas con discapacidad visual. Un puntaje menor de 19 sugiere la necesidad de interpretacion clinica especializada.';
       default:
         return 'Se recomienda consultar con un profesional de salud para una evaluación completa.';
     }
@@ -465,6 +481,8 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         case 15: return 'Cuestionario de Determinantes Sociales';
         case 16: return 'Asistencia en Consulta de Especialidad';
         case 17: return 'Cuestionario de Barreras Percibidas para la Asistencia a Consultas Médicas Programadas';
+        case 18: return 'Montreal Cognitive Assessment 8.1';
+        case 19: return 'Montreal Cognitive Assessment Blind';
         default: return 'Encuesta';
       }
     }
@@ -474,11 +492,15 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
     final baseLevel = _getScoreLevel(score, surveyType);
     final katzClassification =
       surveyType == 10 ? _katzClassificationFromSurvey(_survey!) : null;
+    final storedLevel = _survey!['risk_level'] as String?;
+    final resolvedBaseLevel = (surveyType == 18 || surveyType == 19) && storedLevel != null && storedLevel.isNotEmpty
+        ? storedLevel
+        : baseLevel;
     final level = surveyType == 10 && katzClassification != null
       ? '$baseLevel (Katz $katzClassification)'
-      : baseLevel;
+      : resolvedBaseLevel;
     final iciqOrientation = surveyType == 11 ? _iciqOrientationFromSurvey(_survey!) : const <String>[];
-    final color = _getLevelColor(baseLevel);
+    final color = _getLevelColor(resolvedBaseLevel);
     final createdAt = DateTime.parse(_survey!['created_at']);
 
     // Obtener información del paciente
@@ -549,8 +571,8 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
     }
 
     final recommendation = surveyType == 11 && iciqOrientation.isNotEmpty
-        ? '${_getRecommendation(baseLevel, surveyType)} Orientacion tipo: ${iciqOrientation.join(', ')}.'
-        : _getRecommendation(baseLevel, surveyType);
+        ? '${_getRecommendation(resolvedBaseLevel, surveyType)} Orientacion tipo: ${iciqOrientation.join(', ')}.'
+        : _getRecommendation(resolvedBaseLevel, surveyType);
 
     return Scaffold(
       headers: [AppBar(
@@ -570,7 +592,7 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         score: score,
         level: level,
         color: color,
-        levelIcon: _getLevelIcon(baseLevel),
+        levelIcon: _getLevelIcon(resolvedBaseLevel),
         surveyType: surveyType,
         surveyFullName: surveyFullName,
         recommendation: recommendation,

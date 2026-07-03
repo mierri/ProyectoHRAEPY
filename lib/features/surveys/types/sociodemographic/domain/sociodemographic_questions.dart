@@ -107,7 +107,7 @@ const sociodemographicQuestions = <FormQuestion>[
   ),
   FormQuestion(
     number: '7',
-    label: '¿Quién es el jefe o jefa del hogar?',
+    label: '¿Quién es el jefe o jefa de su hogar?',
     category: 'Hogar',
     fields: [
       FormFieldDef(

@@ -289,7 +289,7 @@ class SF36Questions {
     // ITEM 9a: vitality - Se invierte (1-6) con puntuación personalizada
     SF36Question(
       number: 23,
-      text: 'Las preguntas que siguen se refieren a cómo se ha sentido y cómo le han ido las cosas durante las 4 últimas semanas. En cada pregunta responda lo que se parezca más a cómo se ha sentido usted. Durante las últimas 4 semanas ¿con qué frecuencia...\n\n9a. se sintió lleno de vitalidad?',
+      text: 'Las preguntas que siguen se refieren a cómo se ha sentido y cómo le han ido las cosas durante las 4 últimas semanas. En cada pregunta responda lo que se parezca más a cómo se ha sentido usted. Durante las últimas 4 semanas ¿con qué frecuencia...\n\n9a. ¿se sintió lleno de vitalidad?',
       dimension: SF36Dimension.vitality,
       scaleType: SF36ScaleType.frequency6,
       options: ['Siempre', 'Casi siempre', 'Muchas veces', 'Algunas veces', 'Sólo alguna vez', 'Nunca'],
@@ -300,7 +300,7 @@ class SF36Questions {
     // ITEM 9b: salud mental - No se invierte (1-6)
     SF36Question(
       number: 24,
-      text: '9b. estuvo muy nervioso?',
+      text: '9b. ¿estuvo muy nervioso?',
       dimension: SF36Dimension.mentalHealth,
       scaleType: SF36ScaleType.frequency6,
       options: ['Siempre', 'Casi siempre', 'Muchas veces', 'Algunas veces', 'Sólo alguna vez', 'Nunca'],
@@ -310,7 +310,7 @@ class SF36Questions {
     // ITEM 9c: salud mental - No se invierte (1-6)
     SF36Question(
       number: 25,
-      text: '9c. se sintió tan bajo de moral que nada podía animarle?',
+      text: '9c. ¿se sintió tan bajo de moral que nada podía animarle?',
       dimension: SF36Dimension.mentalHealth,
       scaleType: SF36ScaleType.frequency6,
       options: ['Siempre', 'Casi siempre', 'Muchas veces', 'Algunas veces', 'Sólo alguna vez', 'Nunca'],
@@ -320,7 +320,7 @@ class SF36Questions {
     // ITEM 9d: salud mental - Se invierte (1-6) con puntuación personalizada
     SF36Question(
       number: 26,
-      text: '9d. se sintió calmado y tranquilo?',
+      text: '9d. ¿se sintió calmado y tranquilo?',
       dimension: SF36Dimension.mentalHealth,
       scaleType: SF36ScaleType.frequency6,
       options: ['Siempre', 'Casi siempre', 'Muchas veces', 'Algunas veces', 'Sólo alguna vez', 'Nunca'],
@@ -331,7 +331,7 @@ class SF36Questions {
     // ITEM 9e: vitalidad - Se invierte (1-6) con puntuación personalizada
     SF36Question(
       number: 27,
-      text: '9e. tuvo mucha energía?',
+      text: '9e. ¿tuvo mucha energía?',
       dimension: SF36Dimension.vitality,
       scaleType: SF36ScaleType.frequency6,
       options: ['Siempre', 'Casi siempre', 'Muchas veces', 'Algunas veces', 'Sólo alguna vez', 'Nunca'],
@@ -342,7 +342,7 @@ class SF36Questions {
     // ITEM 9f: salud mental - No se invierte (1-6)
     SF36Question(
       number: 28,
-      text: '9f. se sintió desanimado y deprimido?',
+      text: '9f. ¿se sintió desanimado y deprimido?',
       dimension: SF36Dimension.mentalHealth,
       scaleType: SF36ScaleType.frequency6,
       options: ['Siempre', 'Casi siempre', 'Muchas veces', 'Algunas veces', 'Sólo alguna vez', 'Nunca'],
@@ -352,7 +352,7 @@ class SF36Questions {
     // ITEM 9g: vitalidad - No se invierte (1-6)
     SF36Question(
       number: 29,
-      text: '9g. se sintió agotado?',
+      text: '9g. ¿se sintió agotado?',
       dimension: SF36Dimension.vitality,
       scaleType: SF36ScaleType.frequency6,
       options: ['Siempre', 'Casi siempre', 'Muchas veces', 'Algunas veces', 'Sólo alguna vez', 'Nunca'],
@@ -362,7 +362,7 @@ class SF36Questions {
     // ITEM 9h: salud mental - Se invierte (1-6) con puntuación personalizada
     SF36Question(
       number: 30,
-      text: '9h. se sintió feliz?',
+      text: '9h. ¿se sintió feliz?',
       dimension: SF36Dimension.mentalHealth,
       scaleType: SF36ScaleType.frequency6,
       options: ['Siempre', 'Casi siempre', 'Muchas veces', 'Algunas veces', 'Sólo alguna vez', 'Nunca'],
@@ -373,7 +373,7 @@ class SF36Questions {
     // ITEM 9i: vitalidad - No se invierte (1-6)
     SF36Question(
       number: 31,
-      text: '9i. se sintió cansado?',
+      text: '9i. ¿se sintió cansado?',
       dimension: SF36Dimension.vitality,
       scaleType: SF36ScaleType.frequency6,
       options: ['Siempre', 'Casi siempre', 'Muchas veces', 'Algunas veces', 'Sólo alguna vez', 'Nunca'],

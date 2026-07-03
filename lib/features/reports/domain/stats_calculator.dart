@@ -49,7 +49,7 @@ class SurveyStatsCalculator {
     for (final s in surveys) {
       final score = calculateSurveyScore(s);
       final level = _bdiLevel(score);
-      counts[level] = counts[level]! + 1;
+      counts[level] = (counts[level] ?? 0) + 1;
     }
     return LevelDistribution(
       counts: counts,
@@ -67,7 +67,7 @@ class SurveyStatsCalculator {
     for (final s in surveys) {
       final score = calculateSurveyScore(s);
       final level = _baiLevel(score);
-      counts[level] = counts[level]! + 1;
+      counts[level] = (counts[level] ?? 0) + 1;
     }
     return LevelDistribution(
       counts: counts,
@@ -88,7 +88,7 @@ class SurveyStatsCalculator {
     for (final s in surveys) {
       final score = calculateSurveyScore(s);
       final level = _ghq12Level(score);
-      counts[level] = counts[level]! + 1;
+      counts[level] = (counts[level] ?? 0) + 1;
     }
     return LevelDistribution(
       counts: counts,
@@ -118,7 +118,7 @@ class SurveyStatsCalculator {
     for (final s in surveys) {
       final score = calculateSurveyScore(s);
       final level = _phq9Level(score);
-      counts[level] = counts[level]! + 1;
+      counts[level] = (counts[level] ?? 0) + 1;
     }
     return LevelDistribution(
       counts: counts,
@@ -157,15 +157,16 @@ class SurveyStatsCalculator {
   }
 
   static String _baiLevel(int score) {
-    if (score <= 7) return 'Mínima';
-    if (score <= 15) return 'Leve';
-    if (score <= 25) return 'Moderada';
+    if (score <= 21) return 'Muy baja';
+    if (score <= 35) return 'Moderada';
     return 'Severa';
   }
 
   static String _gdsLevel(int score) {
     if (score <= 4) return 'Normal';
-    return 'Síntomas depresivos';
+    if (score <= 8) return 'Depresion leve';
+    if (score <= 11) return 'Depresion moderada';
+    return 'Depresion severa';
   }
 
   static String _assistLevel(int score) {
@@ -188,22 +189,21 @@ class SurveyStatsCalculator {
     if (score == 0) return 'Sin incontinencia';
     if (score <= 5) return 'Leve';
     if (score <= 12) return 'Moderada';
-    return 'Severa';
+    if (score <= 18) return 'Severa';
+    return 'Muy severa';
   }
 
   static String _ghq12Level(int score) {
-    if (score <= 11) return 'Bajo';
-    if (score <= 20) return 'Leve';
-    if (score <= 27) return 'Moderado';
-    return 'Alto';
+    if (score <= 11) return 'Rango bajo';
+    return 'Rango elevado';
   }
 
   static String _phq9Level(int score) {
-    if (score <= 4) return 'Minima';
-    if (score <= 9) return 'Leve';
+    if (score <= 4) return 'Sin depresion';
+    if (score <= 9) return 'Minima';
     if (score <= 14) return 'Moderada';
-    if (score <= 19) return 'Moderadamente grave';
-    return 'Grave';
+    if (score <= 19) return 'Moderadamente severa';
+    return 'Severa';
   }
 
   // Whoqol

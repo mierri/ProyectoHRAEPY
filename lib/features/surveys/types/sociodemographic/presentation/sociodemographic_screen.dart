@@ -1,10 +1,13 @@
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
+import 'package:ssapp/features/patients/data/patient_repository.dart';
 import 'package:ssapp/features/surveys/domain/survey_service.dart';
 import 'package:ssapp/features/surveys/shared/form/form_survey_screen.dart';
+import 'package:ssapp/features/surveys/types/sociodemographic/domain/sociodemographic_fields.dart';
 import 'package:ssapp/features/surveys/types/sociodemographic/domain/sociodemographic_questions.dart';
 import 'package:ssapp/features/surveys/types/sociodemographic/presentation/sociodemographic_controller.dart';
+import 'package:ssapp/shared/models/patient_model.dart';
 
 const _kColor = Color(0xFF0891B2);
 
@@ -41,6 +44,34 @@ class _SociodemographicScreenState extends State<SociodemographicScreen> {
       );
       _controller.addListener(_rebuild);
       _initialized = true;
+      _preloadConsentFields();
+    }
+  }
+
+  Future<void> _preloadConsentFields() async {
+    final patientService = context.read<PatientService>();
+    PatientModel? patient = patientService.patients
+        .where((p) => p.patientId == widget.patientId)
+        .firstOrNull;
+    patient ??= await patientService.getPatientById(widget.patientId);
+
+    if (!mounted || patient == null) return;
+
+    if (_controller.intAnswer(SociodemographicFieldIds.sexo) == null) {
+      final sexValue = switch (patient.gender.toUpperCase()) {
+        'F' => 0,
+        'M' => 1,
+        'O' => 2,
+        _ => null,
+      };
+      if (sexValue != null) {
+        _controller.setIntAnswer(SociodemographicFieldIds.sexo, sexValue);
+      }
+    }
+
+    if (_controller.intAnswer(SociodemographicFieldIds.edad) == null) {
+      _controller.setIntAnswer(SociodemographicFieldIds.edad, patient.age);
+      _controller.setTextAnswer(SociodemographicFieldIds.edad, patient.age.toString());
     }
   }
 

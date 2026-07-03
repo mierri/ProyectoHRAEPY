@@ -27,7 +27,9 @@ class GdsSurveyHandler extends SurveyTypeHandler {
     required int questionsCount,
   }) {
     if (score <= 4) return 'Resultado dentro de la normalidad.';
-    return 'Presenta sintomas depresivos.';
+    if (score <= 8) return 'Depresion leve.';
+    if (score <= 11) return 'Depresion moderada.';
+    return 'Depresion severa.';
   }
 
   @override
@@ -37,6 +39,8 @@ class GdsSurveyHandler extends SurveyTypeHandler {
     required int questionsCount,
   }) {
     if (score <= 4) return 'Normal';
-    return 'Sintomas depresivos';
+    if (score <= 8) return 'Depresion Leve';
+    if (score <= 11) return 'Depresion Moderada';
+    return 'Depresion Severa';
   }
 }

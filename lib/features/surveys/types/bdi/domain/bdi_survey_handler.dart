@@ -26,10 +26,10 @@ class BdiSurveyHandler extends SurveyTypeHandler {
     required Map<int, int> responses,
     required int questionsCount,
   }) {
-    if (score <= 13) return 'Los sintomas depresivos son minimos o inexistentes.';
+    if (score <= 13) return 'Depresion minima o ausencia de sintomas clinicamente relevantes.';
     if (score <= 19) return 'Presenta sintomas leves de depresion.';
     if (score <= 28) return 'Presenta sintomas moderados de depresion.';
-    return 'Presenta sintomas graves de depresion.';
+    return 'Presenta sintomas severos de depresion.';
   }
 
   @override
@@ -41,6 +41,6 @@ class BdiSurveyHandler extends SurveyTypeHandler {
     if (score <= 13) return 'Depresion Minima';
     if (score <= 19) return 'Depresion Leve';
     if (score <= 28) return 'Depresion Moderada';
-    return 'Depresion Grave';
+    return 'Depresion Severa';
   }
 }

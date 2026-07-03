@@ -19,7 +19,7 @@ void main() {
       expect(result.interpretacion, 'Sin evidencia de incontinencia urinaria segun ICIQ-SF.');
     });
 
-    test('returns severe impact for high score', () {
+    test('returns very severe impact for high score', () {
       final result = IciqSfQuestions.evaluate({
         1: 5,
         2: 6,
@@ -32,7 +32,7 @@ void main() {
 
       expect(result.score, greaterThanOrEqualTo(18));
       expect(result.tieneIncontinencia, true);
-      expect(result.severidad, 'severo');
+      expect(result.severidad, 'muy severo');
       expect(result.orientacionTipo, contains('Mixta'));
     });
   });

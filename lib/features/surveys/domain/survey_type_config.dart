@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ssapp/shared/utils/theme.dart';
 
-// Responsabilidad: centralizar metadatos de tipos de encuesta (color, descripción e instrucciones).
 enum SurveyInstructionVariant {
   bdi,
   bai,
@@ -19,6 +18,8 @@ enum SurveyInstructionVariant {
   socialDeterminants,
   specialtyConsultationAttendance,
   perceivedAttendanceBarriers,
+  mocaBasic,
+  mocaBlind,
   custom,
 }
 
@@ -52,13 +53,13 @@ class SurveyTypeConfig {
     'social_determinants': 15,
     'specialty_consultation_attendance': 7,
     'perceived_attendance_barriers': 4,
+    'moca_basic': 9,
+    'moca_blind': 8,
   };
 
   static String normalizeType(String? surveyType) {
     final normalized = (surveyType ?? 'bdi').toLowerCase();
-    if (normalized == 'socialdeterminants') {
-      return 'social_determinants';
-    }
+    if (normalized == 'socialdeterminants') return 'social_determinants';
     if (normalized == 'specialtyconsultationattendance' ||
         normalized == 'asistencia en consulta de especialidad' ||
         normalized == 'asistencia en consultas de especialidad' ||
@@ -69,10 +70,25 @@ class SurveyTypeConfig {
     if (normalized == 'perceivedattendancebarriers' ||
         normalized == 'barreras percibidas para la asistencia' ||
         normalized == 'barreras percibidas para asistencia' ||
-        normalized == 'barreras percibidas para la asistencia a consultas médicas programadas' ||
         normalized == 'barreras percibidas para la asistencia a consultas medicas programadas' ||
         normalized == '17') {
       return 'perceived_attendance_barriers';
+    }
+    if (normalized == 'mocabasic' ||
+        normalized == 'moca' ||
+        normalized == 'moca 8.1' ||
+        normalized == 'moca8.1' ||
+        normalized == 'moca 8' ||
+        normalized == 'moca basic' ||
+        normalized == 'moca basica' ||
+        normalized == '18') {
+      return 'moca_basic';
+    }
+    if (normalized == 'mocablind' ||
+        normalized == 'moca blind' ||
+        normalized == 'moca discapacidad visual' ||
+        normalized == '19') {
+      return 'moca_blind';
     }
     return normalized.isEmpty ? 'bdi' : normalized;
   }
@@ -109,6 +125,10 @@ class SurveyTypeConfig {
         return const Color(0xFFB45309);
       case 'perceived_attendance_barriers':
         return const Color(0xFFBE123C);
+      case 'moca_basic':
+        return const Color(0xFF0F766E);
+      case 'moca_blind':
+        return const Color(0xFF1D4ED8);
       case 'custom':
         return const Color(0xFF0D9488);
       case 'bdi':
@@ -120,40 +140,44 @@ class SurveyTypeConfig {
   static String descriptionFor(String? surveyType) {
     switch (normalizeType(surveyType)) {
       case 'bai':
-        return 'Este cuestionario evalúa síntomas de ansiedad mediante el Inventario de Ansiedad de Beck (BAI). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
+        return 'Este cuestionario evalua sintomas de ansiedad mediante el Inventario de Ansiedad de Beck (BAI).';
       case 'gds':
-        return 'Este cuestionario evalúa síntomas depresivos en personas mayores mediante la Escala de Depresión Geriátrica de 15 items (GDS-15). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
+        return 'Este cuestionario evalua sintomas depresivos en personas mayores mediante la Escala de Depresion Geriatrica de 15 items (GDS-15).';
       case 'lawton':
-        return 'Este cuestionario evalúa la independencia en actividades instrumentales de la vida diaria mediante la Escala de Lawton (AIVD). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
+        return 'Este cuestionario evalua la independencia en actividades instrumentales de la vida diaria mediante la Escala de Lawton (AIVD).';
       case 'katz':
-        return 'Este cuestionario evalua la independencia en actividades basicas de la vida diaria mediante el Indice de Katz (ABVD). Genera puntaje total de 0 a 6 y clasificacion alfabetica A-H segun patron de dependencia. Los datos recopilados seran utilizados exclusivamente para propositos clinicos y de investigacion del Departamento de Psicologia del HRAEPY.';
+        return 'Este cuestionario evalua la independencia en actividades basicas de la vida diaria mediante el Indice de Katz (ABVD).';
       case 'iciqsf':
-        return 'Este cuestionario evalua severidad e impacto de la incontinencia urinaria mediante ICIQ-SF. Incluye una seccion de orientacion clinica sobre situaciones de perdida de orina. Los datos recopilados seran utilizados exclusivamente para propositos clinicos y de investigacion del Departamento de Psicologia del HRAEPY.';
+        return 'Este cuestionario evalua severidad e impacto de la incontinencia urinaria mediante ICIQ-SF.';
       case 'osteoporosis':
-        return 'Este cuestionario detecta el riesgo de fracturas por osteoporosis. Los datos de peso, talla e IMC se solicitan y se almacenan en la base de datos junto con la encuesta. Los resultados deben cruzarse con la edad, IMC y puntaje obtenido.';
+        return 'Este cuestionario detecta el riesgo de fracturas por osteoporosis.';
       case 'ghq12':
-        return 'Este cuestionario evalua malestar psicologico reciente asociado al estres mediante el Cuestionario de Salud General de Goldberg (GHQ-12). No sustituye un diagnostico clinico y se centra en cambios del funcionamiento en las ultimas dos semanas.';
+        return 'Este cuestionario evalua malestar psicologico reciente asociado al estres mediante el Cuestionario de Salud General de Goldberg (GHQ-12).';
       case 'phq9':
-        return 'Este cuestionario evalua sintomas depresivos en las ultimas dos semanas mediante el PHQ-9. Incluye tamizaje de ideacion autolesiva y orienta la necesidad de valoracion clinica.';
+        return 'Este cuestionario evalua sintomas depresivos en las ultimas dos semanas mediante el PHQ-9.';
       case 'whoqol':
-        return 'Este cuestionario evalúa la calidad de vida en cuatro dominios: salud física, salud psicológica, relaciones sociales y ambiente, mediante el instrumento WHOQOL-BREF de la Organización Mundial de la Salud. Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
+        return 'Este cuestionario evalua la calidad de vida mediante WHOQOL-BREF.';
       case 'sf36':
-        return 'Este cuestionario evalúa diferentes aspectos de la salud y el bienestar mediante la Encuesta de Salud de 36 Items (SF-36). Evalúa funcionamiento físico, rol físico, dolor corporal, salud general, vitalidad, funcionamiento social, rol emocional y salud mental. Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
+        return 'Este cuestionario evalua diferentes aspectos de la salud y el bienestar mediante la Encuesta de Salud de 36 Items (SF-36).';
       case 'assist':
-        return 'Este cuestionario evalúa riesgo asociado al consumo de tabaco, alcohol y otras sustancias mediante el instrumento OMS-ASSIST V3.0. Los resultados orientan el nivel de intervención (sin intervención, intervención breve o tratamiento intensivo). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
+        return 'Este cuestionario evalua riesgo asociado al consumo de tabaco, alcohol y otras sustancias mediante el instrumento OMS-ASSIST V3.0.';
       case 'sociodemographic':
-        return 'Este cuestionario recoge datos sociodemográficos del participante. No genera puntaje clínico; la información es para caracterización y análisis del contexto.';
+        return 'Este cuestionario recoge datos sociodemograficos del participante. No genera puntaje clinico.';
       case 'social_determinants':
-        return 'Este cuestionario recoge determinantes sociales del hogar (educación, vivienda, servicios y apoyo social). No genera puntaje clínico; la información es para análisis del contexto.';
+        return 'Este cuestionario recoge determinantes sociales del hogar. No genera puntaje clinico.';
       case 'specialty_consultation_attendance':
-        return 'Este cuestionario recoge datos generales del usuario y antecedentes recientes de asistencia a consulta de especialidad. No genera puntaje clínico; la información sirve para seguimiento de barreras y adherencia a la atención.';
+        return 'Este cuestionario recoge datos generales del usuario y antecedentes recientes de asistencia a consulta de especialidad.';
       case 'perceived_attendance_barriers':
-        return 'Este cuestionario identifica barreras percibidas para la asistencia a consultas médicas programadas. No genera puntaje clínico; la información sirve para explorar motivos de inasistencia reciente y riesgos de inasistencia futura.';
+        return 'Este cuestionario identifica barreras percibidas para la asistencia a consultas medicas programadas.';
+      case 'moca_basic':
+        return 'MoCA 8.1 es la version estandar del Montreal Cognitive Assessment. La app combina tareas del paciente en la tableta con captura clinica del doctor y calcula el puntaje ajustado sobre 30.';
+      case 'moca_blind':
+        return 'MoCA Blind es la version para discapacidad visual. La app registra el desempeno por apartados y calcula el puntaje total ajustado sobre 22.';
       case 'custom':
-        return 'Esta es una encuesta personalizada creada por su equipo de salud. Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de seguimiento.';
+        return 'Esta es una encuesta personalizada creada por su equipo de salud.';
       case 'bdi':
       default:
-        return 'Este cuestionario evalúa síntomas de depresión mediante el Inventario de Depresión de Beck (BDI-II). Los datos recopilados serán utilizados exclusivamente para propósitos clínicos y de investigación del Departamento de Psicología del HRAEPY.';
+        return 'Este cuestionario evalua sintomas de depresion mediante el Inventario de Depresion de Beck (BDI-II).';
     }
   }
 
@@ -167,120 +191,134 @@ class SurveyTypeConfig {
         return const SurveyInstructionContent(
           title: 'Inventario de Ansiedad de Beck (BAI)',
           instructions:
-              'A continuación encontrará una lista de síntomas. Por favor, indique cuánto le ha molestado cada síntoma durante la última semana, incluyendo hoy.',
+              'A continuacion encontrara una lista de sintomas. Indique cuanto le ha molestado cada sintoma durante la ultima semana, incluyendo hoy.',
           variant: SurveyInstructionVariant.bai,
         );
       case 'ghq12':
         return const SurveyInstructionContent(
           title: 'Cuestionario de Salud General de Goldberg (GHQ-12)',
           instructions:
-              'Responda cada pregunta segun como se ha sentido ultimamente, durante las ultimas dos semanas. El instrumento detecta cambios recientes en su funcionamiento general y no rasgos permanentes de personalidad.',
+              'Responda cada pregunta segun como se ha sentido ultimamente, durante las ultimas dos semanas.',
           variant: SurveyInstructionVariant.ghq12,
         );
       case 'phq9':
         return const SurveyInstructionContent(
           title: 'Cuestionario sobre la Salud del Paciente (PHQ-9)',
           instructions:
-              'Durante las ultimas dos semanas, indique con que frecuencia le han afectado los sintomas descritos. No hay respuestas correctas o incorrectas; responda con honestidad segun su situacion actual.',
+              'Durante las ultimas dos semanas, indique con que frecuencia le han afectado los sintomas descritos.',
           variant: SurveyInstructionVariant.phq9,
         );
       case 'gds':
         return const SurveyInstructionContent(
-          title: 'Escala de Depresión Geriátrica (GDS-15)',
+          title: 'Escala de Depresion Geriatrica (GDS-15)',
           instructions:
-              'Este cuestionario consta de 15 preguntas, cada una con dos opciones de respuesta: Sí o No. Responda según cómo se ha sentido recientemente. No hay respuestas correctas o incorrectas.',
+              'Este cuestionario consta de 15 preguntas, cada una con dos opciones de respuesta: Si o No.',
           variant: SurveyInstructionVariant.gds,
         );
       case 'osteoporosis':
         return const SurveyInstructionContent(
           title: 'Encuesta de Riesgo de Fractura por Osteoporosis',
           instructions:
-              'Este cuestionario se aplica a personas de 50 años o más y permite identificar el riesgo para fractura por osteoporosis. En las preguntas siguientes, marque con una X en la columna correspondiente a la respuesta por la persona entrevistada. Cada pregunta tiene solo dos opciones de respuesta: Sí o No.',
+              'Marque la respuesta correspondiente a cada pregunta. Cada pregunta tiene dos opciones: Si o No.',
           variant: SurveyInstructionVariant.osteoporosis,
         );
       case 'lawton':
         return const SurveyInstructionContent(
           title: 'Escala de Lawton (AIVD)',
           instructions:
-              'Este cuestionario evalúa su nivel de independencia en actividades instrumentales de la vida diaria. Seleccione la opción que mejor describa su capacidad actual en cada actividad.',
+              'Seleccione la opcion que mejor describa su capacidad actual en cada actividad.',
           variant: SurveyInstructionVariant.lawton,
         );
       case 'katz':
         return const SurveyInstructionContent(
           title: 'Indice de Katz (ABVD)',
           instructions:
-              'Este instrumento evalua independencia en actividades basicas de la vida diaria. Cada item puntua 1 si existe independencia total o con minima ayuda, y 0 si existe dependencia.',
+              'Cada item puntua 1 si existe independencia total o con minima ayuda, y 0 si existe dependencia.',
           variant: SurveyInstructionVariant.katz,
         );
       case 'iciqsf':
         return const SurveyInstructionContent(
           title: 'ICIQ-SF',
           instructions:
-              'Este cuestionario evalua frecuencia, cantidad e impacto de la perdida de orina. La pregunta 4 registra situaciones de perdida para orientacion clinica y no suma al puntaje total.',
+              'Este cuestionario evalua frecuencia, cantidad e impacto de la perdida de orina. La pregunta 4 no suma al puntaje total.',
           variant: SurveyInstructionVariant.iciqSf,
         );
       case 'whoqol':
         return const SurveyInstructionContent(
           title: 'Cuestionario de Calidad de Vida (WHOQOL-BREF)',
           instructions:
-              'Este cuestionario le pregunta cómo se ha sentido acerca de su calidad de vida, su salud y otros aspectos de su vida durante las dos últimas semanas. Por favor, responda todas las preguntas. Si no está seguro/a de qué respuesta dar a una pregunta, escoja la que le parezca más apropiada.',
+              'Responda todas las preguntas segun como se ha sentido durante las ultimas dos semanas.',
           variant: SurveyInstructionVariant.whoqol,
         );
       case 'sf36':
         return const SurveyInstructionContent(
           title: 'Encuesta de Salud de 36 Items (SF-36)',
           instructions:
-              'Este cuestionario evalúa diferentes aspectos de su salud y bienestar. Por favor, responda cada pregunta según cómo se ha sentido o qué ha podido hacer durante las últimas cuatro semanas. No hay respuestas correctas o incorrectas, simplemente elija la opción que mejor describa su situación.',
+              'Responda cada pregunta segun como se ha sentido o que ha podido hacer durante las ultimas cuatro semanas.',
           variant: SurveyInstructionVariant.sf36,
         );
       case 'assist':
         return const SurveyInstructionContent(
           title: 'OMS-ASSIST V3.0',
           instructions:
-              'Este cuestionario detecta riesgo asociado al consumo de tabaco, alcohol y otras sustancias. Primero se registra consumo alguna vez en la vida y luego frecuencia/problemas en los últimos 3 meses para cada sustancia seleccionada. Responda con la mayor precisión posible.',
+              'Primero se registra consumo alguna vez en la vida y luego frecuencia o problemas en los ultimos 3 meses para cada sustancia seleccionada.',
           variant: SurveyInstructionVariant.assist,
         );
       case 'sociodemographic':
         return const SurveyInstructionContent(
-          title: 'Cuestionario Sociodemográfico',
+          title: 'Cuestionario Sociodemografico',
           instructions:
-              'Responda cada apartado con la información del participante. Algunos campos pueden requerir especificación adicional.',
+              'Verifique los datos precargados del consentimiento informado y complete la informacion sociodemografica del participante.',
           variant: SurveyInstructionVariant.sociodemographic,
         );
       case 'social_determinants':
         return const SurveyInstructionContent(
           title: 'Cuestionario de Determinantes Sociales',
           instructions:
-              'Responda cada apartado con la información del hogar. Marque todas las opciones que apliquen cuando se solicite.',
+              'Responda las preguntas sobre escolaridad, ocupacion, vivienda, seguridad social, composicion del hogar, bienes y apoyo social.',
           variant: SurveyInstructionVariant.socialDeterminants,
         );
       case 'specialty_consultation_attendance':
         return const SurveyInstructionContent(
           title: 'Asistencia en Consulta de Especialidad',
           instructions:
-              'Capture los datos generales del usuario y registre la especialidad, disponibilidad de transporte y antecedentes de inasistencia a citas durante los últimos tres meses.',
+              'Capture los datos generales del usuario y registre la especialidad, disponibilidad de transporte y antecedentes de inasistencia.',
           variant: SurveyInstructionVariant.specialtyConsultationAttendance,
         );
       case 'perceived_attendance_barriers':
         return const SurveyInstructionContent(
           title: 'Barreras Percibidas para la Asistencia',
           instructions:
-              'Si existe antecedente reciente de inasistencia, primero se registrará el principal motivo de la falta más reciente. Después, seleccione tres motivos distintos en orden de importancia sobre por qué podría faltar a una consulta médica programada en el futuro.',
+              'Primero registre el principal motivo de inasistencia reciente y despues tres motivos distintos en orden de importancia para inasistencia futura.',
           variant: SurveyInstructionVariant.perceivedAttendanceBarriers,
+        );
+      case 'moca_basic':
+        return const SurveyInstructionContent(
+          title: 'MoCA 8.1',
+          instructions:
+              'Esta version del MoCA 8.1 se aplica completamente en la tableta. El paciente realiza las tareas visuales y el doctor registra las respuestas y la puntuacion por dominio dentro de la misma app.',
+          variant: SurveyInstructionVariant.mocaBasic,
+        );
+      case 'moca_blind':
+        return const SurveyInstructionContent(
+          title: 'MoCA Blind',
+          instructions:
+              'Esta version del MoCA Blind se aplica completamente en la tableta. El doctor sigue las consignas visibles en pantalla y registra ahi mismo el desempeno del paciente en cada apartado.',
+          variant: SurveyInstructionVariant.mocaBlind,
         );
       case 'custom':
         return const SurveyInstructionContent(
           title: 'Encuesta personalizada',
           instructions:
-              'Responda cada pregunta con sinceridad. Esta encuesta fue diseñada por su equipo de salud para este seguimiento.',
+              'Responda cada pregunta con sinceridad. Esta encuesta fue disenada por su equipo de salud.',
           variant: SurveyInstructionVariant.custom,
         );
       case 'bdi':
       default:
         return const SurveyInstructionContent(
-          title: 'Inventario de Depresión de Beck (BDI-II)',
+          title: 'Inventario de Depresion de Beck (BDI-II)',
           instructions:
-              'Este cuestionario consta de 21 grupos de afirmaciones. Por favor, lea con cuidado cada grupo y elija la que mejor describe cómo se ha sentido durante las últimas dos semanas, incluyendo hoy.',
+              'Este cuestionario consta de 21 afirmaciones. Lea cada grupo y elija la opcion que mejor describa como se ha sentido durante las ultimas dos semanas, incluyendo hoy.',
           variant: SurveyInstructionVariant.bdi,
         );
     }

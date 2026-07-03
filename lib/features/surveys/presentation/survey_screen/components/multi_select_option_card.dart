@@ -7,6 +7,7 @@ import 'package:ssapp/shared/utils/theme.dart';
 class MultiSelectOptionCard extends StatelessWidget {
   final String text;
   final bool isSelected;
+  final bool isEnabled;
   final Color surveyColor;
   final VoidCallback onTap;
 
@@ -14,6 +15,7 @@ class MultiSelectOptionCard extends StatelessWidget {
     super.key,
     required this.text,
     required this.isSelected,
+    this.isEnabled = true,
     required this.surveyColor,
     required this.onTap,
   });
@@ -21,9 +23,11 @@ class MultiSelectOptionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: isEnabled ? onTap : null,
       child: OutlinedContainer(
-        backgroundColor: isSelected ? surveyColor.withValues(alpha: 0.1) : Colors.white,
+        backgroundColor: !isEnabled
+            ? LightModeColors.lightSurfaceVariant.withValues(alpha: 0.5)
+            : isSelected ? surveyColor.withValues(alpha: 0.1) : Colors.white,
         borderRadius: BorderRadius.circular(12),
         padding: const EdgeInsets.all(16),
         borderColor: isSelected ? surveyColor : LightModeColors.lightOutline.withValues(alpha: 0.5),
@@ -31,7 +35,9 @@ class MultiSelectOptionCard extends StatelessWidget {
         child: Row(children: [
           Icon(
             isSelected ? material.Icons.check_box : material.Icons.check_box_outline_blank,
-            color: isSelected ? surveyColor : LightModeColors.lightOnSurfaceVariant,
+            color: !isEnabled
+                ? LightModeColors.lightOnSurfaceVariant.withValues(alpha: 0.45)
+                : isSelected ? surveyColor : LightModeColors.lightOnSurfaceVariant,
             size: 24,
           ),
           const Gap(12),
@@ -41,7 +47,9 @@ class MultiSelectOptionCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: context.watch<FontSizeProvider>().scaled(15),
                 height: 1.45,
-                color: isSelected ? surveyColor.withValues(alpha: 0.95) : LightModeColors.lightOnSurface,
+                color: !isEnabled
+                    ? LightModeColors.lightOnSurfaceVariant.withValues(alpha: 0.55)
+                    : isSelected ? surveyColor.withValues(alpha: 0.95) : LightModeColors.lightOnSurface,
               ),
             ),
           ),
