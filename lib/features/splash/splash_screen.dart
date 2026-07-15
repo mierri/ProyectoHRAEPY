@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:ssapp/core/supabase/supabase_config.dart';
 import 'package:ssapp/shared/utils/theme.dart';
 import 'package:ssapp/shared/widgets/lumi/lumi_widget.dart';
 
@@ -15,12 +14,8 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    final supabaseFuture = SupabaseConfig.initialize().catchError((_) {});
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.wait([
-        supabaseFuture,
-        Future.delayed(const Duration(milliseconds: 2200)),
-      ]).then((_) {
+      Future.delayed(const Duration(milliseconds: 1600)).then((_) {
         if (mounted) context.go('/');
       });
     });

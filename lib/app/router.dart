@@ -1,4 +1,6 @@
 import 'package:go_router/go_router.dart';
+import 'package:ssapp/features/auth/presentation/login_screen.dart';
+import 'package:ssapp/features/auth/provider/auth_service.dart';
 import 'package:ssapp/features/splash/splash_screen.dart';
 import 'package:ssapp/features/surveys/types/assist/presentation/assist_screen.dart';
 import 'package:ssapp/features/surveys/types/bai/presentation/bai_screen.dart';
@@ -37,17 +39,35 @@ import 'package:ssapp/features/surveys/types/whoqol/presentation/whoqol_screen.d
 import 'package:ssapp/features/survey_builder/presentation/custom_surveys_list_screen.dart';
 import 'package:ssapp/features/survey_builder/presentation/custom_survey_editor_screen.dart';
 
-final GoRouter appRouter = GoRouter(
+GoRouter createAppRouter(AuthService authService) => GoRouter(
+  refreshListenable: authService,
   initialLocation: '/splash',
+  redirect: (context, state) {
+    final location = state.uri.toString();
+    final isSplash = state.matchedLocation == '/splash';
+    final isLogin = state.matchedLocation == '/login';
+
+    if (isSplash) return null;
+
+    if (!authService.isAuthenticated) {
+      if (isLogin) return null;
+      return '/login?from=${Uri.encodeComponent(location)}';
+    }
+
+    if (isLogin) {
+      final from = state.uri.queryParameters['from'];
+      if (from != null && from.isNotEmpty && from != '/login') {
+        return from;
+      }
+      return '/';
+    }
+
+    return null;
+  },
   routes: [
-    GoRoute(
-      path: '/splash',
-      builder: (context, state) => const SplashScreen(),
-    ),
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const DashboardScreen(),
-    ),
+    GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
+    GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+    GoRoute(path: '/', builder: (context, state) => const DashboardScreen()),
     GoRoute(
       path: '/new-survey',
       builder: (context, state) => const SurveyTypeSelectionScreen(),
@@ -56,8 +76,13 @@ final GoRouter appRouter = GoRouter(
       path: '/consent-form',
       builder: (context, state) {
         final surveyType = state.uri.queryParameters['surveyType'];
-        final customSurveyId = int.tryParse(state.uri.queryParameters['customSurveyId'] ?? '');
-        return ConsentFormScreen(surveyType: surveyType, customSurveyId: customSurveyId);
+        final customSurveyId = int.tryParse(
+          state.uri.queryParameters['customSurveyId'] ?? '',
+        );
+        return ConsentFormScreen(
+          surveyType: surveyType,
+          customSurveyId: customSurveyId,
+        );
       },
     ),
     GoRoute(
@@ -150,8 +175,11 @@ final GoRouter appRouter = GoRouter(
         }
 
         if (surveyType == 'custom') {
-          final customSurveyId = int.tryParse(state.uri.queryParameters['customSurveyId'] ?? '') ?? 0;
-          final fromInvestigation = state.uri.queryParameters['fromInvestigation'];
+          final customSurveyId =
+              int.tryParse(state.uri.queryParameters['customSurveyId'] ?? '') ??
+              0;
+          final fromInvestigation =
+              state.uri.queryParameters['fromInvestigation'];
           return DynamicSurveyScreen(
             patientId: patientId,
             customSurveyId: customSurveyId,
