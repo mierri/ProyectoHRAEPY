@@ -1,4 +1,5 @@
 import 'package:ssapp/features/surveys/types/bdi/domain/bdi_questions.dart';
+import 'package:ssapp/features/surveys/types/fantastic_mexa/domain/fantastic_mexa_questions.dart';
 import 'package:ssapp/features/surveys/types/gds/domain/gds_questions.dart';
 import 'package:ssapp/features/surveys/types/ghq12/domain/ghq12_questions.dart';
 import 'package:ssapp/features/surveys/types/iciq_sf/domain/iciq_sf_questions.dart';
@@ -28,8 +29,9 @@ class SurveyCatalog {
   static const int socialDeterminants = 15;
   static const int specialtyConsultationAttendance = 16;
   static const int perceivedAttendanceBarriers = 17;
-  static const int mocaBasic = 18;
+  static const int mocaBasic = 4;
   static const int mocaBlind = 19;
+  static const int fantasticMexA = 20;
   static const int custom = 100;
 
   static const Map<int, String> namesById = {
@@ -51,6 +53,7 @@ class SurveyCatalog {
     perceivedAttendanceBarriers: 'Barreras Percibidas para la Asistencia',
     mocaBasic: 'MoCA 8.1',
     mocaBlind: 'MoCA Blind',
+    fantasticMexA: 'FANTASTIC MEX-A',
     custom: 'Encuesta personalizada',
   };
 
@@ -73,6 +76,7 @@ class SurveyCatalog {
     perceivedAttendanceBarriers: 'secondary',
     mocaBasic: 'secondary',
     mocaBlind: 'secondary',
+    fantasticMexA: 'secondary',
     custom: 'primary',
   };
 
@@ -98,6 +102,8 @@ class SurveyCatalog {
     'mocabasic': mocaBasic,
     'moca_blind': mocaBlind,
     'mocablind': mocaBlind,
+    'fantastic_mexa': fantasticMexA,
+    'fantasticmexa': fantasticMexA,
     'custom': custom,
   };
 
@@ -120,6 +126,7 @@ class SurveyCatalog {
     perceivedAttendanceBarriers: 'perceived_attendance_barriers',
     mocaBasic: 'moca_basic',
     mocaBlind: 'moca_blind',
+    fantasticMexA: 'fantastic_mexa',
     custom: 'custom',
   };
 
@@ -169,6 +176,8 @@ class SurveyCatalog {
         return SpecialtyConsultationAttendanceQuestions.questions;
       case perceivedAttendanceBarriers:
         return PerceivedAttendanceBarriersQuestions.questions;
+      case fantasticMexA:
+        return FantasticMexaQuestions.questions;
       case whoqol:
       case sf36:
       case assist:

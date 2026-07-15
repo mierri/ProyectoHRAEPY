@@ -1,22 +1,58 @@
 import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:ssapp/features/reports/domain/report_models.dart';
 import 'package:ssapp/features/reports/domain/stats_calculator.dart';
 import 'package:ssapp/features/reports/infrastructure/pdf/pdf_report_base.dart';
 
 class BdiBaiPdfGenerator extends PdfReportBase {
   final int surveyType;
+  final List<Uint8List?> chartImages;
 
   static String _surveyName(int surveyType) {
     return switch (surveyType) {
+      1 => 'BDI-II',
       2 => 'BAI',
+      6 => 'ASSIST V3.0',
+      7 => 'GDS-15',
+      8 => 'Lawton AIVD',
+      10 => 'Katz ABVD',
+      11 => 'ICIQ-SF',
       12 => 'GHQ-12',
       13 => 'PHQ-9',
       _ => 'BDI-II',
     };
   }
 
-  BdiBaiPdfGenerator({required this.surveyType})
+  static String _levelFor(int surveyType, int score) {
+    return switch (surveyType) {
+      2 => SurveyStatsCalculator.baiLevel(score),
+      6 => SurveyStatsCalculator.assistLevel(score),
+      7 => SurveyStatsCalculator.gdsLevel(score),
+      8 => SurveyStatsCalculator.lawtonLevel(score),
+      10 => SurveyStatsCalculator.katzLevel(score),
+      11 => SurveyStatsCalculator.iciqsfLevel(score),
+      12 => SurveyStatsCalculator.ghq12Level(score),
+      13 => SurveyStatsCalculator.phq9Level(score),
+      _ => SurveyStatsCalculator.bdiLevel(score),
+    };
+  }
+
+  static LevelDistribution _distributionFor(int surveyType, List<Map<String, dynamic>> surveys) {
+    return switch (surveyType) {
+      2 => SurveyStatsCalculator.baiDistribution(surveys),
+      6 => SurveyStatsCalculator.assistDistribution(surveys),
+      7 => SurveyStatsCalculator.gdsDistribution(surveys),
+      8 => SurveyStatsCalculator.lawtonDistribution(surveys),
+      10 => SurveyStatsCalculator.katzDistribution(surveys),
+      11 => SurveyStatsCalculator.iciqsfDistribution(surveys),
+      12 => SurveyStatsCalculator.ghq12Distribution(surveys),
+      13 => SurveyStatsCalculator.phq9Distribution(surveys),
+      _ => SurveyStatsCalculator.bdiDistribution(surveys),
+    };
+  }
+
+  BdiBaiPdfGenerator({required this.surveyType, this.chartImages = const []})
       : super(
           title: 'Reporte ${_surveyName(surveyType)}',
           subtitle: 'Resumen estadístico',
@@ -29,21 +65,11 @@ class BdiBaiPdfGenerator extends PdfReportBase {
     final fonts = await loadFonts();
     final scores = surveys.map(SurveyStatsCalculator.calculateSurveyScore).toList();
     final stats = SurveyStatsCalculator.computeBasicStats(scores);
-    final dist = switch (surveyType) {
-      2 => SurveyStatsCalculator.baiDistribution(surveys),
-      12 => SurveyStatsCalculator.ghq12Distribution(surveys),
-      13 => SurveyStatsCalculator.phq9Distribution(surveys),
-      _ => SurveyStatsCalculator.bdiDistribution(surveys),
-    };
+    final dist = _distributionFor(surveyType, surveys);
 
     final previewRows = surveys.take(20).map((s) {
       final score = SurveyStatsCalculator.calculateSurveyScore(s);
-      final level = switch (surveyType) {
-        2 => SurveyStatsCalculator.baiLevel(score),
-        12 => SurveyStatsCalculator.ghq12Level(score),
-        13 => SurveyStatsCalculator.phq9Level(score),
-        _ => SurveyStatsCalculator.bdiLevel(score),
-      };
+      final level = _levelFor(surveyType, score);
       final date = ('${s['created_at'] ?? ''}').split('T').first;
       return [
         '${s['survey_id'] ?? ''}',
@@ -83,6 +109,13 @@ class BdiBaiPdfGenerator extends PdfReportBase {
               return [entry.key, dist.ranges[entry.key] ?? '', '${entry.value}', '$pct%'];
             }).toList(),
           ),
+          if (chartImages.isNotEmpty) pw.SizedBox(height: 14),
+          ...chartImages.where((image) => image != null).expand(
+                (image) => [
+                  embedChartImage(image, height: 180),
+                  pw.SizedBox(height: 12),
+                ],
+              ),
           pw.SizedBox(height: 12),
           pw.Text('Últimos registros', style: pw.TextStyle(font: fonts.bold, fontSize: 11)),
           pw.SizedBox(height: 6),

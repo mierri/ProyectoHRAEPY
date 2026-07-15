@@ -139,6 +139,102 @@ class SurveyStatsCalculator {
     );
   }
 
+  static LevelDistribution assistDistribution(List<Map<String, dynamic>> surveys) {
+    final counts = <String, int>{'Bajo': 0, 'Moderado': 0, 'Alto': 0};
+    for (final s in surveys) {
+      final score = calculateSurveyScore(s);
+      final level = _assistLevel(score);
+      counts[level] = (counts[level] ?? 0) + 1;
+    }
+    return LevelDistribution(
+      counts: counts,
+      ranges: {'Bajo': '0–3', 'Moderado': '4–26', 'Alto': '27+'},
+      colors: {'Bajo': '#10B981', 'Moderado': '#F97316', 'Alto': '#EF4444'},
+    );
+  }
+
+  static LevelDistribution gdsDistribution(List<Map<String, dynamic>> surveys) {
+    final counts = <String, int>{
+      'Normal': 0, 'Depresion leve': 0, 'Depresion moderada': 0, 'Depresion severa': 0,
+    };
+    for (final s in surveys) {
+      final score = calculateSurveyScore(s);
+      final level = _gdsLevel(score);
+      counts[level] = (counts[level] ?? 0) + 1;
+    }
+    return LevelDistribution(
+      counts: counts,
+      ranges: {
+        'Normal': '0–4',
+        'Depresion leve': '5–8',
+        'Depresion moderada': '9–11',
+        'Depresion severa': '12–15',
+      },
+      colors: {
+        'Normal': '#10B981',
+        'Depresion leve': '#FBBF24',
+        'Depresion moderada': '#F97316',
+        'Depresion severa': '#EF4444',
+      },
+    );
+  }
+
+  static LevelDistribution lawtonDistribution(List<Map<String, dynamic>> surveys) {
+    final counts = <String, int>{'Independencia total': 0, 'Deterioro funcional': 0};
+    for (final s in surveys) {
+      final score = calculateSurveyScore(s);
+      final level = _lawtonLevel(score);
+      counts[level] = (counts[level] ?? 0) + 1;
+    }
+    return LevelDistribution(
+      counts: counts,
+      ranges: {'Independencia total': '8', 'Deterioro funcional': '0–7'},
+      colors: {'Independencia total': '#10B981', 'Deterioro funcional': '#F97316'},
+    );
+  }
+
+  static LevelDistribution katzDistribution(List<Map<String, dynamic>> surveys) {
+    final counts = <String, int>{'Independencia total': 0, 'Dependencia en algun grado': 0};
+    for (final s in surveys) {
+      final score = calculateSurveyScore(s);
+      final level = _katzLevel(score);
+      counts[level] = (counts[level] ?? 0) + 1;
+    }
+    return LevelDistribution(
+      counts: counts,
+      ranges: {'Independencia total': '6', 'Dependencia en algun grado': '0–5'},
+      colors: {'Independencia total': '#10B981', 'Dependencia en algun grado': '#F97316'},
+    );
+  }
+
+  static LevelDistribution iciqsfDistribution(List<Map<String, dynamic>> surveys) {
+    final counts = <String, int>{
+      'Sin incontinencia': 0, 'Leve': 0, 'Moderada': 0, 'Severa': 0, 'Muy severa': 0,
+    };
+    for (final s in surveys) {
+      final score = calculateSurveyScore(s);
+      final level = _iciqsfLevel(score);
+      counts[level] = (counts[level] ?? 0) + 1;
+    }
+    return LevelDistribution(
+      counts: counts,
+      ranges: {
+        'Sin incontinencia': '0',
+        'Leve': '1–5',
+        'Moderada': '6–12',
+        'Severa': '13–18',
+        'Muy severa': '19–21',
+      },
+      colors: {
+        'Sin incontinencia': '#10B981',
+        'Leve': '#FBBF24',
+        'Moderada': '#F97316',
+        'Severa': '#EF4444',
+        'Muy severa': '#B91C1C',
+      },
+    );
+  }
+
   static String bdiLevel(int score) => _bdiLevel(score);
   static String baiLevel(int score) => _baiLevel(score);
   static String gdsLevel(int score) => _gdsLevel(score);

@@ -26,6 +26,7 @@ class SurveyQuestionCard extends StatelessWidget {
         'katz'    => 'Responda según su nivel de independencia actual',
         'iciqsf'  => 'Responda según su situación urinaria actual',
         'osteoporosis' => 'Factores de riesgo actuales e historial clinico',
+        'fantastic_mexa' => 'Ultimos dos meses',
         _         => 'Últimas dos semanas incluyendo hoy',
       };
 

@@ -91,6 +91,7 @@ flutter:
     - assets/lumi_5.0.png
     - assets/lumi 6.0.png
     - assets/lumi 7.0.png
+    - assets/imagenes-webp/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

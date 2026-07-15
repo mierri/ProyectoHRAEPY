@@ -23,8 +23,20 @@ class ConsentFormController extends ChangeNotifier {
   double? _height;
   double? _imc;
 
+  // FANTASTIC MEX-A: datos generales (no capturados en ningun otro flujo)
+  String _iniciales = '';
+  String _escolaridad = '';
+  String _ocupacion = '';
+  String _estadoCivil = '';
+  String _habitantesCasa = '';
+  String _numHabitantes = '';
+  String _anosLaborando = '';
+  String _horarioLaboral = '';
+
   String get resolvedSurveyType => SurveyTypeConfig.normalizeType(surveyType);
   bool get isOsteoporosisSurvey => resolvedSurveyType == 'osteoporosis';
+  bool get isFantasticMexaSurvey => resolvedSurveyType == 'fantastic_mexa';
+  bool get showAnthropometrics => isOsteoporosisSurvey || isFantasticMexaSurvey;
 
   String get name => _name;
   DateTime? get dateOfBirth => _dateOfBirth;
@@ -38,6 +50,65 @@ class ConsentFormController extends ChangeNotifier {
   double? get weight => _weight;
   double? get height => _height;
   double? get imc => _imc;
+
+  String get fechaHoy {
+    final now = DateTime.now();
+    return '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+  }
+
+  String get iniciales => _iniciales.isNotEmpty ? _iniciales : _defaultIniciales();
+  String get escolaridad => _escolaridad;
+  String get ocupacion => _ocupacion;
+  String get estadoCivil => _estadoCivil;
+  String get habitantesCasa => _habitantesCasa;
+  String get numHabitantes => _numHabitantes;
+  String get anosLaborando => _anosLaborando;
+  String get horarioLaboral => _horarioLaboral;
+
+  String _defaultIniciales() {
+    final parts = _name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
+    return parts.map((p) => p[0].toUpperCase()).take(4).join();
+  }
+
+  void onInicialesChanged(String value) {
+    _iniciales = value.trim();
+    notifyListeners();
+  }
+
+  void onEscolaridadChanged(String value) {
+    _escolaridad = value;
+    notifyListeners();
+  }
+
+  void onOcupacionChanged(String value) {
+    _ocupacion = value.trim();
+    notifyListeners();
+  }
+
+  void onEstadoCivilChanged(String value) {
+    _estadoCivil = value;
+    notifyListeners();
+  }
+
+  void onHabitantesCasaChanged(String value) {
+    _habitantesCasa = value;
+    notifyListeners();
+  }
+
+  void onNumHabitantesChanged(String value) {
+    _numHabitantes = value;
+    notifyListeners();
+  }
+
+  void onAnosLaborandoChanged(String value) {
+    _anosLaborando = value.trim();
+    notifyListeners();
+  }
+
+  void onHorarioLaboralChanged(String value) {
+    _horarioLaboral = value;
+    notifyListeners();
+  }
 
   int? get patientAge {
     if (_selectedPatient != null) return _selectedPatient!.age;
@@ -122,7 +193,7 @@ class ConsentFormController extends ChangeNotifier {
   }
 
   void _recalculateImc() {
-    if (!isOsteoporosisSurvey) {
+    if (!showAnthropometrics) {
       _imc = null;
       return;
     }

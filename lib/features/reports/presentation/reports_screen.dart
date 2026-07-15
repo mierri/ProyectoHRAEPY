@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart' as material;
 import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
+import 'package:ssapp/features/patients/data/patient_repository.dart';
 import 'package:ssapp/features/reports/presentation/reports_viewmodel.dart';
+import 'package:ssapp/shared/models/patient_model.dart';
 import 'package:ssapp/features/reports/presentation/viewmodels/survey_report_viewmodels.dart';
 import 'package:ssapp/features/survey_builder/domain/custom_survey_definition.dart';
 import 'package:ssapp/features/survey_builder/domain/custom_survey_service.dart';
@@ -23,6 +25,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     1: 'BDI-II',
     2: 'BAI',
     3: 'WHOQOL-BREF',
+    4: 'MoCA 8.1',
     5: 'SF-36',
     6: 'ASSIST V3.0',
     7: 'GDS-15',
@@ -36,6 +39,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
     15: 'Determinantes Sociales',
     16: 'Asistencia en Consulta de Especialidad',
     17: 'Barreras Percibidas para la Asistencia',
+    19: 'MoCA Blind',
+    20: 'FANTASTIC MEX-A',
   };
 
   @override
@@ -62,11 +67,20 @@ class _ReportsScreenState extends State<ReportsScreen> {
     await _loadForType(_viewModel.selectedSurveyType);
   }
 
-  Future<void> _loadForType(int value) {
+  Future<void> _loadForType(int value) async {
     setState(() => _selectedValue = value);
     final surveyService = context.read<SurveyService>();
+    List<PatientModel>? patients;
+    if (value == 9) {
+      final patientService = context.read<PatientService>();
+      if (patientService.patients.isEmpty) {
+        await patientService.loadPatients();
+      }
+      patients = patientService.patients;
+    }
+    if (!mounted) return;
     if (_surveyNames.containsKey(value)) {
-      return _viewModel.loadReport(surveyService, value);
+      return _viewModel.loadReport(surveyService, value, patients: patients);
     }
     final definition = context.read<CustomSurveyService>().getById(value);
     return _viewModel.loadReport(
@@ -74,6 +88,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       100,
       customSurveyId: definition?.id,
       customDefinition: definition,
+      patients: patients,
     );
   }
 
@@ -187,6 +202,9 @@ class _HeaderBar extends StatelessWidget {
                     const SelectItemButton(value: 15, child: Text('Determinantes Sociales')),
                     const SelectItemButton(value: 16, child: Text('Asistencia en Consulta de Especialidad')),
                     const SelectItemButton(value: 17, child: Text('Barreras Percibidas para la Asistencia')),
+                    const SelectItemButton(value: 18, child: Text('MoCA 8.1')),
+                    const SelectItemButton(value: 19, child: Text('MoCA Blind')),
+                    const SelectItemButton(value: 20, child: Text('FANTASTIC MEX-A')),
                     for (final def in customSurveys)
                       SelectItemButton(value: def.id, child: Text('Mis encuestas: ${def.title}')),
                   ],
@@ -219,6 +237,8 @@ class _HeaderBar extends StatelessWidget {
         return 'BAI';
       case 3:
         return 'WHOQOL-BREF';
+      case 4:
+        return 'MoCA 8.1';
       case 5:
         return 'SF-36';
       case 6:
@@ -245,6 +265,10 @@ class _HeaderBar extends StatelessWidget {
         return 'Asistencia en Consulta de Especialidad';
       case 17:
         return 'Barreras Percibidas para la Asistencia';
+      case 19:
+        return 'MoCA Blind';
+      case 20:
+        return 'FANTASTIC MEX-A';
       default:
         for (final def in customSurveys) {
           if (def.id == surveyType) return def.title;

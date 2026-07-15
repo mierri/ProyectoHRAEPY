@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart' as material show Icons;
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +10,7 @@ import 'package:ssapp/features/surveys/domain/survey_service.dart';
 import 'package:ssapp/features/surveys/presentation/survey_controller.dart';
 import 'package:ssapp/features/surveys/shared/form/survey_text_field.dart';
 import 'package:ssapp/features/surveys/shared/widgets/survey_form_dialogs.dart';
+import 'package:ssapp/features/surveys/shared/widgets/survey_form_wizard.dart';
 import 'package:ssapp/features/surveys/types/moca_basic/domain/moca_basic_fields.dart';
 import 'package:ssapp/features/surveys/types/moca_basic/presentation/moca_basic_controller.dart';
 import 'package:ssapp/shared/utils/theme.dart';
@@ -29,11 +31,63 @@ class MocaBasicScreen extends StatefulWidget {
 class _MocaBasicScreenState extends State<MocaBasicScreen> {
   late MocaBasicController _controller;
   bool _initialized = false;
+  int _currentIndex = 0;
   final Map<int, TextEditingController> _textControllers = {};
+
+  static const List<List<int>> _sectionRequiredIds = [
+    [
+      MocaBasicFieldIds.trailDrawing,
+      MocaBasicFieldIds.trailCorrect,
+      MocaBasicFieldIds.cubeDrawing,
+      MocaBasicFieldIds.cubeCorrect,
+      MocaBasicFieldIds.clockDrawing,
+      MocaBasicFieldIds.clockContour,
+      MocaBasicFieldIds.clockNumbers,
+      MocaBasicFieldIds.clockHands,
+    ],
+    [
+      MocaBasicFieldIds.namingLion,
+      MocaBasicFieldIds.namingRhino,
+      MocaBasicFieldIds.namingCamel,
+    ],
+    [],
+    [
+      MocaBasicFieldIds.digitsForward,
+      MocaBasicFieldIds.digitsBackward,
+      MocaBasicFieldIds.vigilance,
+      MocaBasicFieldIds.serialSevensCorrect,
+    ],
+    [
+      MocaBasicFieldIds.sentence1,
+      MocaBasicFieldIds.sentence2,
+      MocaBasicFieldIds.fluencyWords,
+    ],
+    [
+      MocaBasicFieldIds.abstractionTrainBicycle,
+      MocaBasicFieldIds.abstractionWatchRuler,
+    ],
+    [
+      MocaBasicFieldIds.delayedRostro,
+      MocaBasicFieldIds.delayedSeda,
+      MocaBasicFieldIds.delayedTemplo,
+      MocaBasicFieldIds.delayedClavel,
+      MocaBasicFieldIds.delayedRojo,
+    ],
+    [
+      MocaBasicFieldIds.orientationDate,
+      MocaBasicFieldIds.orientationMonth,
+      MocaBasicFieldIds.orientationYear,
+      MocaBasicFieldIds.orientationDay,
+      MocaBasicFieldIds.orientationPlace,
+      MocaBasicFieldIds.orientationCity,
+    ],
+    [MocaBasicFieldIds.education12OrLess],
+  ];
 
   int? _fromInvestigationId() {
     final params = GoRouterState.of(context).uri.queryParameters;
-    final raw = params['fromInvestigation'] ??
+    final raw =
+        params['fromInvestigation'] ??
         params['from_investigation'] ??
         params['fromInvestigationId'] ??
         params['from_investigation_id'];
@@ -185,12 +239,42 @@ class _MocaBasicScreenState extends State<MocaBasicScreen> {
     );
   }
 
+  bool _isSectionAnswered(int index) {
+    if (index < 0 || index >= _sectionRequiredIds.length) return false;
+    return _sectionRequiredIds[index].every(_controller.isAnswered);
+  }
+
+  bool get _canGoNext => _isSectionAnswered(_currentIndex);
+
+  void _goToSection(int index) {
+    setState(
+      () => _currentIndex = index.clamp(0, _sectionRequiredIds.length - 1),
+    );
+  }
+
+  void _goToPrevious() {
+    if (_currentIndex > 0) {
+      setState(() => _currentIndex--);
+    }
+  }
+
+  void _goToNextOrSave() {
+    if (_currentIndex < _sectionRequiredIds.length - 1) {
+      setState(() => _currentIndex++);
+    } else {
+      _saveSurvey();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isLast = _currentIndex == _sectionRequiredIds.length - 1;
     return Scaffold(
       headers: [
         AppBar(
-          title: const Text('MoCA 8.1'),
+          title: Text(
+            'MoCA 8.1 (${_currentIndex + 1}/${_sectionRequiredIds.length})',
+          ),
           subtitle: const Text('Paciente + doctor en tableta'),
           leading: [
             IconButton(
@@ -199,9 +283,11 @@ class _MocaBasicScreenState extends State<MocaBasicScreen> {
               variance: ButtonVariance.ghost,
             ),
           ],
-          trailing: const [
-            FontSizeButton(),
-          ],
+          trailing: const [FontSizeButton()],
+        ),
+        FormStepProgressBar(
+          progress: (_currentIndex + 1) / _sectionRequiredIds.length,
+          color: _kColor,
         ),
       ],
       child: Column(
@@ -212,369 +298,518 @@ class _MocaBasicScreenState extends State<MocaBasicScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _HeroCard(),
-                  const Gap(20),
-                  _SectionCard(
-                    number: '1',
-                    title: 'Visoespacial / ejecutivo',
-                    description:
-                        'Cuando el paciente necesite interactuar con la tableta, use estas actividades. El doctor registra la puntuacion oficial debajo de cada una.',
-                    children: [
-                      _PatientTaskCard(
-                        title: 'Trazado alternante',
-                        instruction:
-                            'Paciente: una los circulos siguiendo el patron 1-A-2-B-3-C-4-D-5-E.',
-                        child: _DrawingTask(
-                          controller: _controller,
-                          drawingFieldId: MocaBasicFieldIds.trailDrawing,
-                          backgroundPainter: const _TrailStimulusPainter(),
-                          height: 260,
+                  if (_currentIndex == 0) ...[_HeroCard(), const Gap(20)],
+                  if (_currentIndex == 0)
+                    _SectionCard(
+                      number: '1',
+                      title: 'Visoespacial / ejecutivo',
+                      description:
+                          'Cuando el paciente necesite interactuar con la tableta, use estas actividades. El doctor registra la puntuacion oficial debajo de cada una.',
+                      children: [
+                        _PatientTaskCard(
+                          title: 'Trazado alternante',
+                          instruction:
+                              'Paciente: una los circulos siguiendo el patron 1-A-2-B-3-C-4-D-5-E.',
+                          child: _DrawingTask(
+                            controller: _controller,
+                            drawingFieldId: MocaBasicFieldIds.trailDrawing,
+                            backgroundPainter: const _TrailStimulusPainter(),
+                            height: 260,
+                          ),
                         ),
-                      ),
-                      const Gap(16),
-                      _BooleanScoreRow(
-                        label: 'Doctor: trazado correcto',
-                        value: _controller.intAnswer(MocaBasicFieldIds.trailCorrect),
-                        onChanged: (value) =>
-                            _controller.setIntAnswer(MocaBasicFieldIds.trailCorrect, value),
-                      ),
-                      const Gap(20),
-                      _PatientTaskCard(
-                        title: 'Copia del cubo',
-                        instruction:
-                            'Paciente: observe el cubo modelo y copielo en el recuadro en blanco.',
-                        child: _CubeTask(
-                          controller: _controller,
+                        const Gap(16),
+                        _BooleanScoreRow(
+                          label: 'Doctor: trazado correcto',
+                          value: _controller.intAnswer(
+                            MocaBasicFieldIds.trailCorrect,
+                          ),
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.trailCorrect,
+                            value,
+                          ),
                         ),
-                      ),
-                      const Gap(16),
-                      _BooleanScoreRow(
-                        label: 'Doctor: cubo correcto',
-                        value: _controller.intAnswer(MocaBasicFieldIds.cubeCorrect),
-                        onChanged: (value) =>
-                            _controller.setIntAnswer(MocaBasicFieldIds.cubeCorrect, value),
-                      ),
-                      const Gap(20),
-                      _PatientTaskCard(
-                        title: 'Dibujo del reloj',
-                        instruction:
-                            'Paciente: dibuje un reloj, coloque todos los numeros y marque las 11:10.',
-                        child: _DrawingTask(
-                          controller: _controller,
-                          drawingFieldId: MocaBasicFieldIds.clockDrawing,
-                          height: 280,
+                        const Gap(20),
+                        _PatientTaskCard(
+                          title: 'Copia del cubo',
+                          instruction:
+                              'Paciente: observe el cubo modelo y copielo en el recuadro en blanco.',
+                          child: _CubeTask(controller: _controller),
                         ),
-                      ),
-                      const Gap(16),
-                      _BooleanScoreRow(
-                        label: 'Doctor: contorno correcto',
-                        value: _controller.intAnswer(MocaBasicFieldIds.clockContour),
-                        onChanged: (value) =>
-                            _controller.setIntAnswer(MocaBasicFieldIds.clockContour, value),
-                      ),
-                      const Gap(12),
-                      _BooleanScoreRow(
-                        label: 'Doctor: numeros correctos',
-                        value: _controller.intAnswer(MocaBasicFieldIds.clockNumbers),
-                        onChanged: (value) =>
-                            _controller.setIntAnswer(MocaBasicFieldIds.clockNumbers, value),
-                      ),
-                      const Gap(12),
-                      _BooleanScoreRow(
-                        label: 'Doctor: manecillas correctas',
-                        value: _controller.intAnswer(MocaBasicFieldIds.clockHands),
-                        onChanged: (value) =>
-                            _controller.setIntAnswer(MocaBasicFieldIds.clockHands, value),
-                      ),
-                    ],
-                  ),
-                  const Gap(20),
-                  _SectionCard(
-                    number: '2',
-                    title: 'Denominacion',
-                    description:
-                        'Paciente: nombre los animales mostrados. Doctor: registre uno por uno.',
-                    children: [
-                      const _AnimalStimulusRow(),
-                      const Gap(16),
-                      _BooleanScoreRow(
-                        label: 'Leon',
-                        value: _controller.intAnswer(MocaBasicFieldIds.namingLion),
-                        onChanged: (value) =>
-                            _controller.setIntAnswer(MocaBasicFieldIds.namingLion, value),
-                      ),
-                      const Gap(12),
-                      _BooleanScoreRow(
-                        label: 'Rinoceronte',
-                        value: _controller.intAnswer(MocaBasicFieldIds.namingRhino),
-                        onChanged: (value) =>
-                            _controller.setIntAnswer(MocaBasicFieldIds.namingRhino, value),
-                      ),
-                      const Gap(12),
-                      _BooleanScoreRow(
-                        label: 'Camello',
-                        value: _controller.intAnswer(MocaBasicFieldIds.namingCamel),
-                        onChanged: (value) =>
-                            _controller.setIntAnswer(MocaBasicFieldIds.namingCamel, value),
-                      ),
-                    ],
-                  ),
-                  const Gap(20),
-                  _SectionCard(
-                    number: '3',
-                    title: 'Memoria inmediata',
-                    description:
-                        'Doctor: lea la lista de palabras segun el protocolo oficial. No muestre las palabras al paciente.',
-                    children: [
-                      const _DoctorOnlyNotice(
-                        title: 'Palabras del ensayo',
-                        body:
-                            'Diga en voz alta estas cinco palabras al paciente: ROSTRO, SEDA, TEMPLO, CLAVEL, ROJO. Registre cuantas repite correctamente en el ensayo 1 y en el ensayo 2. Estos datos no suman al puntaje total.',
-                      ),
-                      const Gap(16),
-                      SurveyTextField(
-                        label: 'Ensayo 1 (0 a 5)',
-                        controller: _tcFor(
-                          MocaBasicFieldIds.memoryTrial1,
-                          initial: _controller.intAnswer(MocaBasicFieldIds.memoryTrial1)?.toString() ?? '',
+                        const Gap(16),
+                        _BooleanScoreRow(
+                          label: 'Doctor: cubo correcto',
+                          value: _controller.intAnswer(
+                            MocaBasicFieldIds.cubeCorrect,
+                          ),
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.cubeCorrect,
+                            value,
+                          ),
                         ),
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                        onChanged: (value) => _controller.setIntAnswer(
-                          MocaBasicFieldIds.memoryTrial1,
-                          int.tryParse(value),
+                        const Gap(20),
+                        _PatientTaskCard(
+                          title: 'Dibujo del reloj',
+                          instruction:
+                              'Paciente: dibuje un reloj, coloque todos los numeros y marque las 11:10.',
+                          child: _DrawingTask(
+                            controller: _controller,
+                            drawingFieldId: MocaBasicFieldIds.clockDrawing,
+                            height: 280,
+                          ),
                         ),
-                      ),
-                      const Gap(16),
-                      SurveyTextField(
-                        label: 'Ensayo 2 (0 a 5)',
-                        controller: _tcFor(
-                          MocaBasicFieldIds.memoryTrial2,
-                          initial: _controller.intAnswer(MocaBasicFieldIds.memoryTrial2)?.toString() ?? '',
+                        const Gap(16),
+                        _BooleanScoreRow(
+                          label: 'Doctor: contorno correcto',
+                          value: _controller.intAnswer(
+                            MocaBasicFieldIds.clockContour,
+                          ),
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.clockContour,
+                            value,
+                          ),
                         ),
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                        onChanged: (value) => _controller.setIntAnswer(
-                          MocaBasicFieldIds.memoryTrial2,
-                          int.tryParse(value),
+                        const Gap(12),
+                        _BooleanScoreRow(
+                          label: 'Doctor: numeros correctos',
+                          value: _controller.intAnswer(
+                            MocaBasicFieldIds.clockNumbers,
+                          ),
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.clockNumbers,
+                            value,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const Gap(20),
-                  _SectionCard(
-                    number: '4',
-                    title: 'Atencion',
-                    description:
-                        'Doctor: administre digitos, vigilancia con la letra A y restas seriadas. Capture la puntuacion oficial.',
-                    children: [
-                      _BooleanScoreRow(
-                        label: 'Digitos hacia delante',
-                        value: _controller.intAnswer(MocaBasicFieldIds.digitsForward),
-                        onChanged: (value) =>
-                            _controller.setIntAnswer(MocaBasicFieldIds.digitsForward, value),
-                      ),
-                      const Gap(12),
-                      _BooleanScoreRow(
-                        label: 'Digitos hacia atras',
-                        value: _controller.intAnswer(MocaBasicFieldIds.digitsBackward),
-                        onChanged: (value) =>
-                            _controller.setIntAnswer(MocaBasicFieldIds.digitsBackward, value),
-                      ),
-                      const Gap(12),
-                      _BooleanScoreRow(
-                        label: 'Vigilancia con letra A',
-                        value: _controller.intAnswer(MocaBasicFieldIds.vigilance),
-                        onChanged: (value) =>
-                            _controller.setIntAnswer(MocaBasicFieldIds.vigilance, value),
-                      ),
-                      const Gap(16),
-                      SurveyTextField(
-                        label: 'Restas correctas en serie del 7 (0 a 5)',
-                        helperText: 'Capture cuantas restas consecutivas fueron correctas.',
-                        controller: _tcFor(
-                          MocaBasicFieldIds.serialSevensCorrect,
-                          initial: _controller.intAnswer(MocaBasicFieldIds.serialSevensCorrect)?.toString() ?? '',
+                        const Gap(12),
+                        _BooleanScoreRow(
+                          label: 'Doctor: manecillas correctas',
+                          value: _controller.intAnswer(
+                            MocaBasicFieldIds.clockHands,
+                          ),
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.clockHands,
+                            value,
+                          ),
                         ),
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                        onChanged: (value) => _controller.setIntAnswer(
-                          MocaBasicFieldIds.serialSevensCorrect,
-                          int.tryParse(value),
+                      ],
+                    ),
+                  if (_currentIndex == 1)
+                    _SectionCard(
+                      number: '2',
+                      title: 'Denominacion',
+                      description:
+                          'Paciente: nombre los animales mostrados. Doctor: registre uno por uno.',
+                      children: [
+                        const _AnimalStimulusRow(),
+                        const Gap(16),
+                        _BooleanScoreRow(
+                          label: 'Leon',
+                          value: _controller.intAnswer(
+                            MocaBasicFieldIds.namingLion,
+                          ),
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.namingLion,
+                            value,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const Gap(20),
-                  _SectionCard(
-                    number: '5',
-                    title: 'Lenguaje',
-                    description:
-                        'Doctor: aplique repeticion de frases y fluidez fonemica con la letra F.',
-                    children: [
-                      _BooleanScoreRow(
-                        label: 'Frase 1 correcta',
-                        value: _controller.intAnswer(MocaBasicFieldIds.sentence1),
-                        onChanged: (value) =>
-                            _controller.setIntAnswer(MocaBasicFieldIds.sentence1, value),
-                      ),
-                      const Gap(12),
-                      _BooleanScoreRow(
-                        label: 'Frase 2 correcta',
-                        value: _controller.intAnswer(MocaBasicFieldIds.sentence2),
-                        onChanged: (value) =>
-                            _controller.setIntAnswer(MocaBasicFieldIds.sentence2, value),
-                      ),
-                      const Gap(16),
-                      SurveyTextField(
-                        label: 'Palabras con F en 60 segundos',
-                        helperText: 'La app dara 1 punto si produce 11 o mas palabras validas.',
-                        controller: _tcFor(
-                          MocaBasicFieldIds.fluencyWords,
-                          initial: _controller.intAnswer(MocaBasicFieldIds.fluencyWords)?.toString() ?? '',
+                        const Gap(12),
+                        _BooleanScoreRow(
+                          label: 'Rinoceronte',
+                          value: _controller.intAnswer(
+                            MocaBasicFieldIds.namingRhino,
+                          ),
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.namingRhino,
+                            value,
+                          ),
                         ),
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                        onChanged: (value) => _controller.setIntAnswer(
-                          MocaBasicFieldIds.fluencyWords,
-                          int.tryParse(value),
+                        const Gap(12),
+                        _BooleanScoreRow(
+                          label: 'Camello',
+                          value: _controller.intAnswer(
+                            MocaBasicFieldIds.namingCamel,
+                          ),
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.namingCamel,
+                            value,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const Gap(20),
-                  _SectionCard(
-                    number: '6',
-                    title: 'Abstraccion',
-                    description: 'Doctor: marque cada relacion correctamente identificada.',
-                    children: [
-                      _BooleanScoreRow(
-                        label: 'Tren y bicicleta',
-                        value: _controller.intAnswer(MocaBasicFieldIds.abstractionTrainBicycle),
-                        onChanged: (value) => _controller.setIntAnswer(
-                          MocaBasicFieldIds.abstractionTrainBicycle,
-                          value,
+                      ],
+                    ),
+                  if (_currentIndex == 2)
+                    _SectionCard(
+                      number: '3',
+                      title: 'Memoria inmediata',
+                      description:
+                          'Doctor: lea la lista de palabras al paciente, haga dos intentos y recuerdeselas 5 minutos mas tarde. No muestre las palabras al paciente.',
+                      children: [
+                        const _DoctorOnlyNotice(
+                          title: 'Palabras del ensayo',
+                          body:
+                              'Diga en voz alta: ROSTRO, SEDA, TEMPLO, CLAVEL, ROJO. Registre cuantas repite correctamente en el ensayo 1 y en el ensayo 2. Estos datos no suman al puntaje total.',
                         ),
-                      ),
-                      const Gap(12),
-                      _BooleanScoreRow(
-                        label: 'Reloj y regla',
-                        value: _controller.intAnswer(MocaBasicFieldIds.abstractionWatchRuler),
-                        onChanged: (value) => _controller.setIntAnswer(
-                          MocaBasicFieldIds.abstractionWatchRuler,
-                          value,
+                        const Gap(16),
+                        SurveyTextField(
+                          label: 'Ensayo 1 (0 a 5)',
+                          controller: _tcFor(
+                            MocaBasicFieldIds.memoryTrial1,
+                            initial:
+                                _controller
+                                    .intAnswer(MocaBasicFieldIds.memoryTrial1)
+                                    ?.toString() ??
+                                '',
+                          ),
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.memoryTrial1,
+                            int.tryParse(value),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const Gap(20),
-                  _SectionCard(
-                    number: '7',
-                    title: 'Recuerdo diferido',
-                    description:
-                        'Doctor: marque las palabras recuperadas espontaneamente, sin pistas.',
-                    children: [
-                      _BooleanScoreRow(
-                        label: 'ROSTRO',
-                        value: _controller.intAnswer(MocaBasicFieldIds.delayedRostro),
-                        onChanged: (value) =>
-                            _controller.setIntAnswer(MocaBasicFieldIds.delayedRostro, value),
-                      ),
-                      const Gap(12),
-                      _BooleanScoreRow(
-                        label: 'SEDA',
-                        value: _controller.intAnswer(MocaBasicFieldIds.delayedSeda),
-                        onChanged: (value) =>
-                            _controller.setIntAnswer(MocaBasicFieldIds.delayedSeda, value),
-                      ),
-                      const Gap(12),
-                      _BooleanScoreRow(
-                        label: 'TEMPLO',
-                        value: _controller.intAnswer(MocaBasicFieldIds.delayedTemplo),
-                        onChanged: (value) =>
-                            _controller.setIntAnswer(MocaBasicFieldIds.delayedTemplo, value),
-                      ),
-                      const Gap(12),
-                      _BooleanScoreRow(
-                        label: 'CLAVEL',
-                        value: _controller.intAnswer(MocaBasicFieldIds.delayedClavel),
-                        onChanged: (value) =>
-                            _controller.setIntAnswer(MocaBasicFieldIds.delayedClavel, value),
-                      ),
-                      const Gap(12),
-                      _BooleanScoreRow(
-                        label: 'ROJO',
-                        value: _controller.intAnswer(MocaBasicFieldIds.delayedRojo),
-                        onChanged: (value) =>
-                            _controller.setIntAnswer(MocaBasicFieldIds.delayedRojo, value),
-                      ),
-                    ],
-                  ),
-                  const Gap(20),
-                  _SectionCard(
-                    number: '8',
-                    title: 'Orientacion',
-                    description: 'Doctor: marque cada respuesta exacta.',
-                    children: [
-                      _BooleanScoreRow(
-                        label: 'Fecha',
-                        value: _controller.intAnswer(MocaBasicFieldIds.orientationDate),
-                        onChanged: (value) =>
-                            _controller.setIntAnswer(MocaBasicFieldIds.orientationDate, value),
-                      ),
-                      const Gap(12),
-                      _BooleanScoreRow(
-                        label: 'Mes',
-                        value: _controller.intAnswer(MocaBasicFieldIds.orientationMonth),
-                        onChanged: (value) =>
-                            _controller.setIntAnswer(MocaBasicFieldIds.orientationMonth, value),
-                      ),
-                      const Gap(12),
-                      _BooleanScoreRow(
-                        label: 'Anio',
-                        value: _controller.intAnswer(MocaBasicFieldIds.orientationYear),
-                        onChanged: (value) =>
-                            _controller.setIntAnswer(MocaBasicFieldIds.orientationYear, value),
-                      ),
-                      const Gap(12),
-                      _BooleanScoreRow(
-                        label: 'Dia de la semana',
-                        value: _controller.intAnswer(MocaBasicFieldIds.orientationDay),
-                        onChanged: (value) =>
-                            _controller.setIntAnswer(MocaBasicFieldIds.orientationDay, value),
-                      ),
-                      const Gap(12),
-                      _BooleanScoreRow(
-                        label: 'Lugar',
-                        value: _controller.intAnswer(MocaBasicFieldIds.orientationPlace),
-                        onChanged: (value) =>
-                            _controller.setIntAnswer(MocaBasicFieldIds.orientationPlace, value),
-                      ),
-                      const Gap(12),
-                      _BooleanScoreRow(
-                        label: 'Ciudad',
-                        value: _controller.intAnswer(MocaBasicFieldIds.orientationCity),
-                        onChanged: (value) =>
-                            _controller.setIntAnswer(MocaBasicFieldIds.orientationCity, value),
-                      ),
-                    ],
-                  ),
-                  const Gap(20),
-                  _SectionCard(
-                    number: '9',
-                    title: 'Ajuste educativo',
-                    description:
-                        'La app suma +1 punto si el total es menor de 30 y el paciente tiene 12 anios o menos de estudios.',
-                    children: [
-                      _BooleanScoreRow(
-                        label: '12 anios o menos de estudios',
-                        value: _controller.intAnswer(MocaBasicFieldIds.education12OrLess),
-                        onChanged: (value) => _controller.setIntAnswer(
-                          MocaBasicFieldIds.education12OrLess,
-                          value,
+                        const Gap(16),
+                        SurveyTextField(
+                          label: 'Ensayo 2 (0 a 5)',
+                          controller: _tcFor(
+                            MocaBasicFieldIds.memoryTrial2,
+                            initial:
+                                _controller
+                                    .intAnswer(MocaBasicFieldIds.memoryTrial2)
+                                    ?.toString() ??
+                                '',
+                          ),
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.memoryTrial2,
+                            int.tryParse(value),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
+                  if (_currentIndex == 3)
+                    _SectionCard(
+                      number: '4',
+                      title: 'Atencion',
+                      description:
+                          'Doctor: lea los numeros a 1 por segundo, aplique vigilancia con la letra A y pida restar de 7 en 7 desde 100.',
+                      children: [
+                        const _DoctorOnlyNotice(
+                          title: 'Consignas de atencion',
+                          body:
+                              'Digitos directos: 2 1 8 5 4. Digitos inversos: 7 4 2. Vigilancia: F B A C M N A A J K L B A F A K D E A A A J A M O F A A B. Restas esperadas: 93, 86, 78, 72, 65.',
+                        ),
+                        const Gap(16),
+                        _BooleanScoreRow(
+                          label: 'Digitos hacia delante',
+                          value: _controller.intAnswer(
+                            MocaBasicFieldIds.digitsForward,
+                          ),
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.digitsForward,
+                            value,
+                          ),
+                        ),
+                        const Gap(12),
+                        _BooleanScoreRow(
+                          label: 'Digitos hacia atras',
+                          value: _controller.intAnswer(
+                            MocaBasicFieldIds.digitsBackward,
+                          ),
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.digitsBackward,
+                            value,
+                          ),
+                        ),
+                        const Gap(12),
+                        _BooleanScoreRow(
+                          label: 'Vigilancia con letra A',
+                          value: _controller.intAnswer(
+                            MocaBasicFieldIds.vigilance,
+                          ),
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.vigilance,
+                            value,
+                          ),
+                        ),
+                        const Gap(16),
+                        SurveyTextField(
+                          label: 'Restas correctas en serie del 7 (0 a 5)',
+                          helperText:
+                              '4 o 5 correctas = 3 puntos; 2 o 3 = 2; 1 = 1; 0 = 0.',
+                          controller: _tcFor(
+                            MocaBasicFieldIds.serialSevensCorrect,
+                            initial:
+                                _controller
+                                    .intAnswer(
+                                      MocaBasicFieldIds.serialSevensCorrect,
+                                    )
+                                    ?.toString() ??
+                                '',
+                          ),
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.serialSevensCorrect,
+                            int.tryParse(value),
+                          ),
+                        ),
+                      ],
+                    ),
+                  if (_currentIndex == 4)
+                    _SectionCard(
+                      number: '5',
+                      title: 'Lenguaje',
+                      description:
+                          'Doctor: pida repetir las frases exactas y luego diga el mayor numero posible de palabras con F en 1 minuto.',
+                      children: [
+                        const _DoctorOnlyNotice(
+                          title: 'Frases y fluidez',
+                          body:
+                              'Frase 1: "Solo se que le toca a Juan ayudar hoy." Frase 2: "El gato siempre se esconde debajo del sofa cuando hay perros en la habitacion." Fluidez: N >= 11 palabras con F.',
+                        ),
+                        const Gap(16),
+                        _BooleanScoreRow(
+                          label: 'Frase 1 correcta',
+                          value: _controller.intAnswer(
+                            MocaBasicFieldIds.sentence1,
+                          ),
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.sentence1,
+                            value,
+                          ),
+                        ),
+                        const Gap(12),
+                        _BooleanScoreRow(
+                          label: 'Frase 2 correcta',
+                          value: _controller.intAnswer(
+                            MocaBasicFieldIds.sentence2,
+                          ),
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.sentence2,
+                            value,
+                          ),
+                        ),
+                        const Gap(16),
+                        SurveyTextField(
+                          label: 'Palabras con F en 60 segundos',
+                          helperText:
+                              'La app dara 1 punto si produce 11 o mas palabras validas.',
+                          controller: _tcFor(
+                            MocaBasicFieldIds.fluencyWords,
+                            initial:
+                                _controller
+                                    .intAnswer(MocaBasicFieldIds.fluencyWords)
+                                    ?.toString() ??
+                                '',
+                          ),
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.fluencyWords,
+                            int.tryParse(value),
+                          ),
+                        ),
+                      ],
+                    ),
+                  if (_currentIndex == 5)
+                    _SectionCard(
+                      number: '6',
+                      title: 'Abstraccion',
+                      description:
+                          'Doctor: pregunte la semejanza entre los pares. Ejemplo: platano-naranja = fruta.',
+                      children: [
+                        _BooleanScoreRow(
+                          label: 'Tren y bicicleta',
+                          value: _controller.intAnswer(
+                            MocaBasicFieldIds.abstractionTrainBicycle,
+                          ),
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.abstractionTrainBicycle,
+                            value,
+                          ),
+                        ),
+                        const Gap(12),
+                        _BooleanScoreRow(
+                          label: 'Reloj y regla',
+                          value: _controller.intAnswer(
+                            MocaBasicFieldIds.abstractionWatchRuler,
+                          ),
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.abstractionWatchRuler,
+                            value,
+                          ),
+                        ),
+                      ],
+                    ),
+                  if (_currentIndex == 6)
+                    _SectionCard(
+                      number: '7',
+                      title: 'Recuerdo diferido',
+                      description:
+                          'Doctor: pida recordar sin pistas las palabras ROSTRO, SEDA, TEMPLO, CLAVEL y ROJO. Para MIS: sin pistas x3, pista de categoria x2, eleccion multiple x1.',
+                      children: [
+                        _BooleanScoreRow(
+                          label: 'ROSTRO',
+                          value: _controller.intAnswer(
+                            MocaBasicFieldIds.delayedRostro,
+                          ),
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.delayedRostro,
+                            value,
+                          ),
+                        ),
+                        const Gap(12),
+                        _BooleanScoreRow(
+                          label: 'SEDA',
+                          value: _controller.intAnswer(
+                            MocaBasicFieldIds.delayedSeda,
+                          ),
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.delayedSeda,
+                            value,
+                          ),
+                        ),
+                        const Gap(12),
+                        _BooleanScoreRow(
+                          label: 'TEMPLO',
+                          value: _controller.intAnswer(
+                            MocaBasicFieldIds.delayedTemplo,
+                          ),
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.delayedTemplo,
+                            value,
+                          ),
+                        ),
+                        const Gap(12),
+                        _BooleanScoreRow(
+                          label: 'CLAVEL',
+                          value: _controller.intAnswer(
+                            MocaBasicFieldIds.delayedClavel,
+                          ),
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.delayedClavel,
+                            value,
+                          ),
+                        ),
+                        const Gap(12),
+                        _BooleanScoreRow(
+                          label: 'ROJO',
+                          value: _controller.intAnswer(
+                            MocaBasicFieldIds.delayedRojo,
+                          ),
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.delayedRojo,
+                            value,
+                          ),
+                        ),
+                      ],
+                    ),
+                  if (_currentIndex == 7)
+                    _SectionCard(
+                      number: '8',
+                      title: 'Orientacion',
+                      description:
+                          'Doctor: marque fecha, mes, anio, dia de la semana, lugar y localidad.',
+                      children: [
+                        _BooleanScoreRow(
+                          label: 'Fecha',
+                          value: _controller.intAnswer(
+                            MocaBasicFieldIds.orientationDate,
+                          ),
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.orientationDate,
+                            value,
+                          ),
+                        ),
+                        const Gap(12),
+                        _BooleanScoreRow(
+                          label: 'Mes',
+                          value: _controller.intAnswer(
+                            MocaBasicFieldIds.orientationMonth,
+                          ),
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.orientationMonth,
+                            value,
+                          ),
+                        ),
+                        const Gap(12),
+                        _BooleanScoreRow(
+                          label: 'Anio',
+                          value: _controller.intAnswer(
+                            MocaBasicFieldIds.orientationYear,
+                          ),
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.orientationYear,
+                            value,
+                          ),
+                        ),
+                        const Gap(12),
+                        _BooleanScoreRow(
+                          label: 'Dia de la semana',
+                          value: _controller.intAnswer(
+                            MocaBasicFieldIds.orientationDay,
+                          ),
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.orientationDay,
+                            value,
+                          ),
+                        ),
+                        const Gap(12),
+                        _BooleanScoreRow(
+                          label: 'Lugar',
+                          value: _controller.intAnswer(
+                            MocaBasicFieldIds.orientationPlace,
+                          ),
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.orientationPlace,
+                            value,
+                          ),
+                        ),
+                        const Gap(12),
+                        _BooleanScoreRow(
+                          label: 'Ciudad',
+                          value: _controller.intAnswer(
+                            MocaBasicFieldIds.orientationCity,
+                          ),
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.orientationCity,
+                            value,
+                          ),
+                        ),
+                      ],
+                    ),
+                  if (_currentIndex == 8)
+                    _SectionCard(
+                      number: '9',
+                      title: 'Ajuste educativo',
+                      description:
+                          'La app suma +1 punto si el total es menor de 30 y el paciente tiene 12 anios o menos de estudios.',
+                      children: [
+                        _BooleanScoreRow(
+                          label: '12 anios o menos de estudios',
+                          value: _controller.intAnswer(
+                            MocaBasicFieldIds.education12OrLess,
+                          ),
+                          onChanged: (value) => _controller.setIntAnswer(
+                            MocaBasicFieldIds.education12OrLess,
+                            value,
+                          ),
+                        ),
+                      ],
+                    ),
+                  const Gap(24),
+                  FormStepPagination(
+                    currentStep: _currentIndex,
+                    totalSteps: _sectionRequiredIds.length,
+                    isStepAnswered: _isSectionAnswered,
+                    onStepTapped: _goToSection,
                   ),
                   const Gap(24),
                   SurfaceCard(
@@ -586,9 +821,9 @@ class _MocaBasicScreenState extends State<MocaBasicScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Puntaje estimado actual')
-                                    .semiBold()
-                                    .large(),
+                                const Text(
+                                  'Puntaje estimado actual',
+                                ).semiBold().large(),
                                 const Gap(6),
                                 Text(
                                   '${_controller.computeScore(_controller.buildResponseModelsWithText()) ?? 0}/30',
@@ -601,10 +836,11 @@ class _MocaBasicScreenState extends State<MocaBasicScreen> {
                               ],
                             ),
                           ),
-                          PrimaryButton(
-                            onPressed: _controller.isSaving ? null : _saveSurvey,
-                            child: Text(_controller.isSaving ? 'Guardando...' : 'Guardar MoCA 8.1'),
-                          ),
+                          Text(
+                            isLast
+                                ? 'Listo para guardar al finalizar'
+                                : 'Avance para continuar',
+                          ).muted(),
                         ],
                       ),
                     ),
@@ -612,6 +848,15 @@ class _MocaBasicScreenState extends State<MocaBasicScreen> {
                 ],
               ),
             ),
+          ),
+          FormStepNavBar(
+            canGoPrevious: _currentIndex > 0,
+            canGoNext: _canGoNext,
+            isLastStep: isLast,
+            isSaving: _controller.isSaving,
+            color: _kColor,
+            onPrevious: _goToPrevious,
+            onNext: _goToNextOrSave,
           ),
         ],
       ),
@@ -647,11 +892,7 @@ class _HeroCard extends StatelessWidget {
           Gap(10),
           Text(
             'Esta version combina actividades del paciente en la tableta con captura del doctor. Toda la aplicacion del instrumento y el registro del resultado se realizan dentro de esta pantalla.',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              height: 1.5,
-            ),
+            style: TextStyle(color: Colors.white, fontSize: 14, height: 1.5),
           ),
         ],
       ),
@@ -747,7 +988,10 @@ class _PatientTaskCard extends StatelessWidget {
             children: [
               Icon(material.Icons.touch_app_outlined, color: _kColor),
               Gap(8),
-              Text('Paciente en tableta', style: TextStyle(fontWeight: FontWeight.w600)),
+              Text(
+                'Paciente en tableta',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ],
           ),
           const Gap(12),
@@ -780,9 +1024,15 @@ class _DoctorOnlyNotice extends StatelessWidget {
         children: [
           const Row(
             children: [
-              Icon(material.Icons.visibility_off_outlined, color: Color(0xFFB45309)),
+              Icon(
+                material.Icons.visibility_off_outlined,
+                color: Color(0xFFB45309),
+              ),
               Gap(8),
-              Text('Solo para el doctor', style: TextStyle(fontWeight: FontWeight.w600)),
+              Text(
+                'Solo para el doctor',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ],
           ),
           const Gap(10),
@@ -918,12 +1168,7 @@ class _AnimalCard extends StatelessWidget {
     return OutlinedContainer(
       borderRadius: BorderRadius.circular(16),
       padding: const EdgeInsets.symmetric(vertical: 20),
-      child: Center(
-        child: Text(
-          emoji,
-          style: const TextStyle(fontSize: 56),
-        ),
-      ),
+      child: Center(child: Text(emoji, style: const TextStyle(fontSize: 56))),
     );
   }
 }
@@ -1003,7 +1248,8 @@ class _DrawingTask extends StatelessWidget {
       height: height,
       initialData: controller.textAnswer(drawingFieldId),
       backgroundPainter: backgroundPainter,
-      onChanged: (serialized) => controller.setTextAnswer(drawingFieldId, serialized),
+      onChanged: (serialized) =>
+          controller.setTextAnswer(drawingFieldId, serialized),
     );
   }
 }
@@ -1027,6 +1273,7 @@ class _DrawingPad extends StatefulWidget {
 
 class _DrawingPadState extends State<_DrawingPad> {
   List<List<Offset>> _strokes = [];
+  bool _drawing = false;
 
   @override
   void initState() {
@@ -1046,41 +1293,79 @@ class _DrawingPadState extends State<_DrawingPad> {
     widget.onChanged(_serialize(_strokes));
   }
 
+  Offset _localPosition(PointerEvent event, Size size) {
+    final box = context.findRenderObject() as RenderBox;
+    final local = box.globalToLocal(event.position);
+    return Offset(
+      local.dx.clamp(0.0, size.width),
+      local.dy.clamp(0.0, size.height),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Container(
+        SizedBox(
           height: widget.height,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: LightModeColors.lightOutline),
-          ),
-          child: GestureDetector(
-            onPanStart: (details) {
-              setState(() {
-                _strokes = [..._strokes, [details.localPosition]];
-              });
-              _push();
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final size = Size(constraints.maxWidth, constraints.maxHeight);
+              return RawGestureDetector(
+                gestures: {
+                  EagerGestureRecognizer:
+                      GestureRecognizerFactoryWithHandlers<
+                        EagerGestureRecognizer
+                      >(() => EagerGestureRecognizer(), (recognizer) {}),
+                },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Listener(
+                    behavior: HitTestBehavior.opaque,
+                    onPointerDown: (event) {
+                      setState(() {
+                        _drawing = true;
+                        _strokes = [
+                          ..._strokes,
+                          [_localPosition(event, size)],
+                        ];
+                      });
+                      _push();
+                    },
+                    onPointerMove: (event) {
+                      if (!_drawing) return;
+                      setState(() {
+                        final point = _localPosition(event, size);
+                        if (_strokes.isEmpty) {
+                          _strokes = [
+                            [point],
+                          ];
+                        } else {
+                          _strokes.last = [..._strokes.last, point];
+                        }
+                      });
+                      _push();
+                    },
+                    onPointerUp: (_) => _drawing = false,
+                    onPointerCancel: (_) => _drawing = false,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: LightModeColors.lightOutline),
+                      ),
+                      child: CustomPaint(
+                        painter: _DrawingPadPainter(
+                          strokes: _strokes,
+                          backgroundPainter: widget.backgroundPainter,
+                        ),
+                        child: const SizedBox.expand(),
+                      ),
+                    ),
+                  ),
+                ),
+              );
             },
-            onPanUpdate: (details) {
-              setState(() {
-                if (_strokes.isEmpty) {
-                  _strokes = [[details.localPosition]];
-                } else {
-                  _strokes.last = [..._strokes.last, details.localPosition];
-                }
-              });
-              _push();
-            },
-            child: CustomPaint(
-              painter: _DrawingPadPainter(
-                strokes: _strokes,
-                backgroundPainter: widget.backgroundPainter,
-              ),
-              child: const SizedBox.expand(),
-            ),
           ),
         ),
         const Gap(10),
@@ -1102,9 +1387,8 @@ class _DrawingPadState extends State<_DrawingPad> {
     if (strokes.isEmpty) return '';
     final data = strokes
         .map(
-          (stroke) => stroke
-              .map((point) => {'x': point.dx, 'y': point.dy})
-              .toList(),
+          (stroke) =>
+              stroke.map((point) => {'x': point.dx, 'y': point.dy}).toList(),
         )
         .where((stroke) => stroke.isNotEmpty)
         .toList();
@@ -1139,10 +1423,7 @@ class _DrawingPadPainter extends CustomPainter {
   final List<List<Offset>> strokes;
   final CustomPainter? backgroundPainter;
 
-  const _DrawingPadPainter({
-    required this.strokes,
-    this.backgroundPainter,
-  });
+  const _DrawingPadPainter({required this.strokes, this.backgroundPainter});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1158,7 +1439,11 @@ class _DrawingPadPainter extends CustomPainter {
     for (final stroke in strokes) {
       if (stroke.isEmpty) continue;
       if (stroke.length == 1) {
-        canvas.drawCircle(stroke.first, 1.5, strokePaint..style = PaintingStyle.fill);
+        canvas.drawCircle(
+          stroke.first,
+          1.5,
+          strokePaint..style = PaintingStyle.fill,
+        );
         strokePaint.style = PaintingStyle.stroke;
         continue;
       }

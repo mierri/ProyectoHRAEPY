@@ -6,12 +6,14 @@ import 'package:ssapp/features/reports/domain/specialty_consultation_attendance_
 import 'package:ssapp/features/reports/domain/stats_calculator.dart';
 import 'package:ssapp/features/survey_builder/domain/custom_survey_definition.dart';
 import 'package:ssapp/features/surveys/domain/survey_rules.dart';
+import 'package:ssapp/shared/models/patient_model.dart';
 
 class SurveyCsvExporter {
   Future<Uint8List> export(
     int surveyType,
     List<Map<String, dynamic>> surveys, {
     CustomSurveyDefinition? customDefinition,
+    List<PatientModel>? patients,
   }) async {
     final rows = <List<String>>[];
     if (surveyType == 100 && customDefinition != null) {
@@ -54,6 +56,7 @@ class SurveyCsvExporter {
     switch (surveyType) {
       case 1:
       case 2:
+      case 4:
       case 6:
       case 7:
       case 8:
@@ -61,8 +64,8 @@ class SurveyCsvExporter {
       case 11:
       case 12:
       case 13:
-      case 18:
       case 19:
+      case 20:
         rows.add([
           'survey_id',
           'patient_id',
@@ -158,17 +161,34 @@ class SurveyCsvExporter {
           'created_at',
           'score',
           'risk_level',
+          'altura_m',
+          'peso_kg',
+          'imc',
           'responses_count',
           'synced',
         ]);
+        final patientsById = <int, PatientModel>{
+          for (final p in patients ?? const <PatientModel>[]) p.patientId: p,
+        };
         for (final survey in surveys) {
           final score = survey['score'] as int? ?? SurveyRules.calculateScore(survey);
+          final patientId = survey['patient_id'] as int?;
+          final patient = patientId != null ? patientsById[patientId] : null;
+          final height = patient?.height;
+          final weight = patient?.weight;
+          final imc = patient?.imc ??
+              ((height != null && weight != null && height > 0)
+                  ? weight / (height * height)
+                  : null);
           rows.add([
             '${survey['survey_id'] ?? ''}',
             '${survey['patient_id'] ?? ''}',
             '${survey['created_at'] ?? ''}',
             '$score',
             '${survey['risk_level'] ?? ''}',
+            height != null ? height.toStringAsFixed(2) : '',
+            weight != null ? weight.toStringAsFixed(1) : '',
+            imc != null ? imc.toStringAsFixed(1) : '',
             '${(survey['responses'] as List?)?.length ?? 0}',
             '${survey['synced'] == true}',
           ]);
@@ -271,6 +291,13 @@ class SurveyCsvExporter {
       13 => SurveyStatsCalculator.phq9Level(score),
       18 => score >= 26 ? 'Normal' : 'Interpretacion clinica',
       19 => score >= 19 ? 'Normal' : 'Bajo esperado',
+      20 => switch (score) {
+          >= 158 => 'Excelente',
+          >= 130 => 'Bueno',
+          >= 111 => 'Regular',
+          >= 74 => 'Deficiente',
+          _ => 'Muy deficiente',
+        },
       _ => 'N/A',
     };
   }

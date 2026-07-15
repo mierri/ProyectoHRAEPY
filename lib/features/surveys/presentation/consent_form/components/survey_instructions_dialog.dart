@@ -184,6 +184,10 @@ class SurveyInstructionsDialog extends StatelessWidget {
       item(Symbols.calculate, 'Puntaje total (0-22)', 'La app suma automaticamente atencion, lenguaje, abstraccion, memoria y orientacion.', const Color(0xFF1E40AF)), g,
       item(Symbols.rule, 'Punto de corte', 'En esta version, 19 o mas se considera normal. Se agrega +1 si tiene 12 anos o menos de estudios.', const Color(0xFF1E3A8A)),
     ];
+    if (variant == SurveyInstructionVariant.fantasticMexA) return [
+      item(Symbols.calculate, 'Puntaje total (0-186)', 'Se suman las 46 preguntas (0-4 puntos cada una). El orden de las opciones cambia segun la pregunta.', const Color(0xFF059669)), g,
+      item(Symbols.rule, 'Interpretacion', '158-186 Excelente | 130-157 Bueno | 111-129 Regular | 74-110 Deficiente | 0-73 Muy deficiente.', const Color(0xFF047857)),
+    ];
     if (variant == SurveyInstructionVariant.custom) return [];
     // BDI default
     return [

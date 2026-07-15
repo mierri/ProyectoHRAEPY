@@ -9,6 +9,7 @@ class InvestigationService extends ChangeNotifier {
     1: 'BDI-II',
     2: 'BAI',
     3: 'WHOQOL-BREF',
+    4: 'MoCA 8.1',
     5: 'SF-36',
     6: 'ASSIST V3.0',
     7: 'GDS-15',
@@ -22,14 +23,15 @@ class InvestigationService extends ChangeNotifier {
     15: 'Determinantes Sociales',
     16: 'Asistencia en Consulta de Especialidad',
     17: 'Barreras Percibidas para la Asistencia',
-    18: 'MoCA 8.1',
     19: 'MoCA Blind',
+    20: 'FANTASTIC MEX-A',
   };
 
   static const Map<int, String> surveyTypeToRouteCode = {
     1: 'bdi',
     2: 'bai',
     3: 'whoqol',
+    4: 'moca_basic',
     5: 'sf36',
     6: 'assist',
     7: 'gds',
@@ -43,8 +45,8 @@ class InvestigationService extends ChangeNotifier {
     15: 'social_determinants',
     16: 'specialty_consultation_attendance',
     17: 'perceived_attendance_barriers',
-    18: 'moca_basic',
     19: 'moca_blind',
+    20: 'fantastic_mexa',
   };
 
   List<InvestigationModel> _investigations = [];

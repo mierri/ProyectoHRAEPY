@@ -6,7 +6,9 @@ import 'package:ssapp/features/reports/domain/stats_calculator.dart';
 import 'package:ssapp/features/reports/infrastructure/pdf/pdf_report_base.dart';
 
 class WhoqolPdfGenerator extends PdfReportBase {
-  const WhoqolPdfGenerator()
+  final List<Uint8List?> chartImages;
+
+  const WhoqolPdfGenerator({this.chartImages = const []})
       : super(
           title: 'Reporte WHOQOL-BREF',
           subtitle: 'Calidad de vida',
@@ -62,6 +64,13 @@ class WhoqolPdfGenerator extends PdfReportBase {
               _domRow(report.dom4),
             ],
           ),
+          if (chartImages.isNotEmpty) pw.SizedBox(height: 14),
+          ...chartImages.where((image) => image != null).expand(
+                (image) => [
+                  embedChartImage(image, height: 180),
+                  pw.SizedBox(height: 12),
+                ],
+              ),
           pw.SizedBox(height: 12),
           pw.Text('Últimos registros', style: pw.TextStyle(font: fonts.bold, fontSize: 11)),
           pw.SizedBox(height: 6),

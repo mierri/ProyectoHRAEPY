@@ -4,6 +4,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/features/patients/data/patient_repository.dart';
 import 'package:ssapp/features/surveys/domain/survey_type_config.dart';
 import 'package:ssapp/features/surveys/presentation/consent_controller.dart';
+import 'package:ssapp/features/surveys/types/fantastic_mexa/domain/fantastic_mexa_questions.dart';
 import 'package:ssapp/shared/models/patient_model.dart';
 import 'package:provider/provider.dart';
 import 'package:ssapp/features/surveys/presentation/consent_form/components/consent_info_card.dart';
@@ -57,6 +58,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
   final _tallaController = TextEditingController();
   final _imcController = TextEditingController();
   final _nameController = TextEditingController();
+  final _inicialesController = TextEditingController();
 
   bool _consentExpanded = false;
 
@@ -82,6 +84,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
           final patient = matches.first;
           _controller.selectPatient(patient);
           _nameController.text = _controller.name;
+          _inicialesController.text = _controller.iniciales;
         }
       }
     });
@@ -92,6 +95,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
     _controller.removeListener(_onControllerChanged);
     _controller.dispose();
     _nameController.dispose();
+    _inicialesController.dispose();
     _pesoController.dispose();
     _tallaController.dispose();
     _imcController.dispose();
@@ -150,6 +154,22 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
           context.push(
             '/survey/$patientId?surveyType=${_controller.resolvedSurveyType}&weight=${_controller.weight ?? ''}&height=${_controller.height ?? ''}&imc=${_controller.imc ?? ''}',
           );
+        } else if (_controller.resolvedSurveyType == 'fantastic_mexa') {
+          final uri = Uri(path: '/survey/$patientId', queryParameters: {
+            'surveyType': 'fantastic_mexa',
+            'fecha': _controller.fechaHoy,
+            'iniciales': _controller.iniciales,
+            'escolaridad': _controller.escolaridad,
+            'ocupacion': _controller.ocupacion,
+            'estadoCivil': _controller.estadoCivil,
+            'habitantesCasa': _controller.habitantesCasa,
+            'numHabitantes': _controller.numHabitantes,
+            'anosLaborando': _controller.anosLaborando,
+            'horarioLaboral': _controller.horarioLaboral,
+            'pesoKg': _controller.weight?.toString() ?? '',
+            'estaturaM': _controller.height?.toString() ?? '',
+          });
+          context.push(uri.toString());
         } else if (_controller.resolvedSurveyType == 'custom') {
           context.push('/survey/$patientId?surveyType=custom&customSurveyId=${widget.customSurveyId ?? ''}');
         } else {
@@ -313,9 +333,11 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                   if (patient != null) {
                     _controller.selectPatient(patient);
                     _nameController.text = _controller.name;
+                    _inicialesController.text = _controller.iniciales;
                   } else {
                     _controller.clearSelectedPatient();
                     _nameController.clear();
+                    _inicialesController.clear();
                   }
                 },
                 itemBuilder: (context, patient) {
@@ -405,8 +427,8 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
               const Gap(16),
             ],
 
-            // Osteoporosis: Peso, Talla, IMC
-            if (_controller.isOsteoporosisSurvey) ...[
+            // Osteoporosis y FANTASTIC MEX-A: Peso, Talla, IMC
+            if (_controller.showAnthropometrics) ...[
               const Text('Peso (Kg)').medium(),
               const Gap(5),
               TextField(
@@ -447,6 +469,135 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                 ),
                 const Gap(8),
               ],
+            ],
+
+            // FANTASTIC MEX-A: datos generales adicionales (no capturados en otro flujo)
+            if (_controller.isFantasticMexaSurvey) ...[
+              const Text('Datos generales').textLarge().bold(),
+              const Gap(4),
+              Text('Fecha: ${_controller.fechaHoy}').small().muted(),
+              const Gap(16),
+
+              const Text('Iniciales de su nombre').medium(),
+              const Gap(5),
+              TextField(
+                controller: _inicialesController,
+                placeholder: const Text('Ej: JDR'),
+                onChanged: _controller.onInicialesChanged,
+              ),
+              const Gap(16),
+
+              const Text('Grado de estudios').medium(),
+              const Gap(5),
+              Select<String>(
+                value: _controller.escolaridad.isEmpty ? null : _controller.escolaridad,
+                onChanged: (value) {
+                  if (value != null) _controller.onEscolaridadChanged(value);
+                },
+                itemBuilder: (context, item) => Text(item),
+                popup: SelectPopup(
+                  items: SelectItemList(
+                    children: FantasticMexaGeneralDataOptions.escolaridad
+                        .map((o) => SelectItemButton(value: o, child: Text(o)))
+                        .toList(),
+                  ),
+                ).call,
+                placeholder: const Text('Seleccionar'),
+              ),
+              const Gap(16),
+
+              const Text('Ocupación/Puesto').medium(),
+              const Gap(5),
+              TextField(
+                placeholder: const Text('Ej: Enfermera'),
+                onChanged: _controller.onOcupacionChanged,
+              ),
+              const Gap(16),
+
+              const Text('Estado civil').medium(),
+              const Gap(5),
+              Select<String>(
+                value: _controller.estadoCivil.isEmpty ? null : _controller.estadoCivil,
+                onChanged: (value) {
+                  if (value != null) _controller.onEstadoCivilChanged(value);
+                },
+                itemBuilder: (context, item) => Text(item),
+                popup: SelectPopup(
+                  items: SelectItemList(
+                    children: FantasticMexaGeneralDataOptions.estadoCivil
+                        .map((o) => SelectItemButton(value: o, child: Text(o)))
+                        .toList(),
+                  ),
+                ).call,
+                placeholder: const Text('Seleccionar'),
+              ),
+              const Gap(16),
+
+              const Text('Habitantes en casa').medium(),
+              const Gap(5),
+              Select<String>(
+                value: _controller.habitantesCasa.isEmpty ? null : _controller.habitantesCasa,
+                onChanged: (value) {
+                  if (value != null) _controller.onHabitantesCasaChanged(value);
+                },
+                itemBuilder: (context, item) => Text(item),
+                popup: SelectPopup(
+                  items: SelectItemList(
+                    children: FantasticMexaGeneralDataOptions.habitantesCasa
+                        .map((o) => SelectItemButton(value: o, child: Text(o)))
+                        .toList(),
+                  ),
+                ).call,
+                placeholder: const Text('Seleccionar'),
+              ),
+              const Gap(16),
+
+              const Text('Número de habitantes en casa').medium(),
+              const Gap(5),
+              Select<String>(
+                value: _controller.numHabitantes.isEmpty ? null : _controller.numHabitantes,
+                onChanged: (value) {
+                  if (value != null) _controller.onNumHabitantesChanged(value);
+                },
+                itemBuilder: (context, item) => Text(item),
+                popup: SelectPopup(
+                  items: SelectItemList(
+                    children: FantasticMexaGeneralDataOptions.numHabitantes
+                        .map((o) => SelectItemButton(value: o, child: Text(o)))
+                        .toList(),
+                  ),
+                ).call,
+                placeholder: const Text('Seleccionar'),
+              ),
+              const Gap(16),
+
+              const Text('Años laborando en la empresa/institución').medium(),
+              const Gap(5),
+              TextField(
+                keyboardType: TextInputType.number,
+                placeholder: const Text('Ej: 5'),
+                onChanged: _controller.onAnosLaborandoChanged,
+              ),
+              const Gap(16),
+
+              const Text('Horario laboral').medium(),
+              const Gap(5),
+              Select<String>(
+                value: _controller.horarioLaboral.isEmpty ? null : _controller.horarioLaboral,
+                onChanged: (value) {
+                  if (value != null) _controller.onHorarioLaboralChanged(value);
+                },
+                itemBuilder: (context, item) => Text(item),
+                popup: SelectPopup(
+                  items: SelectItemList(
+                    children: FantasticMexaGeneralDataOptions.horarioLaboral
+                        .map((o) => SelectItemButton(value: o, child: Text(o)))
+                        .toList(),
+                  ),
+                ).call,
+                placeholder: const Text('Seleccionar'),
+              ),
+              const Gap(16),
             ],
 
             if (widget.showConsentSection && !widget.collapseConsent)

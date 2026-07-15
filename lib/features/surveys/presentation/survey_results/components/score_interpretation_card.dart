@@ -20,11 +20,11 @@ class ScoreInterpretationCard extends StatelessWidget {
       case 11: return [{'range': '0-5', 'label': 'Leve', 'color': LightModeColors.lightTertiary}, {'range': '6-12', 'label': 'Moderado', 'color': const Color(0xFFFBBF24)}, {'range': '13-18', 'label': 'Severo', 'color': const Color(0xFFF97316)}, {'range': '19-21', 'label': 'Muy severo', 'color': LightModeColors.lightError}];
       case 12: return [{'range': 'GHQ 0-2', 'label': 'Sin malestar significativo', 'color': LightModeColors.lightTertiary}, {'range': 'GHQ >=3', 'label': 'Caso probable de malestar psicologico', 'color': LightModeColors.lightError}, {'range': 'Likert 0-11', 'label': 'Rango bajo', 'color': LightModeColors.lightTertiary}, {'range': 'Likert >=12', 'label': 'Rango elevado', 'color': LightModeColors.lightError}];
       case 13: return [{'range': '0-4', 'label': 'Sin depresion', 'color': LightModeColors.lightTertiary}, {'range': '5-9', 'label': 'Minima', 'color': const Color(0xFFFBBF24)}, {'range': '10-14', 'label': 'Moderada', 'color': const Color(0xFFF97316)}, {'range': '15-19', 'label': 'Moderadamente severa', 'color': const Color(0xFFDC2626)}, {'range': '20-27', 'label': 'Severa', 'color': const Color(0xFFB91C1C)}];
+      case 4:  return [{'range': '26-30', 'label': 'Rango esperado en MoCA 8.1', 'color': LightModeColors.lightTertiary}, {'range': '0-25', 'label': 'Interpretacion clinica y correlacion por dominios', 'color': const Color(0xFF0F766E)}];
       case 14: return [{'range': 'N/A', 'label': 'Sociodemográfico', 'color': const Color(0xFF4F46E5)}];
       case 15: return [{'range': 'N/A', 'label': 'Determinantes Sociales', 'color': const Color(0xFF0F766E)}];
       case 16: return [{'range': 'N/A', 'label': 'Asistencia en Consulta de Especialidad', 'color': const Color(0xFFB45309)}];
       case 17: return [{'range': 'N/A', 'label': 'Barreras Percibidas para la Asistencia', 'color': const Color(0xFFBE123C)}];
-      case 18: return [{'range': '26-30', 'label': 'Rango esperado en MoCA 8.1', 'color': LightModeColors.lightTertiary}, {'range': '0-25', 'label': 'Interpretacion clinica y correlacion por dominios', 'color': const Color(0xFF0F766E)}];
       case 19: return [{'range': '19-22', 'label': 'Rango normal en MoCA Blind', 'color': LightModeColors.lightTertiary}, {'range': '0-18', 'label': 'Bajo esperado; requiere interpretacion clinica', 'color': const Color(0xFF1D4ED8)}];
       default: return [];
     }

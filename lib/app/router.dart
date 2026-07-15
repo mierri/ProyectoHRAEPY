@@ -3,6 +3,7 @@ import 'package:ssapp/features/splash/splash_screen.dart';
 import 'package:ssapp/features/surveys/types/assist/presentation/assist_screen.dart';
 import 'package:ssapp/features/surveys/types/bai/presentation/bai_screen.dart';
 import 'package:ssapp/features/surveys/types/bdi/presentation/bdi_screen.dart';
+import 'package:ssapp/features/surveys/types/fantastic_mexa/presentation/fantastic_mexa_screen.dart';
 import 'package:ssapp/features/surveys/presentation/consent_form/consent_form_screen.dart';
 import 'package:ssapp/features/dashboard/dashboard_screen.dart';
 import 'package:ssapp/features/investigations/presentation/screens/investigation_apply_screen/investigation_apply_screen.dart';
@@ -142,6 +143,10 @@ final GoRouter appRouter = GoRouter(
 
         if (surveyType == 'osteoporosis') {
           return OsteoporosisScreen(patientId: patientId);
+        }
+
+        if (surveyType == 'fantastic_mexa') {
+          return FantasticMexaScreen(patientId: patientId);
         }
 
         if (surveyType == 'custom') {

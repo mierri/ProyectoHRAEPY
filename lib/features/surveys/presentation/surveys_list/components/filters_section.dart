@@ -40,6 +40,7 @@ class SurveysFiltersSection extends StatelessWidget {
     SurveyFilterOption(value: 'perceived_attendance_barriers',label: 'Barreras Percibidas'),
     SurveyFilterOption(value: 'moca_basic',         label: 'MoCA 8.1'),
     SurveyFilterOption(value: 'moca_blind',         label: 'MoCA Blind'),
+    SurveyFilterOption(value: 'fantastic_mexa',     label: 'FANTASTIC MEX-A'),
   ];
 
   static const _statusOptions = [

@@ -67,6 +67,11 @@ class BdiReportViewModel extends SurveyReportViewModel {
   @override Widget buildSection(List<Map<String, dynamic>> surveys) => BdiReportSection(surveys: surveys);
   @override Future<Uint8List> generatePdf(List<Map<String, dynamic>> surveys) =>
       BdiBaiPdfGenerator(surveyType: 1).generate(surveys);
+  @override Future<Uint8List> generatePdfWithImages(
+    List<Map<String, dynamic>> surveys,
+    List<Uint8List?> chartImages,
+  ) =>
+      BdiBaiPdfGenerator(surveyType: 1, chartImages: chartImages).generate(surveys);
 }
 
 // ── BAI ───────────────────────────────────────────────────────────────────────
@@ -79,6 +84,11 @@ class BaiReportViewModel extends SurveyReportViewModel {
   @override Widget buildSection(List<Map<String, dynamic>> surveys) => BaiReportSection(surveys: surveys);
   @override Future<Uint8List> generatePdf(List<Map<String, dynamic>> surveys) =>
       BdiBaiPdfGenerator(surveyType: 2).generate(surveys);
+  @override Future<Uint8List> generatePdfWithImages(
+    List<Map<String, dynamic>> surveys,
+    List<Uint8List?> chartImages,
+  ) =>
+      BdiBaiPdfGenerator(surveyType: 2, chartImages: chartImages).generate(surveys);
 }
 
 // ── WHOQOL-BREF ───────────────────────────────────────────────────────────────
@@ -94,6 +104,11 @@ class WhoqolReportViewModel extends SurveyReportViewModel {
   }
   @override Future<Uint8List> generatePdf(List<Map<String, dynamic>> surveys) =>
       const WhoqolPdfGenerator().generate(surveys);
+  @override Future<Uint8List> generatePdfWithImages(
+    List<Map<String, dynamic>> surveys,
+    List<Uint8List?> chartImages,
+  ) =>
+      WhoqolPdfGenerator(chartImages: chartImages).generate(surveys);
 }
 
 // ── SF-36 ─────────────────────────────────────────────────────────────────────
@@ -109,6 +124,11 @@ class Sf36ReportViewModel extends SurveyReportViewModel {
   }
   @override Future<Uint8List> generatePdf(List<Map<String, dynamic>> surveys) =>
       const Sf36PdfGenerator().generate(surveys);
+  @override Future<Uint8List> generatePdfWithImages(
+    List<Map<String, dynamic>> surveys,
+    List<Uint8List?> chartImages,
+  ) =>
+      Sf36PdfGenerator(chartImages: chartImages).generate(surveys);
 }
 
 // ── ASSIST V3.0 ───────────────────────────────────────────────────────────────
@@ -121,6 +141,11 @@ class AssistReportViewModel extends SurveyReportViewModel {
   @override Widget buildSection(List<Map<String, dynamic>> surveys) => AssistReportSection(surveys: surveys);
   @override Future<Uint8List> generatePdf(List<Map<String, dynamic>> surveys) =>
       BdiBaiPdfGenerator(surveyType: 6).generate(surveys);
+  @override Future<Uint8List> generatePdfWithImages(
+    List<Map<String, dynamic>> surveys,
+    List<Uint8List?> chartImages,
+  ) =>
+      BdiBaiPdfGenerator(surveyType: 6, chartImages: chartImages).generate(surveys);
 }
 
 // ── GDS-15 ────────────────────────────────────────────────────────────────────
@@ -133,6 +158,11 @@ class GdsReportViewModel extends SurveyReportViewModel {
   @override Widget buildSection(List<Map<String, dynamic>> surveys) => GdsReportSection(surveys: surveys);
   @override Future<Uint8List> generatePdf(List<Map<String, dynamic>> surveys) =>
       BdiBaiPdfGenerator(surveyType: 7).generate(surveys);
+  @override Future<Uint8List> generatePdfWithImages(
+    List<Map<String, dynamic>> surveys,
+    List<Uint8List?> chartImages,
+  ) =>
+      BdiBaiPdfGenerator(surveyType: 7, chartImages: chartImages).generate(surveys);
 }
 
 // ── Lawton AIVD ───────────────────────────────────────────────────────────────
@@ -145,6 +175,11 @@ class LawtonReportViewModel extends SurveyReportViewModel {
   @override Widget buildSection(List<Map<String, dynamic>> surveys) => LawtonReportSection(surveys: surveys);
   @override Future<Uint8List> generatePdf(List<Map<String, dynamic>> surveys) =>
       BdiBaiPdfGenerator(surveyType: 8).generate(surveys);
+  @override Future<Uint8List> generatePdfWithImages(
+    List<Map<String, dynamic>> surveys,
+    List<Uint8List?> chartImages,
+  ) =>
+      BdiBaiPdfGenerator(surveyType: 8, chartImages: chartImages).generate(surveys);
 }
 
 // ── Osteoporosis ──────────────────────────────────────────────────────────────
@@ -160,6 +195,11 @@ class OsteoporosisReportViewModel extends SurveyReportViewModel {
   }
   @override Future<Uint8List> generatePdf(List<Map<String, dynamic>> surveys) =>
       const OsteoporosisPdfGenerator().generate(surveys);
+  @override Future<Uint8List> generatePdfWithImages(
+    List<Map<String, dynamic>> surveys,
+    List<Uint8List?> chartImages,
+  ) =>
+      OsteoporosisPdfGenerator(chartImages: chartImages).generate(surveys);
 }
 
 // ── Katz ABVD ─────────────────────────────────────────────────────────────────
@@ -172,6 +212,11 @@ class KatzReportViewModel extends SurveyReportViewModel {
   @override Widget buildSection(List<Map<String, dynamic>> surveys) => KatzReportSection(surveys: surveys);
   @override Future<Uint8List> generatePdf(List<Map<String, dynamic>> surveys) =>
       BdiBaiPdfGenerator(surveyType: 10).generate(surveys);
+  @override Future<Uint8List> generatePdfWithImages(
+    List<Map<String, dynamic>> surveys,
+    List<Uint8List?> chartImages,
+  ) =>
+      BdiBaiPdfGenerator(surveyType: 10, chartImages: chartImages).generate(surveys);
 }
 
 // ── ICIQ-SF ───────────────────────────────────────────────────────────────────
@@ -184,6 +229,11 @@ class IciqsfReportViewModel extends SurveyReportViewModel {
   @override Widget buildSection(List<Map<String, dynamic>> surveys) => IciqsfReportSection(surveys: surveys);
   @override Future<Uint8List> generatePdf(List<Map<String, dynamic>> surveys) =>
       BdiBaiPdfGenerator(surveyType: 11).generate(surveys);
+  @override Future<Uint8List> generatePdfWithImages(
+    List<Map<String, dynamic>> surveys,
+    List<Uint8List?> chartImages,
+  ) =>
+      BdiBaiPdfGenerator(surveyType: 11, chartImages: chartImages).generate(surveys);
 }
 
 // ── GHQ-12 ────────────────────────────────────────────────────────────────────
@@ -196,6 +246,11 @@ class Ghq12ReportViewModel extends SurveyReportViewModel {
   @override Widget buildSection(List<Map<String, dynamic>> surveys) => Ghq12ReportSection(surveys: surveys);
   @override Future<Uint8List> generatePdf(List<Map<String, dynamic>> surveys) =>
       BdiBaiPdfGenerator(surveyType: 12).generate(surveys);
+  @override Future<Uint8List> generatePdfWithImages(
+    List<Map<String, dynamic>> surveys,
+    List<Uint8List?> chartImages,
+  ) =>
+      BdiBaiPdfGenerator(surveyType: 12, chartImages: chartImages).generate(surveys);
 }
 
 // ── PHQ-9 ─────────────────────────────────────────────────────────────────────
@@ -208,6 +263,11 @@ class Phq9ReportViewModel extends SurveyReportViewModel {
   @override Widget buildSection(List<Map<String, dynamic>> surveys) => Phq9ReportSection(surveys: surveys);
   @override Future<Uint8List> generatePdf(List<Map<String, dynamic>> surveys) =>
       BdiBaiPdfGenerator(surveyType: 13).generate(surveys);
+  @override Future<Uint8List> generatePdfWithImages(
+    List<Map<String, dynamic>> surveys,
+    List<Uint8List?> chartImages,
+  ) =>
+      BdiBaiPdfGenerator(surveyType: 13, chartImages: chartImages).generate(surveys);
 }
 
 // ── Sociodemográfico ──────────────────────────────────────────────────────────
@@ -220,7 +280,7 @@ class SociodemographicReportViewModel extends SurveyReportViewModel {
   @override Widget buildSection(List<Map<String, dynamic>> surveys) =>
       SociodemographicReportSection(surveys: surveys);
   @override Future<Uint8List> generatePdf(List<Map<String, dynamic>> surveys) =>
-      BdiBaiPdfGenerator(surveyType: 14).generate(surveys);
+      GenericPdfReportGenerator(surveyName: surveyName, surveys: surveys, chartImages: const []).generate();
 }
 
 // ── Determinantes Sociales ────────────────────────────────────────────────────
@@ -233,7 +293,7 @@ class SocialDeterminantsReportViewModel extends SurveyReportViewModel {
   @override Widget buildSection(List<Map<String, dynamic>> surveys) =>
       SocialDeterminantsReportSection(surveys: surveys);
   @override Future<Uint8List> generatePdf(List<Map<String, dynamic>> surveys) =>
-      BdiBaiPdfGenerator(surveyType: 15).generate(surveys);
+      GenericPdfReportGenerator(surveyName: surveyName, surveys: surveys, chartImages: const []).generate();
 }
 
 // ── Encuesta personalizada ───────────────────────────────────────────────────
@@ -320,6 +380,12 @@ SurveyReportViewModel resolveReportViewModel(int surveyType, {CustomSurveyDefini
     1  => const BdiReportViewModel(),
     2  => const BaiReportViewModel(),
     3  => const WhoqolReportViewModel(),
+    4  => const GenericScoredReportViewModel(
+      type: 4,
+      name: 'MoCA 8.1',
+      subtitle: 'Tamiz cognitivo estandar con tareas visuales en tableta y puntuacion ajustada sobre 30.',
+      color: Color(0xFF0F766E),
+    ),
     5  => const Sf36ReportViewModel(),
     6  => const AssistReportViewModel(),
     7  => const GdsReportViewModel(),
@@ -333,17 +399,17 @@ SurveyReportViewModel resolveReportViewModel(int surveyType, {CustomSurveyDefini
     15 => const SocialDeterminantsReportViewModel(),
     16 => const SpecialtyConsultationAttendanceReportViewModel(),
     17 => const PerceivedAttendanceBarriersReportViewModel(),
-    18 => const GenericScoredReportViewModel(
-      type: 18,
-      name: 'MoCA 8.1',
-      subtitle: 'Tamiz cognitivo estandar con tareas visuales en tableta y puntuacion ajustada sobre 30.',
-      color: Color(0xFF0F766E),
-    ),
     19 => const GenericScoredReportViewModel(
       type: 19,
       name: 'MoCA Blind',
       subtitle: 'Tamiz cognitivo para discapacidad visual con puntaje ajustado sobre 22.',
       color: Color(0xFF1D4ED8),
+    ),
+    20 => const GenericScoredReportViewModel(
+      type: 20,
+      name: 'FANTASTIC MEX-A',
+      subtitle: 'Estilo de vida en 12 areas mediante 46 items puntuados 0-4 (puntaje total 0-186).',
+      color: Color(0xFF059669),
     ),
     _  => const BdiReportViewModel(),
   };

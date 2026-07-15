@@ -32,6 +32,7 @@ enum SurveyType {
   perceivedAttendanceBarriers,
   mocaBasic,
   mocaBlind,
+  fantasticMexA,
 }
 
 extension SurveyTypeExtension on SurveyType {
@@ -47,6 +48,8 @@ extension SurveyTypeExtension on SurveyType {
         return 'moca_basic';
       case SurveyType.mocaBlind:
         return 'moca_blind';
+      case SurveyType.fantasticMexA:
+        return 'fantastic_mexa';
       default:
         return name;
     }
@@ -90,6 +93,8 @@ extension SurveyTypeExtension on SurveyType {
         return 'MoCA 8.1';
       case SurveyType.mocaBlind:
         return 'MoCA Blind';
+      case SurveyType.fantasticMexA:
+        return 'FANTASTIC MEX-A';
     }
   }
 
@@ -131,6 +136,8 @@ extension SurveyTypeExtension on SurveyType {
         return 'Montreal Cognitive Assessment 8.1';
       case SurveyType.mocaBlind:
         return 'Montreal Cognitive Assessment - Blind';
+      case SurveyType.fantasticMexA:
+        return 'FANTASTIC Lifestyle Questionnaire - Mexican Adaptation';
     }
   }
 
@@ -172,6 +179,8 @@ extension SurveyTypeExtension on SurveyType {
         return 'Evaluacion Cognitiva Montreal 8.1';
       case SurveyType.mocaBlind:
         return 'Evaluacion Cognitiva Montreal para Discapacidad Visual';
+      case SurveyType.fantasticMexA:
+        return 'Cuestionario de Estilo de Vida FANTASTIC MEX-A';
     }
   }
 
@@ -213,6 +222,8 @@ extension SurveyTypeExtension on SurveyType {
         return material.Icons.psychology_alt_outlined;
       case SurveyType.mocaBlind:
         return material.Icons.visibility_off_outlined;
+      case SurveyType.fantasticMexA:
+        return material.Icons.spa_outlined;
     }
   }
 
@@ -254,6 +265,8 @@ extension SurveyTypeExtension on SurveyType {
         return const Color(0xFF0F766E);
       case SurveyType.mocaBlind:
         return const Color(0xFF1D4ED8);
+      case SurveyType.fantasticMexA:
+        return const Color(0xFF059669);
     }
   }
 }

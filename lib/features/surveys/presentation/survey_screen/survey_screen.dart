@@ -6,6 +6,8 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/core/logger/app_logger.dart';
 import 'package:ssapp/features/surveys/presentation/survey_controller.dart';
 import 'package:ssapp/features/surveys/types/bdi/domain/bdi_questions.dart';
+import 'package:ssapp/features/surveys/types/fantastic_mexa/domain/fantastic_mexa_questions.dart';
+import 'package:ssapp/features/surveys/types/fantastic_mexa/presentation/fantastic_mexa_survey_controller.dart';
 import 'package:ssapp/features/surveys/types/iciq_sf/domain/iciq_sf_questions.dart';
 import 'package:ssapp/features/surveys/types/osteoporosis/presentation/osteoporosis_survey_controller.dart';
 import 'package:ssapp/features/surveys/domain/survey_service.dart';
@@ -46,6 +48,23 @@ class _SurveyScreenState extends State<SurveyScreen> {
     return int.tryParse(fromInvestigationStr ?? '');
   }
 
+  FantasticMexaGeneralData _fantasticMexaGeneralDataFromParams() {
+    final params = GoRouterState.of(context).uri.queryParameters;
+    return FantasticMexaGeneralData(
+      fecha: params['fecha'] ?? '',
+      iniciales: params['iniciales'] ?? '',
+      escolaridad: params['escolaridad'] ?? '',
+      ocupacion: params['ocupacion'] ?? '',
+      estadoCivil: params['estadoCivil'] ?? '',
+      habitantesCasa: params['habitantesCasa'] ?? '',
+      numHabitantes: params['numHabitantes'] ?? '',
+      anosLaborando: params['anosLaborando'] ?? '',
+      horarioLaboral: params['horarioLaboral'] ?? '',
+      pesoKg: params['pesoKg'] ?? '',
+      estaturaM: params['estaturaM'] ?? '',
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -82,14 +101,21 @@ class _SurveyScreenState extends State<SurveyScreen> {
               initialWeight: weight,
               initialHeight: height,
             )
-          : SurveyController(
-              patientId: widget.patientId,
-              surveyType: widget.surveyType,
-              surveyService: surveyService,
-              investigationId: fromInvestigationId,
-              initialWeight: weight,
-              initialHeight: height,
-            );
+          : widget.surveyType == 'fantastic_mexa'
+              ? FantasticMexaSurveyController(
+                  patientId: widget.patientId,
+                  surveyService: surveyService,
+                  investigationId: fromInvestigationId,
+                  generalData: _fantasticMexaGeneralDataFromParams(),
+                )
+              : SurveyController(
+                  patientId: widget.patientId,
+                  surveyType: widget.surveyType,
+                  surveyService: surveyService,
+                  investigationId: fromInvestigationId,
+                  initialWeight: weight,
+                  initialHeight: height,
+                );
       _controller.addListener(_onControllerUpdate);
       _isControllerInitialized = true;
     }
@@ -144,6 +170,9 @@ class _SurveyScreenState extends State<SurveyScreen> {
     }
     if (widget.surveyType == 'osteoporosis') {
       return const Color(0xFF145374);
+    }
+    if (widget.surveyType == 'fantastic_mexa') {
+      return const Color(0xFF059669);
     }
     return LightModeColors.lightPrimary;
   }
@@ -372,6 +401,19 @@ class _SurveyScreenState extends State<SurveyScreen> {
       } else {
         levelColor = LightModeColors.lightError;
       }
+    } else if (widget.surveyType == 'fantastic_mexa') {
+      // FANTASTIC MEX-A: tabla de 5 niveles (0-186 puntos)
+      if (totalScore >= 158) {
+        levelColor = LightModeColors.lightTertiary;
+      } else if (totalScore >= 130) {
+        levelColor = const Color(0xFF65A30D);
+      } else if (totalScore >= 111) {
+        levelColor = const Color(0xFFFBBF24);
+      } else if (totalScore >= 74) {
+        levelColor = const Color(0xFFF97316);
+      } else {
+        levelColor = LightModeColors.lightError;
+      }
     } else {
       // BDI-II levels
       if (totalScore <= 13) {
@@ -489,6 +531,23 @@ class _SurveyScreenState extends State<SurveyScreen> {
                     questionIndex: _controller.currentQuestionIndex,
                     surveyColor: _surveyColor,
                   ),
+                  if (widget.surveyType == 'fantastic_mexa' &&
+                      FantasticMexaImages.forQuestion(question.number) != null) ...[
+                    const Gap(16),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        width: double.infinity,
+                        color: _surveyColor.withValues(alpha: 0.06),
+                        padding: const EdgeInsets.all(12),
+                        child: Image.asset(
+                          FantasticMexaImages.forQuestion(question.number)!,
+                          height: 160,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
+                  ],
                   const Gap(32),
                   Text(
                     widget.surveyType == 'iciqsf' && question.number == 4
@@ -542,6 +601,27 @@ class _SurveyScreenState extends State<SurveyScreen> {
                           faceIcon = Symbols.sentiment_very_satisfied;
                           faceColor = const Color(0xFF16A34A);
                         }
+                      } else if (widget.surveyType == 'fantastic_mexa') {
+                        // Las opciones de FANTASTIC MEX-A cambian de orden segun la
+                        // pregunta (items en reversa), asi que la carita depende del
+                        // puntaje (0-4) de la opcion y no de su posicion en la lista.
+                        const faceIconsByScore = [
+                          Symbols.sentiment_very_dissatisfied,
+                          Symbols.sentiment_dissatisfied,
+                          Symbols.sentiment_neutral,
+                          Symbols.sentiment_satisfied,
+                          Symbols.sentiment_very_satisfied,
+                        ];
+                        const faceColorsByScore = [
+                          Color(0xFFDC2626),
+                          Color(0xFFF59E0B),
+                          Color(0xFFFBBF24),
+                          Color(0xFF65A30D),
+                          Color(0xFF16A34A),
+                        ];
+                        final clampedScore = option.score.clamp(0, 4);
+                        faceIcon = faceIconsByScore[clampedScore];
+                        faceColor = faceColorsByScore[clampedScore];
                       } else {
                         const faceIcons = [
                           Symbols.sentiment_very_satisfied,

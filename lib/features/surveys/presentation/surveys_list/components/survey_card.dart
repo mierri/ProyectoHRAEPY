@@ -47,6 +47,9 @@ class SurveyListCard extends StatelessWidget {
       case 15: return const Color(0xFF0F766E);
       case 16: return const Color(0xFFB45309);
       case 17: return const Color(0xFFBE123C);
+      case 4:  return const Color(0xFF0F766E);
+      case 19: return const Color(0xFF1D4ED8);
+      case 20: return const Color(0xFF059669);
       default: return LightModeColors.lightPrimary;
     }
   }
@@ -72,6 +75,9 @@ class SurveyListCard extends StatelessWidget {
       case 15: return 'Determinantes Sociales';
       case 16: return 'Asistencia en Consulta';
       case 17: return 'Barreras Percibidas';
+      case 4:  return 'MoCA 8.1';
+      case 19: return 'MoCA Blind';
+      case 20: return 'FANTASTIC MEX-A';
       default: return 'Encuesta';
     }
   }
@@ -79,7 +85,7 @@ class SurveyListCard extends StatelessWidget {
   bool get _hasScore {
     final type = survey['survey_type'] as int? ?? 1;
     if (type == 100) return _customDefinition?.levels.isNotEmpty ?? false;
-    return type != 14 && type != 15 && type != 16 && type != 17;
+    return type != 14 && type != 15 && type != 16 && type != 17 && type != 4 && type != 19;
   }
 
   int get _expectedResponses {
@@ -105,6 +111,9 @@ class SurveyListCard extends StatelessWidget {
           (response) => response['question_id'] == 1,
         );
         return includesAntecedents ? 4 : 3;
+      case 4:  return 9;
+      case 19: return 8;
+      case 20: return 46;
       default: return 21;
     }
   }
@@ -134,6 +143,7 @@ class SurveyListCard extends StatelessWidget {
     if (type == 11) { if (score == 0) return 'Sin incontinencia'; if (score <= 5) return 'Leve'; if (score <= 12) return 'Moderada'; return 'Severa'; }
     if (type == 12) { if (score <= 11) return 'Bajo'; if (score <= 20) return 'Leve'; if (score <= 27) return 'Moderado'; return 'Alto'; }
     if (type == 13) { if (score <= 4) return 'Minima'; if (score <= 9) return 'Leve'; if (score <= 14) return 'Moderada'; if (score <= 19) return 'Moderadamente grave'; return 'Grave'; }
+    if (type == 20) { if (score >= 158) return 'Excelente'; if (score >= 130) return 'Bueno'; if (score >= 111) return 'Regular'; if (score >= 74) return 'Deficiente'; return 'Muy deficiente'; }
     return '';
   }
 
@@ -154,6 +164,7 @@ class SurveyListCard extends StatelessWidget {
     if (type == 15) return const Color(0xFF0F766E);
     if (type == 16) return const Color(0xFFB45309);
     if (type == 17) return const Color(0xFFBE123C);
+    if (type == 20) { if (score >= 158) return LightModeColors.lightTertiary; if (score >= 130) return const Color(0xFFFBBF24); if (score >= 111) return const Color(0xFFF97316); if (score >= 74) return const Color(0xFFDC2626); return const Color(0xFFB91C1C); }
     return LightModeColors.lightPrimary;
   }
 

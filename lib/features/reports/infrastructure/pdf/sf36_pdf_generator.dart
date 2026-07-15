@@ -6,7 +6,9 @@ import 'package:ssapp/features/reports/domain/stats_calculator.dart';
 import 'package:ssapp/features/reports/infrastructure/pdf/pdf_report_base.dart';
 
 class Sf36PdfGenerator extends PdfReportBase {
-  const Sf36PdfGenerator()
+  final List<Uint8List?> chartImages;
+
+  const Sf36PdfGenerator({this.chartImages = const []})
       : super(
           title: 'Reporte SF-36',
           subtitle: 'Estado de salud',
@@ -65,6 +67,13 @@ class Sf36PdfGenerator extends PdfReportBase {
               _dimRow(report.mentalHealth),
             ],
           ),
+          if (chartImages.isNotEmpty) pw.SizedBox(height: 14),
+          ...chartImages.where((image) => image != null).expand(
+                (image) => [
+                  embedChartImage(image, height: 180),
+                  pw.SizedBox(height: 12),
+                ],
+              ),
           pw.SizedBox(height: 12),
           pw.Text('Últimos registros', style: pw.TextStyle(font: fonts.bold, fontSize: 11)),
           pw.SizedBox(height: 6),

@@ -5,7 +5,9 @@ import 'package:ssapp/features/reports/domain/stats_calculator.dart';
 import 'package:ssapp/features/reports/infrastructure/pdf/pdf_report_base.dart';
 
 class OsteoporosisPdfGenerator extends PdfReportBase {
-  const OsteoporosisPdfGenerator()
+  final List<Uint8List?> chartImages;
+
+  const OsteoporosisPdfGenerator({this.chartImages = const []})
       : super(
           title: 'Reporte Osteoporosis',
           subtitle: 'Riesgo de fractura',
@@ -64,6 +66,13 @@ class OsteoporosisPdfGenerator extends PdfReportBase {
               'Sin etiqueta': '$unknown',
             },
           ),
+          if (chartImages.isNotEmpty) pw.SizedBox(height: 14),
+          ...chartImages.where((image) => image != null).expand(
+                (image) => [
+                  embedChartImage(image, height: 180),
+                  pw.SizedBox(height: 12),
+                ],
+              ),
           pw.SizedBox(height: 12),
           pw.Text('Últimos registros', style: pw.TextStyle(font: fonts.bold, fontSize: 11)),
           pw.SizedBox(height: 6),

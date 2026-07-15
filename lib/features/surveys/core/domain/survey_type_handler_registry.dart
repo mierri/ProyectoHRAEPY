@@ -15,6 +15,7 @@ import 'package:ssapp/features/surveys/types/specialty_consultation_attendance/d
 import 'package:ssapp/features/surveys/types/sociodemographic/domain/sociodemographic_survey_handler.dart';
 import 'package:ssapp/features/surveys/types/social_determinants/domain/social_determinants_survey_handler.dart';
 import 'package:ssapp/features/surveys/types/custom/domain/custom_survey_handler.dart';
+import 'package:ssapp/features/surveys/types/fantastic_mexa/domain/fantastic_mexa_survey_handler.dart';
 
 class SurveyTypeHandlerRegistry {
   SurveyTypeHandlerRegistry._();
@@ -37,6 +38,7 @@ class SurveyTypeHandlerRegistry {
     'perceived_attendance_barriers': PerceivedAttendanceBarriersSurveyHandler(),
     'moca_basic': MocaBasicSurveyHandler(),
     'moca_blind': MocaBlindSurveyHandler(),
+    'fantastic_mexa': FantasticMexaSurveyHandler(),
     'custom': CustomSurveyHandler(),
   };
 

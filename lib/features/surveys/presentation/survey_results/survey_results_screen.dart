@@ -246,7 +246,7 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
       case 16: // Asistencia en Consulta de Especialidad
       case 17: // Barreras percibidas para la asistencia
         return 'Sin puntuación';
-      case 18: // MoCA 8.1
+      case 4: // MoCA 8.1
         return score >= 26 ? 'Normal' : 'Interpretacion clinica';
       case 19: // MoCA Blind
         return score >= 19 ? 'Normal' : 'Bajo esperado';
@@ -392,7 +392,7 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         return 'Este cuestionario no tiene una interpretación de puntajes. Se recomienda revisar la especialidad médica, disponibilidad de transporte y antecedentes de inasistencia para apoyar el seguimiento del paciente.';
       case 17: // Barreras percibidas para la asistencia
         return 'Este cuestionario no tiene una interpretación de puntajes. Se recomienda revisar los motivos de inasistencia reciente y los tres principales riesgos percibidos de falta futura para planear apoyos y seguimiento.';
-      case 18: // MoCA 8.1
+      case 4: // MoCA 8.1
         return 'El MoCA 8.1 funciona como tamiz cognitivo general. Revise el puntaje ajustado, los dibujos del paciente y los dominios con menor desempeno para orientar una valoracion cognitiva mas amplia.';
       case 19: // MoCA Blind
         return 'El MoCA Blind funciona como tamiz cognitivo para personas con discapacidad visual. Un puntaje menor de 19 sugiere la necesidad de interpretacion clinica especializada.';
@@ -468,6 +468,7 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         case 1: return 'Inventario de Depresión de Beck II';
         case 2: return 'Inventario de Ansiedad de Beck';
         case 3: return 'Cuestionario de Calidad de Vida WHOQOL-BREF';
+        case 4: return 'Montreal Cognitive Assessment 8.1';
         case 5: return 'Encuesta de Salud de 36 Items';
         case 6: return 'OMS-ASSIST V3.0';
         case 7: return 'Escala de Depresión Geriátrica de 15 ítems';
@@ -481,7 +482,6 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
         case 15: return 'Cuestionario de Determinantes Sociales';
         case 16: return 'Asistencia en Consulta de Especialidad';
         case 17: return 'Cuestionario de Barreras Percibidas para la Asistencia a Consultas Médicas Programadas';
-        case 18: return 'Montreal Cognitive Assessment 8.1';
         case 19: return 'Montreal Cognitive Assessment Blind';
         default: return 'Encuesta';
       }
@@ -493,7 +493,7 @@ class _SurveyResultsScreenState extends State<SurveyResultsScreen> {
     final katzClassification =
       surveyType == 10 ? _katzClassificationFromSurvey(_survey!) : null;
     final storedLevel = _survey!['risk_level'] as String?;
-    final resolvedBaseLevel = (surveyType == 18 || surveyType == 19) && storedLevel != null && storedLevel.isNotEmpty
+    final resolvedBaseLevel = (surveyType == 4 || surveyType == 19) && storedLevel != null && storedLevel.isNotEmpty
         ? storedLevel
         : baseLevel;
     final level = surveyType == 10 && katzClassification != null

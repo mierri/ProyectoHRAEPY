@@ -20,6 +20,7 @@ enum SurveyInstructionVariant {
   perceivedAttendanceBarriers,
   mocaBasic,
   mocaBlind,
+  fantasticMexA,
   custom,
 }
 
@@ -55,6 +56,7 @@ class SurveyTypeConfig {
     'perceived_attendance_barriers': 4,
     'moca_basic': 9,
     'moca_blind': 8,
+    'fantastic_mexa': 46,
   };
 
   static String normalizeType(String? surveyType) {
@@ -81,7 +83,7 @@ class SurveyTypeConfig {
         normalized == 'moca 8' ||
         normalized == 'moca basic' ||
         normalized == 'moca basica' ||
-        normalized == '18') {
+        normalized == '4') {
       return 'moca_basic';
     }
     if (normalized == 'mocablind' ||
@@ -129,6 +131,8 @@ class SurveyTypeConfig {
         return const Color(0xFF0F766E);
       case 'moca_blind':
         return const Color(0xFF1D4ED8);
+      case 'fantastic_mexa':
+        return const Color(0xFF059669);
       case 'custom':
         return const Color(0xFF0D9488);
       case 'bdi':
@@ -173,6 +177,8 @@ class SurveyTypeConfig {
         return 'MoCA 8.1 es la version estandar del Montreal Cognitive Assessment. La app combina tareas del paciente en la tableta con captura clinica del doctor y calcula el puntaje ajustado sobre 30.';
       case 'moca_blind':
         return 'MoCA Blind es la version para discapacidad visual. La app registra el desempeno por apartados y calcula el puntaje total ajustado sobre 22.';
+      case 'fantastic_mexa':
+        return 'FANTASTIC MEX-A evalua el estilo de vida en 12 areas (familia, actividad fisica, nutricion, tabaco, alcohol, sueno, personalidad, introspeccion, carrera, salud, orden y somatometria) mediante 46 items puntuados 0-4.';
       case 'custom':
         return 'Esta es una encuesta personalizada creada por su equipo de salud.';
       case 'bdi':
@@ -305,6 +311,13 @@ class SurveyTypeConfig {
           instructions:
               'Esta version del MoCA Blind se aplica completamente en la tableta. El doctor sigue las consignas visibles en pantalla y registra ahi mismo el desempeno del paciente en cada apartado.',
           variant: SurveyInstructionVariant.mocaBlind,
+        );
+      case 'fantastic_mexa':
+        return const SurveyInstructionContent(
+          title: 'FANTASTIC MEX-A',
+          instructions:
+              'Senale la respuesta con la que se identifica, de acuerdo con sus patrones de comportamiento de los ultimos dos meses. La pregunta 46 (IMC) no tiene imagen.',
+          variant: SurveyInstructionVariant.fantasticMexA,
         );
       case 'custom':
         return const SurveyInstructionContent(
