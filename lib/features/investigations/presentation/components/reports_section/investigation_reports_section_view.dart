@@ -27,10 +27,7 @@ const Map<int, String> _surveyNames = {
 class InvestigationReportsSection extends StatefulWidget {
   final InvestigationModel investigation;
 
-  const InvestigationReportsSection({
-    super.key,
-    required this.investigation,
-  });
+  const InvestigationReportsSection({super.key, required this.investigation});
 
   @override
   State<InvestigationReportsSection> createState() =>
@@ -91,9 +88,9 @@ class _InvestigationReportsSectionState
             const Gap(12),
             const Text('Sin encuestas configuradas').semiBold(),
             const Gap(4),
-            const Text('Esta investigación no tiene encuestas asignadas')
-                .small()
-                .muted(),
+            const Text(
+              'Esta investigación no tiene encuestas asignadas',
+            ).small().muted(),
           ],
         ),
       );
@@ -111,12 +108,15 @@ class _InvestigationReportsSectionState
                 availableTypes: _availableTypes,
                 isExporting: vm.isExporting,
                 onSurveyTypeChanged: _loadForType,
-                onExportCsv:
-                    vm.surveys.isEmpty ? null : () => vm.exportCsv(context),
-                onExportPdf:
-                    vm.surveys.isEmpty ? null : () => vm.exportPdf(context),
-                onPrintPdf:
-                    vm.surveys.isEmpty ? null : () => vm.printPdf(context),
+                onExportExcel: vm.surveys.isEmpty || !vm.canExportExcel
+                    ? null
+                    : () => vm.exportExcel(context),
+                onExportPdf: vm.surveys.isEmpty
+                    ? null
+                    : () => vm.exportPdf(context),
+                onPrintPdf: vm.surveys.isEmpty
+                    ? null
+                    : () => vm.printPdf(context),
               ),
               const Divider(height: 1),
               const Gap(16),
@@ -158,7 +158,7 @@ class _ControlBar extends StatelessWidget {
   final List<int> availableTypes;
   final bool isExporting;
   final ValueChanged<int> onSurveyTypeChanged;
-  final VoidCallback? onExportCsv;
+  final VoidCallback? onExportExcel;
   final VoidCallback? onExportPdf;
   final VoidCallback? onPrintPdf;
 
@@ -167,7 +167,7 @@ class _ControlBar extends StatelessWidget {
     required this.availableTypes,
     required this.isExporting,
     required this.onSurveyTypeChanged,
-    required this.onExportCsv,
+    required this.onExportExcel,
     required this.onExportPdf,
     required this.onPrintPdf,
   });
@@ -202,8 +202,8 @@ class _ControlBar extends StatelessWidget {
           ),
         ),
         OutlineButton(
-          onPressed: isExporting ? null : onExportCsv,
-          child: const Text('Exportar CSV'),
+          onPressed: isExporting ? null : onExportExcel,
+          child: const Text('Exportar Excel'),
         ),
         OutlineButton(
           onPressed: isExporting ? null : onPrintPdf,

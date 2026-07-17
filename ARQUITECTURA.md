@@ -22,17 +22,25 @@ lib/
     storage/
     supabase/
   features/
-    auth/
+    auth/                             # Login + sesión (Supabase Auth)
+    splash/
     dashboard/
-    investigations/
+    investigations/                   # Estudios: consentimiento, participantes, encuestas, reportes
     patients/
       data/
       presentation/
     reports/
       domain/
       infrastructure/
+        pdf/
+        excel/
+        export/
       presentation/
     settings/
+    survey_builder/                   # Constructor de encuestas personalizadas (custom)
+      data/
+      domain/
+      presentation/
     surveys/
       core/domain/
       data/
@@ -42,13 +50,22 @@ lib/
         assist/
         bai/
         bdi/
+        custom/
+        fantastic_mexa/
         gds/
+        ghq12/
         iciq_sf/
         katz/
         lawton/
-        moca/
+        moca_basic/
+        moca_blind/
         osteoporosis/
+        perceived_attendance_barriers/
+        phq9/
         sf36/
+        social_determinants/
+        sociodemographic/
+        specialty_consultation_attendance/
         whoqol/
   shared/
     models/
@@ -129,12 +146,28 @@ Nota de organización actual:
 1. `ReportsScreen` (orquestador) en `features/reports/presentation/`.
 2. Cálculo estadístico en `features/reports/domain/stats_calculator.dart`.
 3. Exportadores en `features/reports/infrastructure/`:
-   - CSV por tipo.
+   - Excel por tipo.
    - PDF por tipo (`BDI/BAI`, `WHOQOL`, `SF-36`, `Osteoporosis`).
 
 ### 6.3 Pacientes y sync
 1. Gestión de pacientes en `features/patients/`.
 2. Sync coordinado por servicios compartidos y contratos `ISyncable`.
+
+### 6.4 Investigaciones
+1. `InvestigationsScreen` lista estudios; `CreateInvestigationScreen` los crea/edita por pasos (detalles, encuestas, consentimiento, revisión).
+2. `InvestigationApplyScreen` asocia pacientes participantes y lanza las encuestas del estudio.
+3. `InvestigationRepository` persiste el modelo (`InvestigationModel`) en Hive/Supabase.
+4. `investigations/presentation/components/reports_section/` reutiliza los reportes de `features/reports/` filtrados por investigación.
+
+### 6.5 Constructor de encuestas (survey_builder)
+1. `CustomSurveysListScreen` lista las encuestas personalizadas creadas.
+2. `CustomSurveyEditorScreen` permite definir preguntas y niveles de interpretación sin tocar código.
+3. `CustomSurveyRepository` persiste `CustomSurveyModel`/`CustomSurveyDefinition`.
+4. El tipo `custom` se resuelve en runtime vía `DynamicSurveyScreen` (`features/surveys/presentation/dynamic_survey/`).
+
+### 6.6 Autenticación
+1. `LoginScreen` + `AuthService` (`features/auth/`) gestionan sesión contra Supabase Auth.
+2. `router.dart` protege rutas con `redirect` según `authService.isAuthenticated`.
 
 ## 7. Checklist para cambios futuros
 

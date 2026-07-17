@@ -124,9 +124,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   customSurveys: _customSurveys,
                   isExporting: vm.isExporting,
                   onSurveyTypeChanged: (value) => _loadForType(value),
-                  onExportCsv: vm.surveys.isEmpty ? null : () => vm.exportCsv(context),
-                  onExportPdf: vm.surveys.isEmpty ? null : () => vm.exportPdf(context),
-                  onPrintPdf: vm.surveys.isEmpty ? null : () => vm.printPdf(context),
+                  onExportExcel: vm.surveys.isEmpty || !vm.canExportExcel
+                      ? null
+                      : () => vm.exportExcel(context),
+                  onExportPdf: vm.surveys.isEmpty
+                      ? null
+                      : () => vm.exportPdf(context),
+                  onPrintPdf: vm.surveys.isEmpty
+                      ? null
+                      : () => vm.printPdf(context),
                 ),
                 const Divider(height: 1),
                 Expanded(
@@ -152,7 +158,7 @@ class _HeaderBar extends StatelessWidget {
   final List<CustomSurveyDefinition> customSurveys;
   final bool isExporting;
   final ValueChanged<int> onSurveyTypeChanged;
-  final VoidCallback? onExportCsv;
+  final VoidCallback? onExportExcel;
   final VoidCallback? onExportPdf;
   final VoidCallback? onPrintPdf;
 
@@ -161,7 +167,7 @@ class _HeaderBar extends StatelessWidget {
     required this.customSurveys,
     required this.isExporting,
     required this.onSurveyTypeChanged,
-    required this.onExportCsv,
+    required this.onExportExcel,
     required this.onExportPdf,
     required this.onPrintPdf,
   });
@@ -182,39 +188,73 @@ class _HeaderBar extends StatelessWidget {
               onChanged: (v) {
                 if (v != null) onSurveyTypeChanged(v);
               },
-              itemBuilder: (context, item) => Text(_labelForType(item, customSurveys)),
+              itemBuilder: (context, item) =>
+                  Text(_labelForType(item, customSurveys)),
               popup: SelectPopup(
                 items: SelectItemList(
                   children: [
                     const SelectItemButton(value: 1, child: Text('BDI-II')),
                     const SelectItemButton(value: 2, child: Text('BAI')),
-                    const SelectItemButton(value: 3, child: Text('WHOQOL-BREF')),
+                    const SelectItemButton(
+                      value: 3,
+                      child: Text('WHOQOL-BREF'),
+                    ),
                     const SelectItemButton(value: 5, child: Text('SF-36')),
-                    const SelectItemButton(value: 6, child: Text('ASSIST V3.0')),
+                    const SelectItemButton(
+                      value: 6,
+                      child: Text('ASSIST V3.0'),
+                    ),
                     const SelectItemButton(value: 7, child: Text('GDS-15')),
-                    const SelectItemButton(value: 8, child: Text('Lawton AIVD')),
-                    const SelectItemButton(value: 9, child: Text('Osteoporosis')),
+                    const SelectItemButton(
+                      value: 8,
+                      child: Text('Lawton AIVD'),
+                    ),
+                    const SelectItemButton(
+                      value: 9,
+                      child: Text('Osteoporosis'),
+                    ),
                     const SelectItemButton(value: 10, child: Text('Katz ABVD')),
                     const SelectItemButton(value: 11, child: Text('ICIQ-SF')),
                     const SelectItemButton(value: 12, child: Text('GHQ-12')),
                     const SelectItemButton(value: 13, child: Text('PHQ-9')),
-                    const SelectItemButton(value: 14, child: Text('Sociodemográfico')),
-                    const SelectItemButton(value: 15, child: Text('Determinantes Sociales')),
-                    const SelectItemButton(value: 16, child: Text('Asistencia en Consulta de Especialidad')),
-                    const SelectItemButton(value: 17, child: Text('Barreras Percibidas para la Asistencia')),
+                    const SelectItemButton(
+                      value: 14,
+                      child: Text('Sociodemográfico'),
+                    ),
+                    const SelectItemButton(
+                      value: 15,
+                      child: Text('Determinantes Sociales'),
+                    ),
+                    const SelectItemButton(
+                      value: 16,
+                      child: Text('Asistencia en Consulta de Especialidad'),
+                    ),
+                    const SelectItemButton(
+                      value: 17,
+                      child: Text('Barreras Percibidas para la Asistencia'),
+                    ),
                     const SelectItemButton(value: 18, child: Text('MoCA 8.1')),
-                    const SelectItemButton(value: 19, child: Text('MoCA Blind')),
-                    const SelectItemButton(value: 20, child: Text('FANTASTIC MEX-A')),
+                    const SelectItemButton(
+                      value: 19,
+                      child: Text('MoCA Blind'),
+                    ),
+                    const SelectItemButton(
+                      value: 20,
+                      child: Text('FANTASTIC MEX-A'),
+                    ),
                     for (final def in customSurveys)
-                      SelectItemButton(value: def.id, child: Text('Mis encuestas: ${def.title}')),
+                      SelectItemButton(
+                        value: def.id,
+                        child: Text('Mis encuestas: ${def.title}'),
+                      ),
                   ],
                 ),
               ).call,
             ),
           ),
           OutlineButton(
-            onPressed: isExporting ? null : onExportCsv,
-            child: const Text('Exportar CSV'),
+            onPressed: isExporting ? null : onExportExcel,
+            child: const Text('Exportar Excel'),
           ),
           OutlineButton(
             onPressed: isExporting ? null : onPrintPdf,
@@ -229,7 +269,10 @@ class _HeaderBar extends StatelessWidget {
     );
   }
 
-  static String _labelForType(int surveyType, List<CustomSurveyDefinition> customSurveys) {
+  static String _labelForType(
+    int surveyType,
+    List<CustomSurveyDefinition> customSurveys,
+  ) {
     switch (surveyType) {
       case 1:
         return 'BDI-II';
@@ -296,11 +339,17 @@ class _ReportBody extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(material.Icons.bar_chart, size: 72, color: Theme.of(context).colorScheme.mutedForeground),
+            Icon(
+              material.Icons.bar_chart,
+              size: 72,
+              color: Theme.of(context).colorScheme.mutedForeground,
+            ),
             const Gap(12),
             Text('Sin encuestas para $surveyName').semiBold(),
             const Gap(4),
-            const Text('Selecciona otro tipo o completa nuevas encuestas').small().muted(),
+            const Text(
+              'Selecciona otro tipo o completa nuevas encuestas',
+            ).small().muted(),
           ],
         ),
       );

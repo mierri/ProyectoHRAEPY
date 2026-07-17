@@ -1,17 +1,23 @@
 # ssapp
 
-Sistema de gestion de pacientes y encuestas clinicas con almacenamiento offline y sincronizacion con Supabase.
+Sistema de gestion de pacientes y encuestas clinicas — Departamento de Psicología HRAEPY — con almacenamiento offline y sincronizacion con Supabase.
+
+> 📘 ¿Buscás una explicación no técnica para el cliente/hospital? Ver **[MANUAL_USUARIO.md](MANUAL_USUARIO.md)**.
 
 ## ✨ Características
 
+- ✅ **Autenticación**: Login seguro por usuario (Supabase Auth)
 - ✅ **Almacenamiento Offline**: Funciona sin conexión a internet usando Hive
 - ✅ **Sincronización Automática**: Sincroniza automáticamente cuando hay conexión
 - ✅ **Base de datos en la nube**: Supabase como backend
 - ✅ **Gestión de Pacientes**: CRUD completo con sincronización
-- ✅ **Gestión de Encuestas Multiples**: BDI-II, BAI, WHOQOL, SF-36, ASSIST, GDS-15, Lawton, Katz, ICIQ-SF, Osteoporosis, MoCA
+- ✅ **Gestión de Encuestas Múltiples**: 19 instrumentos clínicos (BDI-II, BAI, WHOQOL-BREF, SF-36, ASSIST, GDS-15, Lawton, Katz, ICIQ-SF, Osteoporosis, GHQ-12, PHQ-9, Sociodemográfico, Determinantes Sociales, Asistencia en Consulta de Especialidad, Barreras Percibidas para la Asistencia, MoCA 8.1, MoCA Blind, FANTASTIC MEX-A)
+- ✅ **Constructor de Encuestas**: Diseño de encuestas personalizadas propias, sin tocar código
+- ✅ **Investigaciones**: Agrupa pacientes, consentimiento informado y encuestas dentro de un estudio de investigación
 - ✅ **Detección de Conectividad**: Monitoreo de estado de red
 - ✅ **Estado de Sincronización**: Indicadores visuales de datos pendientes
-- ✅ **Reportes por Tipo**: Exportacion CSV/PDF por instrumento
+- ✅ **Reportes por Tipo**: Exportación Excel/PDF por instrumento, con gráficos
+- ✅ **Multiplataforma**: Android, y Web (desplegado en Vercel)
 
 ## 📁 Estructura del Proyecto
 
@@ -27,12 +33,16 @@ lib/
 │   ├── storage/
 │   └── supabase/
 ├── features/
-│   ├── auth/
+│   ├── auth/                         # Login y sesión (Supabase Auth)
+│   ├── splash/
 │   ├── dashboard/
 │   ├── patients/
+│   ├── investigations/               # Estudios de investigación (consentimiento, participantes, encuestas)
 │   ├── reports/
 │   ├── settings/
+│   ├── survey_builder/               # Constructor de encuestas personalizadas
 │   └── surveys/
+│       └── types/                    # Un subdirectorio domain/presentation por cada instrumento clínico
 ├── shared/
 │   ├── models/                       # Modelos Hive sincronizables
 │   ├── services/
@@ -53,11 +63,20 @@ Ver documentación completa del backend en:
 
 ## 🛠 Tecnologías
 
-- **Flutter**: Framework de UI
+- **Flutter / Dart**: Framework de UI multiplataforma (Android, Web)
 - **Hive**: Base de datos local (offline)
-- **Supabase**: Backend en la nube (PostgreSQL)
+- **Supabase**: Backend en la nube (PostgreSQL + Auth)
+- **go_router**: Enrutamiento/navegación declarativa
+- **provider**: Gestión de estado
+- **shadcn_flutter / google_fonts / material_symbols_icons**: UI y estilos
+- **fl_chart**: Gráficos de reportes
+- **pdf / printing**: Generación e impresión de reportes en PDF
+- **excel**: Exportación de reportes en Excel
+- **flutter_tts / just_audio**: Lectura en voz alta de encuestas (accesibilidad)
 - **connectivity_plus**: Detección de conectividad
 - **build_runner**: Generación de código para Hive
+- **GitHub**: Control de versiones y colaboración (ver [GITFLOW.md](GITFLOW.md))
+- **Vercel**: Hosting y despliegue automático de la versión web (ver [WEB_DEPLOY.md](WEB_DEPLOY.md))
 
 ## 📦 Instalación
 
@@ -125,10 +144,14 @@ flutter analyze
 
 ### ✅ Completado
 - [x] Arquitectura feature-first
-- [x] Modulo de encuestas modularizado por tipo
+- [x] Modulo de encuestas modularizado por tipo (19 instrumentos)
+- [x] Autenticación con Supabase Auth
+- [x] Constructor de encuestas personalizadas
+- [x] Modulo de investigaciones (consentimiento, participantes, encuestas por estudio)
 - [x] Persistencia Hive + sincronizacion Supabase
-- [x] Reportes y exportacion por tipo (CSV/PDF)
+- [x] Reportes y exportacion por tipo (Excel/PDF)
 - [x] UI principal de pacientes, encuestas, reportes y configuracion
+- [x] Despliegue web automatico en Vercel
 
 ### 🚧 Pendiente
 - [ ] Reducir warnings de `flutter analyze`

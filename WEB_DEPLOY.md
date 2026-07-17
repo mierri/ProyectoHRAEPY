@@ -9,7 +9,7 @@ Esta app ya incluye soporte para Flutter Web.
 - Los reportes permiten:
   - descargar PDF
   - imprimir PDF
-  - descargar CSV
+  - descargar Excel
 
 ## Build web
 
@@ -38,6 +38,6 @@ La carpeta `build/web` se puede subir tal cual a un hosting estatico, por ejempl
 ## Notas
 
 - En web, la experiencia recomendada es usar Chrome o Edge.
-- La descarga de PDF y CSV se hace directamente desde el navegador.
+- La descarga de PDF y Excel se hace directamente desde el navegador.
 - La impresion del PDF abre el flujo de impresion del navegador/sistema.
 - Si usan una sola computadora dentro del consultorio, esta version web puede fijarse como acceso directo en el escritorio.

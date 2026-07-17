@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:printing/printing.dart';
@@ -22,8 +21,9 @@ class ReportsViewModel extends ChangeNotifier {
   ReportsViewModel({
     GenerateReportUseCase? generateReportUseCase,
     ExportDataUseCase? exportDataUseCase,
-  })  : _generateReportUseCase = generateReportUseCase ?? GenerateReportUseCase(),
-        _exportDataUseCase = exportDataUseCase ?? ExportDataUseCase();
+  }) : _generateReportUseCase =
+           generateReportUseCase ?? GenerateReportUseCase(),
+       _exportDataUseCase = exportDataUseCase ?? ExportDataUseCase();
 
   int selectedSurveyType = 1;
   CustomSurveyDefinition? selectedCustomDefinition;
@@ -32,8 +32,11 @@ class ReportsViewModel extends ChangeNotifier {
   List<Map<String, dynamic>> _surveys = [];
 
   List<Map<String, dynamic>> get surveys => List.unmodifiable(_surveys);
-  SurveyReportViewModel get activeReportViewModel =>
-      resolveReportViewModel(selectedSurveyType, customDefinition: selectedCustomDefinition);
+  SurveyReportViewModel get activeReportViewModel => resolveReportViewModel(
+    selectedSurveyType,
+    customDefinition: selectedCustomDefinition,
+  );
+  bool get canExportExcel => !_isMocaType(selectedSurveyType);
 
   Future<void> loadReport(
     SurveyService surveyService,
@@ -110,7 +113,9 @@ class ReportsViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> exportCsv(BuildContext context) async {
+  Future<void> exportExcel(BuildContext context) async {
+    if (!canExportExcel) return;
+
     isExporting = true;
     notifyListeners();
     try {
@@ -118,7 +123,7 @@ class ReportsViewModel extends ChangeNotifier {
       if (patientService.patients.isEmpty) {
         await patientService.loadPatients();
       }
-      final bytes = await _exportDataUseCase.exportCsv(
+      final bytes = await _exportDataUseCase.exportExcel(
         selectedSurveyType,
         _surveys,
         customDefinition: selectedCustomDefinition,
@@ -126,16 +131,20 @@ class ReportsViewModel extends ChangeNotifier {
       );
       await saveReportFile(
         bytes: bytes,
-        filename: 'reporte_$selectedSurveyType.csv',
-        mimeType: 'text/csv',
+        filename: 'reporte_$selectedSurveyType.xlsx',
+        mimeType:
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       );
     } catch (e, st) {
-      AppLogger.error('Error exporting CSV', e, st);
+      AppLogger.error('Error exporting Excel', e, st);
     } finally {
       isExporting = false;
       notifyListeners();
     }
   }
+
+  bool _isMocaType(int surveyType) =>
+      surveyType == 4 || surveyType == 18 || surveyType == 19;
 
   Future<void> printPdf(BuildContext context) async {
     isExporting = true;

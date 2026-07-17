@@ -119,7 +119,7 @@ class _WelcomePanel extends StatelessWidget {
         const LumiWidget(
           variant: LumiVariant.waving,
           size: 190,
-          message: 'Hola, soy Lumi. Te acompano al entrar.',
+          message: 'Hola, soy Lumi. Te acompaño al entrar.',
           bubbleColor: Color(0xFFFFFFFF),
         ),
         const SizedBox(height: 18),

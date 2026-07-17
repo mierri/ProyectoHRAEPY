@@ -23,7 +23,7 @@ Resultado:
 - Feature `reports/` con estructura por capas (`data`, `domain`, `infrastructure`, `presentation`).
 - `GenerateReportUseCase` y `ExportDataUseCase` implementados.
 - PDF por tipo (`bdi_bai`, `whoqol`, `sf36`, `osteoporosis`) sobre `PdfReportBase`.
-- `SurveyCsvExporter` como exportador CSV por tipo.
+- `SurveyExcelExporter` como exportador Excel por tipo.
 - `ReportsViewModel` delega render/export a viewmodels por tipo.
 
 ### Fase 3 - Survey Controller

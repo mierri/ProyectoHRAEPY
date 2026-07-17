@@ -76,9 +76,9 @@ lib/
 - `domain/report_models.dart`: modelos estadisticos base.
 - `domain/stats_calculator.dart`: calculos puros.
 - `domain/use_cases/generate_report_use_case.dart`: carga de data por tipo.
-- `domain/use_cases/export_data_use_case.dart`: exportacion CSV.
+- `domain/use_cases/export_data_use_case.dart`: exportacion Excel.
 - `infrastructure/pdf/*`: generadores PDF por instrumento + base comun.
-- `infrastructure/csv/survey_csv_exporter.dart`: exportador CSV por tipo.
+- `infrastructure/excel/survey_excel_exporter.dart`: exportador Excel por tipo.
 - `presentation/reports_screen.dart`: UI principal.
 - `presentation/reports_viewmodel.dart`: estado y acciones de reportes.
 - `reports_feature.dart`: barrel/entry point.
