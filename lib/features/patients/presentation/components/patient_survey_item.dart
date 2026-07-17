@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart' as material show Icons;
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/features/patients/presentation/patient_utils.dart';
 import 'package:ssapp/features/surveys/domain/survey_catalog.dart';
 import 'package:ssapp/features/surveys/domain/survey_rules.dart';
+import 'package:ssapp/features/surveys/domain/survey_service.dart';
 import 'package:ssapp/shared/utils/theme.dart';
 
 class PatientSurveyItem extends StatelessWidget {
@@ -12,6 +14,54 @@ class PatientSurveyItem extends StatelessWidget {
   final VoidCallback onClose;
 
   const PatientSurveyItem({super.key, required this.survey, required this.onClose});
+
+  Future<void> _confirmDelete(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eliminar encuesta'),
+        content: const Text(
+            '¿Eliminar esta encuesta contestada? Esta acción no se puede deshacer.'),
+        actions: [
+          OutlineButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          PrimaryButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    // No se muestra un toast de éxito: se dispararía mientras este diálogo
+    // (dentro de PatientDetailsDialog) sigue abierto y quedaría pintado
+    // detrás de él, invisible. La fila desapareciendo de la lista ya es
+    // la confirmación. En caso de error sí usamos un AlertDialog, que se
+    // apila como ruta nueva y por eso siempre se ve.
+    try {
+      await context.read<SurveyService>().deleteSurvey(survey['survey_id'] as int);
+    } catch (e) {
+      if (context.mounted) {
+        await showDialog<void>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('No se pudo eliminar'),
+            content: Text('Ocurrió un error al eliminar la encuesta: $e'),
+            actions: [
+              PrimaryButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Entendido'),
+              ),
+            ],
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +96,11 @@ class PatientSurveyItem extends StatelessWidget {
               surveyType: surveyType,
               survey: survey,
             )),
+            IconButton(
+              icon: const Icon(material.Icons.delete_outline),
+              variance: ButtonVariance.ghost,
+              onPressed: () => _confirmDelete(context),
+            ),
             if (isComplete)
               Icon(material.Icons.chevron_right,
                   color: Theme.of(context).colorScheme.mutedForeground),

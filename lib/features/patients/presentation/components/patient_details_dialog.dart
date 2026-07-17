@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' as material show Icons;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
+import 'package:ssapp/features/patients/data/patient_repository.dart';
 import 'package:ssapp/features/patients/presentation/components/patient_survey_item.dart';
 import 'package:ssapp/features/patients/presentation/patient_utils.dart';
 import 'package:ssapp/features/surveys/domain/survey_service.dart';
@@ -12,6 +13,86 @@ class PatientDetailsDialog extends StatelessWidget {
   final PatientModel patient;
 
   const PatientDetailsDialog({super.key, required this.patient});
+
+  /// Diálogo modal simple (título + mensaje + botón "Entendido").
+  /// Se usa en vez de un toast porque un toast disparado mientras este
+  /// mismo diálogo sigue abierto queda pintado detrás de él (misma capa
+  /// base que el fondo de la app) y resulta invisible para el usuario.
+  Future<void> _showInfoDialog(
+      BuildContext context, {required String title, required String message}) {
+    return showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          PrimaryButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Entendido'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmDeletePatient(
+      BuildContext context, List<Map<String, dynamic>> surveys) async {
+    if (surveys.isNotEmpty) {
+      await _showInfoDialog(
+        context,
+        title: 'No se puede eliminar',
+        message: 'Este paciente tiene encuestas registradas. Elimínalas primero desde el historial.',
+      );
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eliminar paciente'),
+        content: Text('¿Eliminar a "${patient.name}"? Esta acción no se puede deshacer.'),
+        actions: [
+          OutlineButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          PrimaryButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await context.read<PatientService>().deletePatient(patient.patientId);
+      if (!context.mounted) return;
+
+      // No mostramos el toast aquí: justo después de pop(), este context
+      // está siendo removido del árbol y showToast() falla al buscar su
+      // ToastLayer ancestro. En vez de eso, devolvemos `true` y dejamos que
+      // el llamador (con un context estable) muestre la confirmación.
+      Navigator.of(context).pop(true);
+    } on PatientHasSurveysException {
+      if (context.mounted) {
+        await _showInfoDialog(
+          context,
+          title: 'No se puede eliminar',
+          message: 'Este paciente tiene encuestas registradas. Elimínalas primero.',
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        await _showInfoDialog(
+          context,
+          title: 'No se pudo eliminar',
+          message: 'Ocurrió un error al eliminar el paciente: $e',
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +127,18 @@ class PatientDetailsDialog extends StatelessWidget {
             const Divider(height: 1),
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+              child: Row(children: [
+                OutlineButton(
+                  onPressed: () => _confirmDeletePatient(context, patientSurveys),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(material.Icons.delete_outline,
+                        size: 16, color: LightModeColors.lightError),
+                    const Gap(6),
+                    Text('Eliminar paciente',
+                        style: TextStyle(color: LightModeColors.lightError)),
+                  ]),
+                ),
+                const Spacer(),
                 OutlineButton(
                   onPressed: () => Navigator.of(context).pop(),
                   child: const Text('Cerrar'),

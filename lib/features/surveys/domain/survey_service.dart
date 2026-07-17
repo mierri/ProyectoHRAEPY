@@ -52,4 +52,12 @@ class SurveyService extends ChangeNotifier {
   Future<SaveSurveyResult> saveSurvey(SurveyModel survey) {
     return _saveSurveyUseCase.execute(survey);
   }
+
+  /// Elimina una encuesta contestada (local y remota).
+  Future<void> deleteSurvey(int surveyId) async {
+    await _repository.deleteSurvey(surveyId);
+    _surveys.removeWhere((s) => s['survey_id'] == surveyId);
+    _cachedStats = null;
+    notifyListeners();
+  }
 }

@@ -1,10 +1,12 @@
 import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
+import 'package:pdf/pdf.dart';
 import 'package:ssapp/features/reports/domain/osteoporosis_report_service.dart';
 import 'package:ssapp/features/reports/domain/stats_calculator.dart';
 import 'package:ssapp/features/reports/infrastructure/pdf/bdi_bai_pdf_generator.dart';
 import 'package:ssapp/features/reports/infrastructure/pdf/osteoporosis_pdf_generator.dart';
+import 'package:ssapp/features/reports/infrastructure/pdf/pdf_report_base.dart';
 import 'package:ssapp/features/reports/infrastructure/pdf/perceived_attendance_barriers_pdf_generator.dart';
 import 'package:ssapp/features/reports/infrastructure/pdf/sf36_pdf_generator.dart';
 import 'package:ssapp/features/reports/infrastructure/pdf/generic_pdf_generator.dart';
@@ -37,6 +39,10 @@ abstract class SurveyReportViewModel {
   String get surveyName;
   List<GlobalKey> get chartKeys;
 
+  /// PDF accent color for this survey. Defaults to a neutral app color;
+  /// override to match the survey's on-screen report section color.
+  PdfColor get pdfAccentColor => AppPdfColors.tertiary;
+
   Widget buildSection(List<Map<String, dynamic>> surveys);
 
   /// Legacy: generates PDF without chart images (fallback).
@@ -53,6 +59,7 @@ abstract class SurveyReportViewModel {
       surveyName: surveyName,
       surveys: surveys,
       chartImages: chartImages,
+      accentColor: pdfAccentColor,
     ).generate();
   }
 }
@@ -103,7 +110,7 @@ class WhoqolReportViewModel extends SurveyReportViewModel {
     return WhoqolReportSection(data: data);
   }
   @override Future<Uint8List> generatePdf(List<Map<String, dynamic>> surveys) =>
-      const WhoqolPdfGenerator().generate(surveys);
+      WhoqolPdfGenerator().generate(surveys);
   @override Future<Uint8List> generatePdfWithImages(
     List<Map<String, dynamic>> surveys,
     List<Uint8List?> chartImages,
@@ -123,7 +130,7 @@ class Sf36ReportViewModel extends SurveyReportViewModel {
     return Sf36ReportSection(data: data);
   }
   @override Future<Uint8List> generatePdf(List<Map<String, dynamic>> surveys) =>
-      const Sf36PdfGenerator().generate(surveys);
+      Sf36PdfGenerator().generate(surveys);
   @override Future<Uint8List> generatePdfWithImages(
     List<Map<String, dynamic>> surveys,
     List<Uint8List?> chartImages,
@@ -194,7 +201,7 @@ class OsteoporosisReportViewModel extends SurveyReportViewModel {
     return OsteoporosisReportSection(report: report);
   }
   @override Future<Uint8List> generatePdf(List<Map<String, dynamic>> surveys) =>
-      const OsteoporosisPdfGenerator().generate(surveys);
+      OsteoporosisPdfGenerator().generate(surveys);
   @override Future<Uint8List> generatePdfWithImages(
     List<Map<String, dynamic>> surveys,
     List<Uint8List?> chartImages,
@@ -277,10 +284,16 @@ class SociodemographicReportViewModel extends SurveyReportViewModel {
   @override int get surveyType => 14;
   @override String get surveyName => 'Sociodemográfico';
   @override List<GlobalKey> get chartKeys => SociodemographicReportSection.chartKeys;
+  @override PdfColor get pdfAccentColor => PdfColor.fromHex('#4F46E5');
   @override Widget buildSection(List<Map<String, dynamic>> surveys) =>
       SociodemographicReportSection(surveys: surveys);
   @override Future<Uint8List> generatePdf(List<Map<String, dynamic>> surveys) =>
-      GenericPdfReportGenerator(surveyName: surveyName, surveys: surveys, chartImages: const []).generate();
+      GenericPdfReportGenerator(
+        surveyName: surveyName,
+        surveys: surveys,
+        chartImages: const [],
+        accentColor: pdfAccentColor,
+      ).generate();
 }
 
 // ── Determinantes Sociales ────────────────────────────────────────────────────
@@ -290,10 +303,16 @@ class SocialDeterminantsReportViewModel extends SurveyReportViewModel {
   @override int get surveyType => 15;
   @override String get surveyName => 'Determinantes Sociales';
   @override List<GlobalKey> get chartKeys => SocialDeterminantsReportSection.chartKeys;
+  @override PdfColor get pdfAccentColor => PdfColor.fromHex('#0F766E');
   @override Widget buildSection(List<Map<String, dynamic>> surveys) =>
       SocialDeterminantsReportSection(surveys: surveys);
   @override Future<Uint8List> generatePdf(List<Map<String, dynamic>> surveys) =>
-      GenericPdfReportGenerator(surveyName: surveyName, surveys: surveys, chartImages: const []).generate();
+      GenericPdfReportGenerator(
+        surveyName: surveyName,
+        surveys: surveys,
+        chartImages: const [],
+        accentColor: pdfAccentColor,
+      ).generate();
 }
 
 // ── Encuesta personalizada ───────────────────────────────────────────────────
@@ -342,10 +361,16 @@ class CustomSurveyReportViewModel extends SurveyReportViewModel {
   @override int get surveyType => 100;
   @override String get surveyName => definition.title;
   @override List<GlobalKey> get chartKeys => const [];
+  @override PdfColor get pdfAccentColor => PdfColor.fromHex(definition.colorHex);
   @override Widget buildSection(List<Map<String, dynamic>> surveys) =>
       CustomSurveyReportSection(definition: definition, surveys: surveys);
   @override Future<Uint8List> generatePdf(List<Map<String, dynamic>> surveys) =>
-      GenericPdfReportGenerator(surveyName: surveyName, surveys: surveys, chartImages: const []).generate();
+      GenericPdfReportGenerator(
+        surveyName: surveyName,
+        surveys: surveys,
+        chartImages: const [],
+        accentColor: pdfAccentColor,
+      ).generate();
 }
 
 class GenericScoredReportViewModel extends SurveyReportViewModel {
@@ -364,10 +389,19 @@ class GenericScoredReportViewModel extends SurveyReportViewModel {
   @override int get surveyType => type;
   @override String get surveyName => name;
   @override List<GlobalKey> get chartKeys => const [];
+  @override PdfColor get pdfAccentColor {
+    final rgb = color.toARGB32() & 0x00FFFFFF;
+    return PdfColor.fromHex(rgb.toRadixString(16).padLeft(6, '0'));
+  }
   @override Widget buildSection(List<Map<String, dynamic>> surveys) =>
       GenericReportSection(title: name, subtitle: subtitle, color: color, surveys: surveys);
   @override Future<Uint8List> generatePdf(List<Map<String, dynamic>> surveys) =>
-      GenericPdfReportGenerator(surveyName: surveyName, surveys: surveys, chartImages: const []).generate();
+      GenericPdfReportGenerator(
+        surveyName: surveyName,
+        surveys: surveys,
+        chartImages: const [],
+        accentColor: pdfAccentColor,
+      ).generate();
 }
 
 // ── Router ────────────────────────────────────────────────────────────────────

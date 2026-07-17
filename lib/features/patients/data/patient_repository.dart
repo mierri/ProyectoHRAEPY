@@ -1,10 +1,15 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:ssapp/core/logger/app_logger.dart';
+import 'package:ssapp/core/network/network_executor.dart';
 import 'package:ssapp/shared/services/syncable.dart';
 import 'package:ssapp/core/supabase/supabase_config.dart';
 import 'package:ssapp/shared/models/patient_model.dart';
 import 'package:ssapp/shared/utils/id_generator.dart';
+
+/// Se lanza al intentar eliminar un paciente que ya tiene encuestas
+/// asociadas (violaría `surveys_patient_id_fkey`).
+class PatientHasSurveysException implements Exception {}
 
 // Responsabilidad: gestionar CRUD y carga de pacientes locales/remotos.
 class PatientService extends ChangeNotifier implements ISyncable {
@@ -110,16 +115,17 @@ class PatientService extends ChangeNotifier implements ISyncable {
   Future<List<PatientModel>> getAllPatientsFromSupabase() async {
     try {
       final supabase = SupabaseConfig.client;
-      
-      final data = await supabase
-          .from('patients')
-          .select()
-          .order('created_at', ascending: false);
+
+      final data = await NetworkExecutor.runWithRetry(
+        () => supabase.from('patients').select().order('created_at', ascending: false),
+        operationName: 'fetch patients from supabase',
+      );
 
       return (data as List)
           .map((json) => PatientModel.fromJson(json))
           .toList();
     } catch (e) {
+      AppLogger.error('Error al obtener pacientes de Supabase', e);
       return [];
     }
   }
@@ -173,40 +179,65 @@ class PatientService extends ChangeNotifier implements ISyncable {
     }
   }
 
+  bool _isForeignKeyPatientError(Object error) {
+    final message = error.toString();
+    return message.contains('surveys_patient_id_fkey') ||
+        message.contains('code: 23503') ||
+        message.contains('foreign key constraint');
+  }
+
+  /// Elimina un paciente. Lanza [PatientHasSurveysException] si el paciente
+  /// tiene encuestas asociadas (la FK `surveys_patient_id_fkey` lo impide),
+  /// o la excepción original si el borrado remoto falla por otro motivo
+  /// (para que la UI pueda mostrar el detalle real en vez de fallar en silencio).
   Future<bool> deletePatient(int patientId) async {
+    final supabase = SupabaseConfig.client;
+
     try {
-      // Eliminar de Supabase
-      final supabase = SupabaseConfig.client;
-      
-      await supabase
-          .from('patients')
-          .delete()
-          .eq('patient_id', patientId);
-
-      // Eliminar de la lista local
-      _patients.removeWhere((p) => p.patientId == patientId);
-
-      // Eliminar de Hive
-      try {
-        final box = await Hive.openBox<PatientModel>('patients');
-        final keys = box.keys.toList();
-        for (var key in keys) {
-          final patient = box.get(key);
-          if (patient?.patientId == patientId) {
-            await box.delete(key);
-            break;
-          }
-        }
-      } catch (e) {
-        AppLogger.error('Error al eliminar de Hive', e);
+      // `.select()` fuerza a Postgrest a devolver las filas borradas. Si RLS
+      // bloquea el DELETE, Supabase no lanza excepción: simplemente no
+      // coincide con ninguna fila y responde éxito con una lista vacía. Sin
+      // esta verificación esa respuesta "exitosa" es indistinguible de un
+      // borrado real, y el paciente reaparece al recargar.
+      final deleted = await NetworkExecutor.runWithRetry(
+        () => supabase.from('patients').delete().eq('patient_id', patientId).select(),
+        operationName: 'delete patient',
+      );
+      if ((deleted as List).isEmpty) {
+        throw StateError(
+          'El paciente no se eliminó en el servidor (0 filas afectadas). '
+          'Probablemente una política de seguridad (RLS) en la tabla `patients` '
+          'está bloqueando el DELETE para este usuario.',
+        );
       }
-
-      notifyListeners();
-      return true;
     } catch (e) {
+      if (_isForeignKeyPatientError(e)) {
+        throw PatientHasSurveysException();
+      }
       AppLogger.error('Error al eliminar paciente', e);
-      return false;
+      rethrow;
     }
+
+    // Eliminar de la lista local
+    _patients.removeWhere((p) => p.patientId == patientId);
+
+    // Eliminar de Hive
+    try {
+      final box = await Hive.openBox<PatientModel>('patients');
+      final keys = box.keys.toList();
+      for (var key in keys) {
+        final patient = box.get(key);
+        if (patient?.patientId == patientId) {
+          await box.delete(key);
+          break;
+        }
+      }
+    } catch (e) {
+      AppLogger.error('Error al eliminar de Hive', e);
+    }
+
+    notifyListeners();
+    return true;
   }
 
   Future<List<Map<String, dynamic>>> getPatientSurveys(int patientId) async {

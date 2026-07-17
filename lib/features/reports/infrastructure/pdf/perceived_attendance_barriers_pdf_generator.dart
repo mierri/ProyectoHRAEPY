@@ -9,12 +9,13 @@ import 'package:ssapp/features/reports/infrastructure/pdf/pdf_report_base.dart';
 class PerceivedAttendanceBarriersPdfGenerator extends PdfReportBase {
   final List<Uint8List?> chartImages;
 
+  // Matches the on-screen color in PerceivedAttendanceBarriersReportSection.
   PerceivedAttendanceBarriersPdfGenerator({
     this.chartImages = const [],
   }) : super(
           title: 'Reporte Barreras Percibidas para la Asistencia',
           subtitle: 'Resumen de motivos de inasistencia reciente y futura',
-          accentColor: const PdfColor(0.7451, 0.0706, 0.2353),
+          accentColor: PdfColor.fromHex('#BE123C'),
         );
 
   @override
@@ -49,7 +50,7 @@ class PerceivedAttendanceBarriersPdfGenerator extends PdfReportBase {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(28),
-        footer: (_) => buildFooterNote(fonts.regular, fonts.bold),
+        footer: (ctx) => buildFooterBar(ctx, fonts.regular),
         build: (_) => [
           buildDocHeader(
             DateTime.now(),
@@ -99,10 +100,7 @@ class PerceivedAttendanceBarriersPdfGenerator extends PdfReportBase {
                   pw.SizedBox(height: 12),
                 ],
               ),
-          pw.Text(
-            'Últimos registros',
-            style: pw.TextStyle(font: fonts.bold, fontSize: 11),
-          ),
+          buildSectionTitle('Últimos registros', fonts.bold),
           pw.SizedBox(height: 6),
           buildSimpleTable(
             regular: fonts.regular,

@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart' as material show Icons;
+import 'package:flutter/material.dart' as material show Icons, Colors;
 import 'package:intl/intl.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/features/patients/presentation/components/patient_details_dialog.dart';
 import 'package:ssapp/features/patients/presentation/patient_utils.dart';
 import 'package:ssapp/shared/models/patient_model.dart';
 import 'package:ssapp/shared/utils/theme.dart';
+import 'package:ssapp/shared/utils/toast_helper.dart';
 
 class PatientCard extends StatelessWidget {
   final PatientModel patient;
@@ -13,16 +14,31 @@ class PatientCard extends StatelessWidget {
 
   const PatientCard({super.key, required this.patient, required this.surveyCount});
 
+  Future<void> _openDetails(BuildContext context) async {
+    final deleted = await showDialog<bool>(
+      context: context,
+      builder: (_) => PatientDetailsDialog(patient: patient),
+    );
+    // El toast se muestra acá (no dentro del diálogo) porque este context
+    // sigue montado después de que el diálogo se cierra; el del diálogo,
+    // en cambio, está siendo removido del árbol justo en ese momento.
+    if (deleted == true && context.mounted) {
+      showCenteredToast(
+        context,
+        title: 'Paciente eliminado',
+        icon: material.Icons.check_circle,
+        iconColor: material.Colors.green,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final count = surveyCount;
     final color = genderColor(patient.gender);
 
     return GestureDetector(
-      onTap: () => showDialog(
-        context: context,
-        builder: (_) => PatientDetailsDialog(patient: patient),
-      ),
+      onTap: () => _openDetails(context),
       child: OutlinedContainer(
         borderRadius: BorderRadius.circular(12),
         padding: const EdgeInsets.all(20),

@@ -39,11 +39,16 @@ class _PatientsScreenState extends State<PatientsScreen> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    await Future.wait([
-      context.read<PatientService>().loadPatients(),
-      context.read<SurveyService>().loadSurveys(),
-    ]);
-    if (mounted) setState(() => _isLoading = false);
+    try {
+      await Future.wait([
+        context.read<PatientService>().loadPatients(),
+        context.read<SurveyService>().loadSurveys(),
+      ]);
+    } finally {
+      // Garantiza que el spinner no quede pegado si algo inesperado falla:
+      // antes, una excepción no capturada dejaba _isLoading en true para siempre.
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   List<PatientModel> _filtered(List<PatientModel> all) {

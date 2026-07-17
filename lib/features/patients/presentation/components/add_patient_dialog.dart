@@ -6,11 +6,24 @@ import 'package:ssapp/shared/utils/theme.dart';
 import 'package:ssapp/shared/utils/toast_helper.dart';
 import 'package:ssapp/shared/widgets/date_text_field.dart';
 
-void showAddPatientDialog(BuildContext context) {
-  showDialog(
+void showAddPatientDialog(BuildContext context) async {
+  final createdName = await showDialog<String>(
     context: context,
     builder: (ctx) => const _AddPatientDialogContent(),
   );
+  // El toast se muestra acá, no dentro del diálogo: justo después de
+  // Navigator.pop(), el context del diálogo está siendo removido del árbol
+  // y showToast() lanza "must be an ancestor" al buscar su ToastLayer.
+  if (createdName != null && context.mounted) {
+    showCenteredToast(
+      context,
+      title: 'Paciente creado',
+      subtitle: '$createdName agregado exitosamente',
+      icon: material.Icons.check_circle,
+      iconColor: LightModeColors.lightTertiary,
+      location: ToastLocation.bottomCenter,
+    );
+  }
 }
 
 class _AddPatientDialogContent extends StatefulWidget {
@@ -60,18 +73,13 @@ class _AddPatientDialogContentState extends State<_AddPatientDialogContent> {
     );
 
     if (!mounted) return;
-    Navigator.of(context).pop();
 
-    showCenteredToast(
-      context,
-      title: patient != null ? 'Paciente creado' : 'Error',
-      subtitle: patient != null
-          ? '${patient.name} agregado exitosamente'
-          : 'No se pudo crear el paciente',
-      icon: patient != null ? material.Icons.check_circle : material.Icons.error,
-      iconColor: patient != null ? LightModeColors.lightTertiary : LightModeColors.lightError,
-      location: ToastLocation.bottomCenter,
-    );
+    if (patient == null) {
+      _showError('Error', 'No se pudo crear el paciente');
+      return;
+    }
+
+    Navigator.of(context).pop(patient.name);
   }
 
   @override

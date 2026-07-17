@@ -9,12 +9,13 @@ import 'package:ssapp/features/reports/infrastructure/pdf/pdf_report_base.dart';
 class SpecialtyConsultationAttendancePdfGenerator extends PdfReportBase {
   final List<Uint8List?> chartImages;
 
+  // Matches the on-screen color in SpecialtyConsultationAttendanceReportSection.
   SpecialtyConsultationAttendancePdfGenerator({
     this.chartImages = const [],
   }) : super(
           title: 'Reporte Asistencia en Consulta de Especialidad',
           subtitle: 'Resumen de asistencia y acceso a consultas de especialidad',
-          accentColor: PdfColor(0.7059, 0.3255, 0.0353),
+          accentColor: PdfColor.fromHex('#B45309'),
         );
 
   @override
@@ -51,7 +52,7 @@ class SpecialtyConsultationAttendancePdfGenerator extends PdfReportBase {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(28),
-        footer: (_) => buildFooterNote(fonts.regular, fonts.bold),
+        footer: (ctx) => buildFooterBar(ctx, fonts.regular),
         build: (_) => [
           buildDocHeader(
             DateTime.now(),
@@ -102,10 +103,7 @@ class SpecialtyConsultationAttendancePdfGenerator extends PdfReportBase {
                   pw.SizedBox(height: 12),
                 ],
               ),
-          pw.Text(
-            'Últimos registros',
-            style: pw.TextStyle(font: fonts.bold, fontSize: 11),
-          ),
+          buildSectionTitle('Últimos registros', fonts.bold),
           pw.SizedBox(height: 6),
           buildSimpleTable(
             regular: fonts.regular,

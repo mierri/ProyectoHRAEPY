@@ -8,11 +8,12 @@ import 'package:ssapp/features/reports/infrastructure/pdf/pdf_report_base.dart';
 class WhoqolPdfGenerator extends PdfReportBase {
   final List<Uint8List?> chartImages;
 
-  const WhoqolPdfGenerator({this.chartImages = const []})
+  // Matches the on-screen color in WhoqolReportSection.
+  WhoqolPdfGenerator({this.chartImages = const []})
       : super(
           title: 'Reporte WHOQOL-BREF',
           subtitle: 'Calidad de vida',
-          accentColor: PdfColors.indigo,
+          accentColor: PdfColor.fromHex('#7C3AED'),
         );
 
   @override
@@ -36,6 +37,7 @@ class WhoqolPdfGenerator extends PdfReportBase {
 
     doc.addPage(
       pw.MultiPage(
+        footer: (ctx) => buildFooterBar(ctx, fonts.regular),
         build: (_) => [
           buildDocHeader(DateTime.now(), surveys.length, fonts.bold, fonts.regular),
           pw.SizedBox(height: 12),
@@ -51,7 +53,7 @@ class WhoqolPdfGenerator extends PdfReportBase {
             },
           ),
           pw.SizedBox(height: 12),
-          pw.Text('Dominios WHOQOL', style: pw.TextStyle(font: fonts.bold, fontSize: 11)),
+          buildSectionTitle('Dominios WHOQOL', fonts.bold),
           pw.SizedBox(height: 6),
           buildSimpleTable(
             regular: fonts.regular,
@@ -72,7 +74,7 @@ class WhoqolPdfGenerator extends PdfReportBase {
                 ],
               ),
           pw.SizedBox(height: 12),
-          pw.Text('Últimos registros', style: pw.TextStyle(font: fonts.bold, fontSize: 11)),
+          buildSectionTitle('Últimos registros', fonts.bold),
           pw.SizedBox(height: 6),
           buildSimpleTable(
             regular: fonts.regular,

@@ -7,11 +7,12 @@ import 'package:ssapp/features/reports/infrastructure/pdf/pdf_report_base.dart';
 class OsteoporosisPdfGenerator extends PdfReportBase {
   final List<Uint8List?> chartImages;
 
-  const OsteoporosisPdfGenerator({this.chartImages = const []})
+  // Matches the on-screen color in OsteoporosisReportSection.
+  OsteoporosisPdfGenerator({this.chartImages = const []})
       : super(
           title: 'Reporte Osteoporosis',
           subtitle: 'Riesgo de fractura',
-          accentColor: PdfColors.deepOrange,
+          accentColor: PdfColor.fromHex('#145374'),
         );
 
   @override
@@ -51,6 +52,7 @@ class OsteoporosisPdfGenerator extends PdfReportBase {
 
     doc.addPage(
       pw.MultiPage(
+        footer: (ctx) => buildFooterBar(ctx, fonts.regular),
         build: (_) => [
           buildDocHeader(DateTime.now(), surveys.length, fonts.bold, fonts.regular),
           pw.SizedBox(height: 12),
@@ -74,7 +76,7 @@ class OsteoporosisPdfGenerator extends PdfReportBase {
                 ],
               ),
           pw.SizedBox(height: 12),
-          pw.Text('Últimos registros', style: pw.TextStyle(font: fonts.bold, fontSize: 11)),
+          buildSectionTitle('Últimos registros', fonts.bold),
           pw.SizedBox(height: 6),
           buildSimpleTable(
             regular: fonts.regular,

@@ -52,11 +52,28 @@ class BdiBaiPdfGenerator extends PdfReportBase {
     };
   }
 
+  // Matches each survey's on-screen color (see the respective
+  // `*_report_section.dart` widget's `_color` constant).
+  static PdfColor _accentFor(int surveyType) {
+    return switch (surveyType) {
+      1 => PdfColor.fromHex('#10B981'), // BDI-II
+      2 => PdfColor.fromHex('#14B8A6'), // BAI
+      6 => PdfColor.fromHex('#6B7FBD'), // ASSIST V3.0
+      7 => PdfColor.fromHex('#0EA5E9'), // GDS-15
+      8 => PdfColor.fromHex('#14B8A6'), // Lawton AIVD
+      10 => PdfColor.fromHex('#0D9488'), // Katz ABVD
+      11 => PdfColor.fromHex('#2563EB'), // ICIQ-SF
+      12 => PdfColor.fromHex('#0284C7'), // GHQ-12
+      13 => PdfColor.fromHex('#9333EA'), // PHQ-9
+      _ => PdfColor.fromHex('#10B981'),
+    };
+  }
+
   BdiBaiPdfGenerator({required this.surveyType, this.chartImages = const []})
       : super(
           title: 'Reporte ${_surveyName(surveyType)}',
           subtitle: 'Resumen estadístico',
-          accentColor: PdfColors.blue,
+          accentColor: _accentFor(surveyType),
         );
 
   @override
@@ -82,6 +99,7 @@ class BdiBaiPdfGenerator extends PdfReportBase {
 
     doc.addPage(
       pw.MultiPage(
+        footer: (ctx) => buildFooterBar(ctx, fonts.regular),
         build: (_) => [
           buildDocHeader(DateTime.now(), surveys.length, fonts.bold, fonts.regular),
           pw.SizedBox(height: 12),
@@ -98,7 +116,7 @@ class BdiBaiPdfGenerator extends PdfReportBase {
             },
           ),
           pw.SizedBox(height: 12),
-          pw.Text('Distribución por nivel', style: pw.TextStyle(font: fonts.bold, fontSize: 11)),
+          buildSectionTitle('Distribución por nivel', fonts.bold),
           pw.SizedBox(height: 6),
           buildSimpleTable(
             regular: fonts.regular,
@@ -117,7 +135,7 @@ class BdiBaiPdfGenerator extends PdfReportBase {
                 ],
               ),
           pw.SizedBox(height: 12),
-          pw.Text('Últimos registros', style: pw.TextStyle(font: fonts.bold, fontSize: 11)),
+          buildSectionTitle('Últimos registros', fonts.bold),
           pw.SizedBox(height: 6),
           buildSimpleTable(
             regular: fonts.regular,

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/features/investigations/data/investigation_repository.dart';
 import 'package:ssapp/features/investigations/domain/investigation_model.dart';
+import 'package:ssapp/features/patients/presentation/components/patient_survey_item.dart';
 import 'package:ssapp/features/surveys/domain/survey_service.dart';
 import 'package:ssapp/shared/models/patient_model.dart';
 import 'package:ssapp/shared/widgets/section_empty_state.dart';
@@ -90,6 +91,7 @@ class InvestigationParticipantsSection extends StatelessWidget {
               investigation: investigation,
               allSurveys: allSurveys,
               totalSurveys: totalSurveys,
+              onRemove: () => _confirmAndRemove(context, patient),
             ),
           ),
       ],
@@ -102,29 +104,33 @@ class _ParticipantCard extends StatelessWidget {
   final InvestigationModel investigation;
   final List<Map<String, dynamic>> allSurveys;
   final int totalSurveys;
+  final VoidCallback onRemove;
 
   const _ParticipantCard({
     required this.patient,
     required this.investigation,
     required this.allSurveys,
     required this.totalSurveys,
+    required this.onRemove,
   });
 
-  int _countCompleted() {
-    final completed = <int>{};
-    for (final survey in allSurveys) {
+  List<Map<String, dynamic>> _completedSurveys() {
+    return allSurveys.where((survey) {
       final invId = survey['investigation_id'] as int?;
       final pId = survey['patient_id'] as int?;
       final typeId = survey['survey_type'] as int?;
-      if (invId != investigation.id || pId != patient.patientId || typeId == null) continue;
-      if (investigation.surveyTypeIds.contains(typeId)) completed.add(typeId);
-    }
-    return completed.length;
+      if (invId != investigation.id || pId != patient.patientId || typeId == null) return false;
+      final responses = survey['responses'] as List?;
+      return investigation.surveyTypeIds.contains(typeId) &&
+          responses != null &&
+          responses.isNotEmpty;
+    }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    final completed = _countCompleted();
+    final completedSurveys = _completedSurveys();
+    final completed = completedSurveys.length;
     final isComplete = totalSurveys > 0 && completed >= totalSurveys;
 
     return OutlinedContainer(
@@ -160,6 +166,11 @@ class _ParticipantCard extends StatelessWidget {
                 ),
               ),
               _StatusBadge(completed: completed, total: totalSurveys, isComplete: isComplete),
+              IconButton(
+                icon: const Icon(material.Icons.person_remove_outlined),
+                variance: ButtonVariance.ghost,
+                onPressed: onRemove,
+              ),
             ],
           ),
           if (totalSurveys > 0) ...[
@@ -167,6 +178,16 @@ class _ParticipantCard extends StatelessWidget {
             _ProgressBar(completed: completed, total: totalSurveys),
             const Gap(4),
             Text('$completed/$totalSurveys encuestas completadas').small().muted(),
+          ],
+          if (completedSurveys.isNotEmpty) ...[
+            const Gap(10),
+            const Divider(height: 1),
+            const Gap(10),
+            for (final survey in completedSurveys)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: PatientSurveyItem(survey: survey, onClose: () {}),
+              ),
           ],
           if (!isComplete) ...[
             const Gap(10),

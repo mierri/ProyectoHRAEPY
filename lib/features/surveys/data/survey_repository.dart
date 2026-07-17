@@ -16,6 +16,7 @@ abstract class SurveyRepositoryContract implements ISyncable {
   Future<List<Map<String, dynamic>>> getAllSurveysFromSupabase();
   Future<int> syncPendingSurveys();
   Future<bool> syncPatientToSupabase(PatientModel patient);
+  Future<void> deleteSurvey(int surveyId);
 }
 
 // Responsabilidad: persistir y sincronizar encuestas entre Hive y Supabase.
@@ -321,6 +322,48 @@ class SurveyRepository implements SurveyRepositoryContract {
       }
     } catch (e) {
       AppLogger.error('Error al descargar encuestas desde servidor', e);
+    }
+  }
+
+  @override
+  Future<void> deleteSurvey(int surveyId) async {
+    final supabase = SupabaseConfig.client;
+
+    // El borrado remoto debe tener éxito antes de tocar Hive: si se traga el
+    // error y borra localmente igual, la encuesta reaparece en el próximo
+    // `loadSurveys()` porque el merge local+remoto la vuelve a traer de Supabase.
+    await NetworkExecutor.runWithRetry(
+      () => supabase.from('responses').delete().eq('survey_id', surveyId),
+      operationName: 'delete survey responses',
+    );
+    // `.select()` fuerza a Postgrest a devolver las filas borradas. Si RLS
+    // bloquea el DELETE, Supabase no lanza excepción: simplemente no
+    // coincide con ninguna fila y responde éxito con una lista vacía. Sin
+    // esta verificación esa respuesta "exitosa" es indistinguible de un
+    // borrado real, y la encuesta reaparece al recargar.
+    final deletedSurveys = await NetworkExecutor.runWithRetry(
+      () => supabase.from('surveys').delete().eq('survey_id', surveyId).select(),
+      operationName: 'delete survey',
+    );
+    if ((deletedSurveys as List).isEmpty) {
+      throw StateError(
+        'La encuesta no se eliminó en el servidor (0 filas afectadas). '
+        'Probablemente una política de seguridad (RLS) en la tabla `surveys` '
+        'está bloqueando el DELETE para este usuario.',
+      );
+    }
+
+    try {
+      final box = await Hive.openBox<SurveyModel>('surveys');
+      final key = box.keys.firstWhere(
+        (k) => box.get(k)?.surveyId == surveyId,
+        orElse: () => null,
+      );
+      if (key != null) {
+        await box.delete(key);
+      }
+    } catch (e) {
+      AppLogger.error('Error al eliminar encuesta de Hive', e);
     }
   }
 

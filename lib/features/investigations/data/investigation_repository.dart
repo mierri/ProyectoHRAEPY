@@ -3,6 +3,7 @@ import 'package:hive/hive.dart';
 import 'package:ssapp/core/logger/app_logger.dart';
 import 'package:ssapp/core/supabase/supabase_config.dart';
 import 'package:ssapp/features/investigations/domain/investigation_model.dart';
+import 'package:ssapp/shared/models/patient_model.dart';
 
 class InvestigationService extends ChangeNotifier {
   static const Map<int, String> surveyTypes = {
@@ -176,6 +177,36 @@ class InvestigationService extends ChangeNotifier {
     }
   }
 
+  bool _isForeignKeyPatientError(Object error) {
+    final message = error.toString();
+    return message.contains('fk_ip_patient') ||
+        message.contains('code: 23503') ||
+        message.contains('foreign key constraint');
+  }
+
+  /// El paciente puede haberse creado offline-first (solo en Hive) y aún no
+  /// haber sincronizado a Supabase cuando se intenta vincular como
+  /// participante, provocando la violación de `fk_ip_patient`. Lo sincroniza
+  /// aquí mismo, igual que `SurveyRepository` hace para `surveys_patient_id_fkey`.
+  Future<bool> _syncPatientFromLocalIfNeeded(int patientId) async {
+    try {
+      final box = await Hive.openBox<PatientModel>('patients');
+      final patients = box.values.where((p) => p.patientId == patientId).toList();
+      if (patients.isEmpty) return false;
+
+      final patient = patients.first;
+      final supabase = SupabaseConfig.client;
+      await supabase.from('patients').upsert(patient.toJson()).select().single();
+
+      patient.synced = true;
+      await patient.save();
+      return true;
+    } catch (e) {
+      AppLogger.error('No se pudo sincronizar paciente relacionado ($patientId)', e);
+      return false;
+    }
+  }
+
   Future<void> linkParticipant({
     required int investigationId,
     required int patientId,
@@ -185,13 +216,23 @@ class InvestigationService extends ChangeNotifier {
   }) async {
     try {
       final supabase = SupabaseConfig.client;
-      await supabase.from('investigation_participants').upsert({
+      final payload = {
         'investigation_id': investigationId,
         'patient_id': patientId,
         if (email != null) 'email': email,
         if (phone1 != null) 'phone1': phone1,
         if (phone2 != null && phone2.trim().isNotEmpty) 'phone2': phone2,
-      });
+      };
+
+      try {
+        await supabase.from('investigation_participants').upsert(payload);
+      } catch (e) {
+        if (_isForeignKeyPatientError(e) && await _syncPatientFromLocalIfNeeded(patientId)) {
+          await supabase.from('investigation_participants').upsert(payload);
+        } else {
+          rethrow;
+        }
+      }
 
       final current = byId(investigationId);
       if (current != null && !current.participantIds.contains(patientId)) {

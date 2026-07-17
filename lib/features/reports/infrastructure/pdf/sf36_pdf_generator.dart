@@ -8,11 +8,12 @@ import 'package:ssapp/features/reports/infrastructure/pdf/pdf_report_base.dart';
 class Sf36PdfGenerator extends PdfReportBase {
   final List<Uint8List?> chartImages;
 
-  const Sf36PdfGenerator({this.chartImages = const []})
+  // Matches the on-screen color in Sf36ReportSection.
+  Sf36PdfGenerator({this.chartImages = const []})
       : super(
           title: 'Reporte SF-36',
           subtitle: 'Estado de salud',
-          accentColor: PdfColors.green,
+          accentColor: PdfColor.fromHex('#06B6D4'),
         );
 
   @override
@@ -36,6 +37,7 @@ class Sf36PdfGenerator extends PdfReportBase {
 
     doc.addPage(
       pw.MultiPage(
+        footer: (ctx) => buildFooterBar(ctx, fonts.regular),
         build: (_) => [
           buildDocHeader(DateTime.now(), surveys.length, fonts.bold, fonts.regular),
           pw.SizedBox(height: 12),
@@ -50,7 +52,7 @@ class Sf36PdfGenerator extends PdfReportBase {
             },
           ),
           pw.SizedBox(height: 12),
-          pw.Text('Dimensiones SF-36', style: pw.TextStyle(font: fonts.bold, fontSize: 11)),
+          buildSectionTitle('Dimensiones SF-36', fonts.bold),
           pw.SizedBox(height: 6),
           buildSimpleTable(
             regular: fonts.regular,
@@ -75,7 +77,7 @@ class Sf36PdfGenerator extends PdfReportBase {
                 ],
               ),
           pw.SizedBox(height: 12),
-          pw.Text('Últimos registros', style: pw.TextStyle(font: fonts.bold, fontSize: 11)),
+          buildSectionTitle('Últimos registros', fonts.bold),
           pw.SizedBox(height: 6),
           buildSimpleTable(
             regular: fonts.regular,

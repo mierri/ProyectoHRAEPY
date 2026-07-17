@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:ssapp/features/patients/data/patient_repository.dart';
 import 'package:ssapp/features/survey_builder/domain/custom_survey_definition.dart';
+import 'package:ssapp/features/surveys/domain/survey_service.dart';
 import 'package:ssapp/shared/utils/theme.dart';
 import 'package:ssapp/shared/utils/toast_helper.dart';
 
@@ -17,6 +18,50 @@ class SurveyListCard extends StatelessWidget {
   final Map<String, dynamic> survey;
   final List<CustomSurveyDefinition> customSurveys;
   const SurveyListCard({super.key, required this.survey, this.customSurveys = const []});
+
+  Future<void> _confirmDelete(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eliminar encuesta'),
+        content: const Text(
+            '¿Eliminar esta encuesta contestada? Esta acción no se puede deshacer.'),
+        actions: [
+          OutlineButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          PrimaryButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await context.read<SurveyService>().deleteSurvey(survey['survey_id'] as int);
+      if (context.mounted) {
+        showCenteredToast(
+          context,
+          title: 'Encuesta eliminada',
+          icon: material.Icons.check_circle,
+          iconColor: LightModeColors.lightTertiary,
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        showCenteredToast(
+          context,
+          title: 'No se pudo eliminar',
+          subtitle: '$e',
+          icon: material.Icons.error_outline,
+          iconColor: LightModeColors.lightError,
+        );
+      }
+    }
+  }
 
   CustomSurveyDefinition? get _customDefinition {
     final id = survey['custom_survey_id'] as int?;
@@ -220,6 +265,11 @@ class SurveyListCard extends StatelessWidget {
               Text(patientName).small().muted(),
             ])),
             if (isComplete && _hasScore) SurveyScoreBadge(score: score, level: level, color: levelColor),
+            IconButton(
+              icon: const Icon(material.Icons.delete_outline),
+              variance: ButtonVariance.ghost,
+              onPressed: () => _confirmDelete(context),
+            ),
           ]),
           const Gap(10),
           const Divider(height: 1),
