@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart' as material show Icons;
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
@@ -236,11 +237,8 @@ class SurveyListCard extends StatelessWidget {
     final respLabel  = isComplete ? 'Completa' : '$totalResp/$expected respuestas';
 
     return GestureDetector(
-      onTap: isComplete && _hasScore
-          ? () => showCenteredToast(context,
-              title: 'Resultados', subtitle: 'Score: $score - $level',
-              icon: material.Icons.analytics, iconColor: levelColor,
-              location: ToastLocation.bottomCenter)
+      onTap: isComplete
+          ? () => context.push('/survey-result/${survey['survey_id']}')
           : null,
       child: OutlinedContainer(
         borderRadius: BorderRadius.circular(12),

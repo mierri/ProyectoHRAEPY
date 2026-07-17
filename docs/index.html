@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Manual del Sistema — Departamento de Psicología HRAEPY</title>
+<meta name="description" content="Manual no técnico del Sistema de Pacientes y Encuestas: tecnologías, funcionalidades, flujo de actualización y seguridad.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='7' fill='%234a6a58'/%3E%3Cpath d='M12 18s-5.5-3.4-5.5-7.4C6.5 8 8.3 6.3 10.5 6.3c.9 0 1.8.4 2.3 1.1a3 3 0 0 1 2.4-1.1c2.2 0 4 1.7 4 4.3 0 4-5.5 7.4-5.5 7.4z' fill='%23f6efe2'/%3E%3C/svg%3E">
+<style>
+/* ============ Reset & base ============ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*{animation-duration:.001ms !important;transition-duration:.001ms !important}}
+
+:root{
+  --bg:#f6f1e6;
+  --surface:#fffcf6;
+  --surface-2:#efe6d5;
+  --border:#e2d6bf;
+  --text:#332e25;
+  --text-muted:#6c6252;
+  --text-faint:#9c927c;
+  --scrollbar-thumb:#cdbf9f;
+  --scrollbar-thumb-hover:#4a6a58;
+  --primary:#4a6a58;
+  --primary-600:#37503f;
+  --primary-50:#e9efe6;
+  --primary-100:#d6e2d1;
+  --accent:#bd7247;
+  --accent-50:#f7e9dd;
+  --success:#4a7a5e;
+  --success-50:#e8f2e7;
+  --warning:#a97a2c;
+  --warning-50:#f7ecd9;
+  --danger:#a8503e;
+  --danger-50:#f6e6e0;
+  --security:#6f6693;
+  --security-50:#ece9f3;
+  --radius-sm:10px;
+  --radius:18px;
+  --radius-lg:26px;
+  --shadow-sm:0 1px 2px rgba(60,48,25,.07);
+  --shadow:0 1px 3px rgba(60,48,25,.06), 0 12px 30px -16px rgba(60,48,25,.22);
+  --shadow-lg:0 20px 50px -18px rgba(48,38,20,.38);
+  --header-h:64px;
+  --progress-h:3px;
+  --sidebar-w:272px;
+  --font:ui-sans-serif,'Segoe UI',system-ui,-apple-system,Roboto,'Helvetica Neue',Arial,sans-serif;
+  --font-serif:Georgia,'Iowan Old Style','Palatino Linotype','Book Antiqua',serif;
+  --maxw:820px;
+}
+[data-theme="dark"]{
+  --bg:#161a15;
+  --surface:#1e231c;
+  --surface-2:#262c22;
+  --border:#38402f;
+  --text:#ece6d6;
+  --text-muted:#b7ae98;
+  --text-faint:#82795f;
+  --scrollbar-thumb:#3c4534;
+  --scrollbar-thumb-hover:#93b39e;
+  --primary:#93b39e;
+  --primary-600:#aac7b4;
+  --primary-50:#232b21;
+  --primary-100:#2b3527;
+  --accent:#dd9a6c;
+  --accent-50:#33291f;
+  --success:#93b39e;
+  --success-50:#1d2a1e;
+  --warning:#dab269;
+  --warning-50:#332912;
+  --danger:#dd8f7c;
+  --danger-50:#33201a;
+  --security:#aca6d2;
+  --security-50:#26243a;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.6);
+  --shadow-lg:0 20px 50px -20px rgba(0,0,0,.7);
+}
+
+body{
+  font-family:var(--font);
+  background:var(--bg);
+  color:var(--text);
+  line-height:1.65;
+  font-size:16px;
+  -webkit-font-smoothing:antialiased;
+  padding-top:calc(var(--header-h) + var(--progress-h));
+  transition:background .2s ease,color .2s ease;
+  position:relative;
+}
+body::before{
+  content:"";position:fixed;inset:0;z-index:300;pointer-events:none;opacity:.045;
+  mix-blend-mode:multiply;background-size:170px 170px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+[data-theme="dark"] body::before{opacity:.06;mix-blend-mode:overlay}
+img{max-width:100%;display:block}
+a{color:var(--primary)}
+::selection{background:var(--primary-100);color:var(--text)}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:4px}
+
+/* ============ Scrollbars ============ */
+*{scrollbar-width:thin;scrollbar-color:var(--scrollbar-thumb) transparent}
+*::-webkit-scrollbar{width:11px;height:11px}
+*::-webkit-scrollbar-track{background:transparent}
+*::-webkit-scrollbar-thumb{
+  background-color:var(--scrollbar-thumb);border-radius:999px;
+  border:3px solid var(--bg);background-clip:padding-box;
+}
+*::-webkit-scrollbar-thumb:hover{background-color:var(--scrollbar-thumb-hover)}
+*::-webkit-scrollbar-corner{background:transparent}
+@media (max-width:960px){ .sidebar::-webkit-scrollbar-thumb{border-color:var(--surface)} }
+
+.icon{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.icon-lg{width:22px;height:22px}
+
+/* ============ Header ============ */
+.site-header{
+  position:fixed;top:0;left:0;right:0;height:var(--header-h);
+  background:color-mix(in srgb, var(--surface) 94%, transparent);
+  backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:14px;
+  padding:0 16px;z-index:60;
+}
+.hamburger.icon-btn{
+  display:none;background:none;border:1px solid var(--border);border-radius:10px;
+  width:38px;height:38px;align-items:center;justify-content:center;color:var(--text);cursor:pointer;
+}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text);white-space:nowrap}
+.brand-mark{width:34px;height:34px;border-radius:42% 58% 63% 37% / 47% 42% 58% 53%;background:linear-gradient(150deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
+.brand-text{font-family:var(--font-serif);font-weight:700;font-size:15px;line-height:1.15}
+.brand-text small{display:block;font-weight:500;color:var(--text-muted);font-size:11.5px}
+
+.breadcrumb{
+  color:var(--text-muted);font-size:13px;font-weight:500;display:flex;align-items:center;
+  overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+  margin-left:6px;padding-left:16px;border-left:1px solid var(--border);height:22px;
+}
+.breadcrumb b{color:var(--text);font-weight:600}
+
+.header-spacer{flex:1}
+
+.search-box{
+  position:relative;display:flex;align-items:center;
+}
+.search-box .icon{position:absolute;left:11px;color:var(--text-faint);pointer-events:none}
+.search-box input{
+  width:220px;padding:8px 12px 8px 34px;border-radius:10px;border:1px solid var(--border);
+  background:var(--surface-2);color:var(--text);font-family:inherit;font-size:13.5px;
+}
+.search-box input:focus{background:var(--surface);border-color:var(--primary)}
+
+.icon-btn{
+  background:none;border:1px solid var(--border);border-radius:10px;width:38px;height:38px;
+  display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer;flex-shrink:0;
+}
+.icon-btn:hover{background:var(--surface-2)}
+.theme-toggle .i-moon{display:none}
+[data-theme="dark"] .theme-toggle .i-sun{display:none}
+[data-theme="dark"] .theme-toggle .i-moon{display:block}
+
+.progress-bar{position:fixed;top:var(--header-h);left:0;right:0;height:var(--progress-h);background:var(--surface-2);z-index:59}
+.progress-bar-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--primary),var(--accent));transition:width .08s linear}
+
+/* ============ Buttons ============ */
+.btn{
+  display:inline-flex;align-items:center;gap:8px;font-family:inherit;font-weight:600;font-size:14px;
+  padding:11px 20px;border-radius:999px;border:1px solid transparent;cursor:pointer;text-decoration:none;
+  transition:transform .15s ease, background .15s ease;
+}
+.btn:hover{transform:translateY(-1px)}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-600)}
+.btn-ghost{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.4);color:#fff}
+.btn-ghost:hover{background:rgba(255,255,255,.26)}
+.btn-outline{background:var(--surface);border-color:var(--border);color:var(--text)}
+.btn-outline:hover{background:var(--surface-2)}
+
+/* ============ Cover ============ */
+.cover{
+  position:relative;overflow:hidden;color:#f8f4ea;
+  background:
+    radial-gradient(560px 420px at 88% 8%, rgba(189,114,71,.35) 0%, transparent 65%),
+    radial-gradient(680px 520px at 6% 96%, rgba(214,226,209,.16) 0%, transparent 60%),
+    linear-gradient(165deg,#233b2c 0%,#2c4a37 45%,#3a5d45 100%);
+  padding:88px 20px 118px;
+}
+.cover::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(38% 46% at 82% 22%, rgba(255,255,255,.10) 0%, transparent 100%),
+    radial-gradient(30% 38% at 12% 78%, rgba(189,114,71,.20) 0%, transparent 100%);
+  filter:blur(6px);
+}
+.cover-wave{position:absolute;left:0;right:0;bottom:-1px;line-height:0;color:var(--bg)}
+.cover-wave svg{display:block;width:100%;height:56px}
+.cover-wave path{fill:currentColor}
+.cover-inner{position:relative;max-width:840px;margin:0 auto;text-align:center}
+.cover h1{font-family:var(--font-serif);font-size:clamp(29px,4.4vw,45px);font-weight:600;line-height:1.2;letter-spacing:-.005em}
+.cover p.lead{margin-top:18px;font-size:clamp(15px,1.8vw,18px);color:rgba(246,240,225,.82);max-width:600px;margin-left:auto;margin-right:auto}
+.cover-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:32px}
+.cover-meta{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;margin-top:40px;font-size:13px;color:rgba(246,240,225,.7)}
+.cover-meta span{display:flex;align-items:center;gap:7px}
+
+/* ============ Layout ============ */
+.doc-grid{max-width:1360px;margin:0 auto;display:flex;align-items:flex-start}
+
+.sidebar{
+  width:var(--sidebar-w);flex-shrink:0;position:sticky;
+  top:calc(var(--header-h) + var(--progress-h));
+  height:calc(100vh - var(--header-h) - var(--progress-h));
+  overflow-y:auto;padding:28px 14px 40px 20px;border-right:1px solid var(--border);
+}
+.sidebar-group{margin-bottom:22px}
+.sidebar-group h4{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-faint);font-weight:700;padding:0 10px;margin-bottom:8px}
+.sidebar nav ul{list-style:none}
+.sidebar nav a{
+  display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--text-muted);font-size:14px;
+  padding:7px 10px;border-radius:8px;font-weight:500;border-left:2px solid transparent;
+}
+.sidebar nav a:hover{color:var(--text);background:var(--surface-2)}
+.sidebar nav a.active{color:var(--primary);background:var(--primary-50);border-left-color:var(--primary);font-weight:700}
+.sidebar nav a .icon{color:var(--text-faint);flex-shrink:0}
+.sidebar nav a.active .icon{color:var(--primary)}
+.sidebar-overlay{display:none}
+
+.content-wrap{flex:1;min-width:0;padding:44px 24px 100px}
+.content{max-width:var(--maxw);margin:0 auto}
+
+.content section{scroll-margin-top:calc(var(--header-h) + var(--progress-h) + 18px)}
+.content section + section{margin-top:64px;padding-top:8px;border-top:1px solid var(--border)}
+.content section:first-child{margin-top:0;border-top:none;padding-top:0}
+
+.eyebrow{display:flex;align-items:center;gap:8px;color:var(--accent);font-weight:700;font-size:12.5px;text-transform:uppercase;letter-spacing:.09em;margin-bottom:10px}
+.content h2{font-family:var(--font-serif);font-size:27px;font-weight:600;letter-spacing:-.005em;display:flex;align-items:center;gap:10px;scroll-margin-top:inherit}
+.content h3{font-family:var(--font-serif);font-size:19px;font-weight:600;margin-top:30px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.content p{color:var(--text-muted);margin:12px 0}
+.content p b, .content p strong{color:var(--text)}
+.content ul, .content ol{margin:12px 0 12px 22px;color:var(--text-muted)}
+.content li{margin:6px 0}
+.content li::marker{color:var(--primary)}
+.anchor-link{
+  opacity:0;background:none;border:none;color:var(--text-faint);cursor:pointer;display:inline-flex;
+  padding:4px;border-radius:6px;transition:opacity .12s ease;
+}
+.content h2:hover .anchor-link, .content h3:hover .anchor-link{opacity:1}
+.anchor-link:hover{color:var(--primary);background:var(--surface-2)}
+
+.lede{font-size:17px;color:var(--text-muted)}
+
+/* ============ Grids / Cards ============ */
+.grid{display:grid;gap:14px;margin:20px 0}
+.grid-2{grid-template-columns:repeat(2,1fr)}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+@media (max-width:720px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+.card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:18px;box-shadow:var(--shadow-sm);
+}
+.card .icon-badge{
+  width:40px;height:40px;border-radius:42% 58% 63% 37% / 47% 42% 58% 53%;background:var(--primary-50);color:var(--primary);
+  display:flex;align-items:center;justify-content:center;margin-bottom:12px;
+}
+.card h3{margin-top:0;font-family:var(--font-serif);font-weight:600;font-size:16px}
+.card p{font-size:13.8px;margin:6px 0 0}
+.card .tag{
+  display:inline-block;margin-top:10px;font-size:11px;font-weight:700;color:var(--accent);
+  background:var(--accent-50);padding:3px 8px;border-radius:6px;
+}
+
+.module-card{display:flex;gap:12px;align-items:flex-start}
+.module-card .icon-badge{margin-bottom:0;flex-shrink:0}
+
+/* ============ Flow diagram ============ */
+.flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin:22px 0;justify-content:center}
+.flow-step{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;
+  width:168px;text-align:center;box-shadow:var(--shadow-sm);
+}
+.flow-step .icon-badge{margin:0 auto 10px}
+.flow-step h4{font-size:13.5px;margin-bottom:4px}
+.flow-step p{font-size:12px;color:var(--text-muted);margin:0}
+.flow-arrow{display:flex;align-items:center;justify-content:center;color:var(--text-faint);width:38px;flex-shrink:0}
+.flow-arrow .v{display:none}
+@media (max-width:760px){
+  .flow{flex-direction:column;align-items:center}
+  .flow-step{width:100%;max-width:320px}
+  .flow-arrow{width:auto;height:30px}
+  .flow-arrow .h{display:none}
+  .flow-arrow .v{display:block}
+}
+
+/* ============ Timeline ============ */
+.timeline{position:relative;margin:22px 0;padding-left:6px}
+.timeline::before{content:"";position:absolute;left:19px;top:6px;bottom:6px;width:2px;background:var(--border)}
+.timeline-item{position:relative;padding:0 0 26px 52px}
+.timeline-item:last-child{padding-bottom:0}
+.timeline-dot{
+  position:absolute;left:0;top:0;width:40px;height:40px;border-radius:50%;background:var(--primary-50);
+  color:var(--primary);display:flex;align-items:center;justify-content:center;border:1px solid var(--primary-100);z-index:1;
+}
+.timeline-item h4{font-size:15px;margin-bottom:3px}
+.timeline-item p{font-size:13.8px;color:var(--text-muted);margin:0}
+
+/* ============ Callouts ============ */
+.callout{display:flex;gap:12px;border:1px solid var(--border);border-radius:var(--radius);padding:15px 17px;margin:18px 0;background:var(--surface)}
+.callout .icon{margin-top:2px;flex-shrink:0}
+.callout strong{display:block;margin-bottom:3px;font-size:14.5px}
+.callout p{margin:0;font-size:13.8px}
+.callout-info{background:var(--primary-50);border-color:var(--primary-100)}
+.callout-info .icon{color:var(--primary)}
+.callout-warning{background:var(--warning-50);border-color:#e6d3ac}
+.callout-warning .icon{color:var(--warning)}
+.callout-security{background:var(--security-50);border-color:#d7d3e6}
+.callout-security .icon{color:var(--security)}
+.callout-tip{background:var(--success-50);border-color:#c9ddc9}
+.callout-tip .icon{color:var(--success)}
+[data-theme="dark"] .callout-warning{border-color:#4a3b1e}
+[data-theme="dark"] .callout-security{border-color:#3a3752}
+[data-theme="dark"] .callout-tip{border-color:#33422f}
+
+/* ============ Tables ============ */
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);margin:18px 0}
+table{width:100%;border-collapse:collapse;font-size:13.8px;min-width:480px}
+th{background:var(--surface-2);text-align:left;padding:11px 14px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted)}
+td{padding:12px 14px;border-top:1px solid var(--border);color:var(--text-muted);vertical-align:top}
+td b, td strong{color:var(--text)}
+tr:hover td{background:var(--surface-2)}
+
+/* ============ Accordion ============ */
+.accordion-item{border:1px solid var(--border);border-radius:12px;margin:10px 0;background:var(--surface);overflow:hidden}
+.accordion-item summary{
+  list-style:none;cursor:pointer;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;
+  gap:10px;font-weight:600;font-size:14.5px;
+}
+.accordion-item summary::-webkit-details-marker{display:none}
+.accordion-item summary span{display:flex;align-items:center;gap:9px}
+.accordion-item summary .chev{color:var(--text-faint);transition:transform .18s ease;flex-shrink:0}
+.accordion-item[open] summary .chev{transform:rotate(180deg)}
+.accordion-item .accordion-body{padding:0 16px 16px;color:var(--text-muted);font-size:13.8px}
+.accordion-item .accordion-body ol,.accordion-item .accordion-body ul{margin-left:18px}
+.accordion-item summary .qi{color:var(--primary);flex-shrink:0}
+
+/* ============ Glossary search ============ */
+.mini-search{position:relative;margin:16px 0 8px;max-width:340px}
+.mini-search .icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text-faint)}
+.mini-search input{width:100%;padding:9px 12px 9px 34px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:13.8px}
+
+/* ============ Back to top / toast ============ */
+.back-to-top{
+  position:fixed;right:22px;bottom:22px;width:44px;height:44px;border-radius:50%;background:var(--primary);
+  color:#fff;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--shadow-lg);
+  opacity:0;pointer-events:none;transform:translateY(10px);transition:opacity .2s ease, transform .2s ease;z-index:50;
+}
+.back-to-top.show{opacity:1;pointer-events:auto;transform:translateY(0)}
+.toast{
+  position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);
+  padding:10px 16px;border-radius:10px;font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;
+  transition:opacity .2s ease, transform .2s ease;z-index:80;display:flex;align-items:center;gap:8px;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ============ Footer ============ */
+.site-footer{border-top:1px solid var(--border);padding:36px 24px 60px;background:var(--surface)}
+.footer-inner{max-width:var(--maxw);margin:0 auto;display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+.footer-inner p{color:var(--text-faint);font-size:12.8px}
+.footer-links{display:flex;gap:16px;flex-wrap:wrap}
+.footer-links a{color:var(--text-muted);font-size:13px;text-decoration:none;display:flex;align-items:center;gap:6px}
+.footer-links a:hover{color:var(--primary)}
+
+/* ============ Utility ============ */
+.no-results{display:none;padding:12px 10px;color:var(--text-faint);font-size:13px}
+.search-hidden{display:none !important}
+
+/* ============ Responsive ============ */
+@media (max-width:960px){
+  .hamburger.icon-btn{display:flex}
+  .breadcrumb{display:none}
+  .search-box input{width:150px}
+  .sidebar{
+    position:fixed;top:0;left:0;bottom:0;height:100vh;width:290px;background:var(--surface);z-index:70;
+    transform:translateX(-100%);transition:transform .22s ease;padding-top:20px;box-shadow:var(--shadow-lg);
+  }
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-overlay{
+    display:none;position:fixed;inset:0;background:rgba(4,10,25,.5);z-index:65;
+  }
+  .sidebar-overlay.show{display:block}
+  .content-wrap{padding:36px 18px 80px}
+}
+
+/* ============ Print ============ */
+@media print{
+  .site-header,.progress-bar,.sidebar,.sidebar-overlay,.back-to-top,.toast,.cover-actions,.anchor-link,.mini-search,.cover-wave{display:none !important}
+  body{padding-top:0;background:#fff;color:#000}
+  body::before{display:none}
+  .cover{background:#fff !important;color:#000 !important;padding:0 0 20px}
+  .cover::before{display:none}
+  .cover p.lead{color:#333}
+  .cover-meta{color:#333}
+  .doc-grid{display:block}
+  .content-wrap{padding:0}
+  .content{max-width:100%}
+  .content section{page-break-inside:avoid;border-top:none !important;margin-top:26px}
+  .card,.callout,.accordion-item,.flow-step,.timeline-item{page-break-inside:avoid}
+  a{color:#000;text-decoration:underline}
+  .site-footer{border-top:1px solid #ccc}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ Icon sprite ============ -->
+<svg style="display:none" aria-hidden="true">
+  <symbol id="i-menu" viewBox="0 0 24 24"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.5" y1="4.5" x2="6.6" y2="6.6"/><line x1="17.4" y1="17.4" x2="19.5" y2="19.5"/><line x1="4.5" y1="19.5" x2="6.6" y2="17.4"/><line x1="17.4" y1="6.6" x2="19.5" y2="4.5"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.6" y2="16.6"/></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></symbol>
+  <symbol id="i-arrow-up" viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></symbol>
+  <symbol id="i-arrow-right" viewBox="0 0 24 24"><line x1="4" y1="12" x2="20" y2="12"/><polyline points="13 5 20 12 13 19"/></symbol>
+  <symbol id="i-arrow-down" viewBox="0 0 24 24"><line x1="12" y1="4" x2="12" y2="20"/><polyline points="5 13 12 20 19 13"/></symbol>
+  <symbol id="i-printer" viewBox="0 0 24 24"><polyline points="6 9 6 3 18 3 18 9"/><rect x="4" y="9" width="16" height="8" rx="1.5"/><rect x="8" y="14" width="8" height="6"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M9 12a4 4 0 0 0 5.7 0l2.6-2.6a4 4 0 0 0-5.7-5.7L10.3 5"/><path d="M15 12a4 4 0 0 0-5.7 0L6.7 14.6a4 4 0 0 0 5.7 5.7l1.3-1.3"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z"/><polyline points="9 12 11 14 15 10"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16"/><line x1="12" y1="8" x2="12" y2="8.02"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3l10 18H2z"/><line x1="12" y1="10" x2="12" y2="15"/><line x1="12" y1="18" x2="12" y2="18.02"/></symbol>
+  <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M2 8.5a16 16 0 0 1 20 0"/><path d="M5.5 12.5a11 11 0 0 1 13 0"/><path d="M9 16.5a6 6 0 0 1 6 0"/><line x1="12" y1="20" x2="12" y2="20.02"/></symbol>
+  <symbol id="i-smartphone" viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></symbol>
+  <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="1.5"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18a4 4 0 1 1 .8-7.9A5.5 5.5 0 0 1 18 12.5 3.5 3.5 0 0 1 17.5 18H7z"/></symbol>
+  <symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></symbol>
+  <symbol id="i-git-branch" viewBox="0 0 24 24"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></symbol>
+  <symbol id="i-rocket" viewBox="0 0 24 24"><path d="M12 2c3 1 5 4 5 8 0 3-1.5 6-5 10-3.5-4-5-7-5-10 0-4 2-7 5-8z"/><circle cx="12" cy="9" r="2"/><path d="M7 15l-3 5 5-2"/><path d="M17 15l3 5-5-2"/></symbol>
+  <symbol id="i-file-text" viewBox="0 0 24 24"><path d="M6 2h8l6 6v14H6z"/><line x1="9" y1="12" x2="16" y2="12"/><line x1="9" y1="16" x2="16" y2="16"/><line x1="9" y1="8" x2="12" y2="8"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><circle cx="18" cy="9" r="3"/><path d="M22 21c0-3-2-5-4.5-5.5"/></symbol>
+  <symbol id="i-bar-chart" viewBox="0 0 24 24"><line x1="5" y1="20" x2="5" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="19" y1="20" x2="19" y2="14"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><polyline points="5 13 10 18 19 6"/></symbol>
+  <symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="17" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="15" y2="15"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><polygon points="12 2 22 8 12 14 2 8"/><polyline points="2 14 12 20 22 14"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 4 c3 0 6 1 8 3 c2 -2 5 -3 8 -3 v14 c-3 0 -6 1 -8 3 c-2 -2 -5 -3 -8 -3 z"/><line x1="12" y1="7" x2="12" y2="21"/></symbol>
+  <symbol id="i-life-buoy" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><line x1="6.3" y1="6.3" x2="9.5" y2="9.5"/><line x1="14.5" y1="14.5" x2="17.7" y2="17.7"/><line x1="6.3" y1="17.7" x2="9.5" y2="14.5"/><line x1="14.5" y1="9.5" x2="17.7" y2="6.3"/></symbol>
+  <symbol id="i-volume" viewBox="0 0 24 24"><polygon points="4 9 8 9 12 5 12 19 8 15 4 15"/><path d="M16 8a5 5 0 0 1 0 8"/></symbol>
+  <symbol id="i-hard-drive" viewBox="0 0 24 24"><line x1="3" y1="13" x2="21" y2="13"/><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="17" x2="7" y2="17.02"/><line x1="11" y1="17" x2="13" y2="17"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.2 9a2.8 2.8 0 1 1 4 2.5c-.9.5-1.5 1-1.5 2.2"/><line x1="12" y1="17" x2="12" y2="17.02"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2 19 4"/><path d="M15 8l2.5 2.5"/><path d="M18 5l1.5 1.5"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><polyline points="21 3 21 8 16 8"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><polyline points="3 21 3 16 8 16"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v13"/><polyline points="7 11 12 16 17 11"/><path d="M5 19h14"/></symbol>
+</svg>
+
+<!-- ============ Header ============ -->
+<header class="site-header">
+  <button class="hamburger icon-btn" id="hamburgerBtn" aria-label="Abrir menú"><svg class="icon"><use href="#i-menu"/></svg></button>
+  <a class="brand" href="#portada">
+    <span class="brand-mark"><svg class="icon icon-lg"><use href="#i-layers"/></svg></span>
+    <span class="brand-text">Manual del Sistema<small>Psicología</small></span>
+  </a>
+  <div class="breadcrumb"><b id="breadcrumbCurrent">Inicio</b></div>
+  <div class="header-spacer"></div>
+  <div class="search-box">
+    <svg class="icon"><use href="#i-search"/></svg>
+    <input type="text" id="searchInput" placeholder="Buscar en el manual…" autocomplete="off">
+  </div>
+  <button class="icon-btn theme-toggle" id="themeToggle" aria-label="Cambiar modo claro/oscuro">
+    <svg class="icon i-sun"><use href="#i-sun"/></svg>
+    <svg class="icon i-moon"><use href="#i-moon"/></svg>
+  </button>
+  <button class="icon-btn" id="printBtn" aria-label="Imprimir o exportar a PDF"><svg class="icon"><use href="#i-printer"/></svg></button>
+</header>
+<div class="progress-bar"><div class="progress-bar-fill" id="progressFill"></div></div>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- ============ Cover ============ -->
+<section class="cover" id="portada">
+  <div class="cover-inner">
+    <h1>Manual del Sistema de Pacientes y Encuestas</h1>
+    <p class="lead">Guía en lenguaje simple para el Departamento de Psicología del HRAEPY: qué es la aplicación, cómo está construida, cómo se actualiza y cómo se protegen los datos.</p>
+    <div class="cover-actions">
+      <a class="btn btn-ghost" href="#introduccion">Empezar a leer <svg class="icon"><use href="#i-arrow-right"/></svg></a>
+      <button class="btn btn-ghost" id="printBtn2"><svg class="icon"><use href="#i-download"/></svg> Descargar / Imprimir PDF</button>
+    </div>
+    <div class="cover-meta">
+      <span><svg class="icon"><use href="#i-file-text"/></svg> Versión del documento 1.0</span>
+      <span><svg class="icon"><use href="#i-refresh"/></svg> Actualizado 17 de julio de 2026</span>
+      <span><svg class="icon"><use href="#i-users"/></svg> Personal del Depto. de Psicología</span>
+    </div>
+  </div>
+  <div class="cover-wave" aria-hidden="true">
+    <svg viewBox="0 0 1440 56" preserveAspectRatio="none"><path d="M0,30 C220,55 420,2 700,18 C980,34 1180,52 1440,16 L1440,56 L0,56 Z"/></svg>
+  </div>
+</section>
+
+<div class="doc-grid">
+  <!-- ============ Sidebar ============ -->
+  <aside class="sidebar" id="sidebar">
+    <nav>
+      <div class="sidebar-group">
+        <h4>General</h4>
+        <ul>
+          <li><a href="#introduccion"><svg class="icon"><use href="#i-info"/></svg>¿Qué es el sistema?</a></li>
+          <li><a href="#tecnologias"><svg class="icon"><use href="#i-layers"/></svg>Tecnologías</a></li>
+          <li><a href="#arquitectura"><svg class="icon"><use href="#i-database"/></svg>Cómo está organizado</a></li>
+        </ul>
+      </div>
+      <div class="sidebar-group">
+        <h4>Uso diario</h4>
+        <ul>
+          <li><a href="#funcionalidades"><svg class="icon"><use href="#i-clipboard"/></svg>Funcionalidades</a></li>
+          <li><a href="#sincronizacion"><svg class="icon"><use href="#i-refresh"/></svg>Sincronización</a></li>
+          <li><a href="#requisitos"><svg class="icon"><use href="#i-monitor"/></svg>Requisitos</a></li>
+        </ul>
+      </div>
+      <div class="sidebar-group">
+        <h4>Actualizaciones</h4>
+        <ul>
+          <li><a href="#actualizaciones"><svg class="icon"><use href="#i-git-branch"/></svg>GitHub + Vercel</a></li>
+        </ul>
+      </div>
+      <div class="sidebar-group">
+        <h4>Seguridad</h4>
+        <ul>
+          <li><a href="#seguridad"><svg class="icon"><use href="#i-lock"/></svg>Seguridad y privacidad</a></li>
+          <li><a href="#buenas-practicas"><svg class="icon"><use href="#i-check"/></svg>Buenas prácticas</a></li>
+        </ul>
+      </div>
+      <div class="sidebar-group">
+        <h4>Ayuda</h4>
+        <ul>
+          <li><a href="#problemas"><svg class="icon"><use href="#i-life-buoy"/></svg>Resolución de problemas</a></li>
+          <li><a href="#faq"><svg class="icon"><use href="#i-help"/></svg>Preguntas frecuentes</a></li>
+          <li><a href="#glosario"><svg class="icon"><use href="#i-book"/></svg>Glosario</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="no-results" id="noResults">Sin resultados para tu búsqueda.</div>
+  </aside>
+
+  <!-- ============ Content ============ -->
+  <div class="content-wrap">
+    <article class="content">
+
+      <section id="introduccion" data-title="¿Qué es el sistema?">
+        <div class="eyebrow"><svg class="icon"><use href="#i-info"/></svg>General</div>
+        <h2>¿Qué es esta aplicación? <button class="anchor-link" data-copy="#introduccion" aria-label="Copiar enlace"><svg class="icon"><use href="#i-link"/></svg></button></h2>
+        <p class="lede">Es un sistema pensado para que el Departamento de Psicología del hospital gestione pacientes, aplique encuestas clínicas y genere reportes, sin depender de papel ni de planillas sueltas.</p>
+        <p>Con la aplicación, el equipo puede:</p>
+        <ul>
+          <li>Registrar y administrar <b>pacientes</b>.</li>
+          <li>Aplicar <b>encuestas y tests clínicos</b> (19 instrumentos distintos: depresión, ansiedad, calidad de vida, memoria, hábitos, entre otros).</li>
+          <li>Agrupar pacientes y encuestas dentro de <b>investigaciones/estudios</b>, con su consentimiento informado.</li>
+          <li>Generar <b>reportes con gráficos</b>, y descargarlos en <b>PDF o Excel</b>.</li>
+          <li>Crear <b>encuestas propias y personalizadas</b>, sin que nadie tenga que programar.</li>
+          <li>Seguir funcionando <b>aunque no haya internet</b>, sincronizando los datos automáticamente cuando la conexión vuelve.</li>
+        </ul>
+        <p>Funciona tanto en <b>tablets/celulares Android</b> como en una <b>computadora, desde el navegador web</b> — con la misma información sincronizada entre ambos.</p>
+      </section>
+
+      <section id="tecnologias" data-title="Tecnologías">
+        <div class="eyebrow"><svg class="icon"><use href="#i-layers"/></svg>General</div>
+        <h2>¿Con qué está construida? <button class="anchor-link" data-copy="#tecnologias" aria-label="Copiar enlace"><svg class="icon"><use href="#i-link"/></svg></button></h2>
+        <p class="lede">Toda aplicación moderna se apoya en distintas piezas de tecnología, cada una con un trabajo específico. Acá va la lista, explicada con analogías simples.</p>
+
+        <div class="grid grid-2">
+          <div class="card">
+            <div class="icon-badge"><svg class="icon icon-lg"><use href="#i-layers"/></svg></div>
+            <h3>Flutter <span class="tag">Lenguaje / herramienta</span></h3>
+            <p>Es la herramienta con la que se construyó la aplicación. Su ventaja principal es que <b>se escribe una sola vez y funciona en varios lugares</b>: celular (Android) y computadora (Web), sin duplicar el trabajo cada vez que se corrige algo. Es una tecnología creada por Google y usada por empresas grandes a nivel mundial, lo que da estabilidad a largo plazo.</p>
+          </div>
+          <div class="card">
+            <div class="icon-badge"><svg class="icon icon-lg"><use href="#i-cloud"/></svg></div>
+            <h3>Supabase <span class="tag">Nube / datos</span></h3>
+            <p>El servicio que guarda la información de forma segura en internet: pacientes, encuestas, respuestas y usuarios. Es como una <b>caja fuerte digital compartida</b>. También maneja el <b>inicio de sesión</b>, para que solo personal autorizado entre al sistema.</p>
+          </div>
+          <div class="card">
+            <div class="icon-badge"><svg class="icon icon-lg"><use href="#i-hard-drive"/></svg></div>
+            <h3>Hive <span class="tag">Guardado local</span></h3>
+            <p>Permite que la app <b>siga funcionando sin conexión a internet</b>. Los datos se guardan en el dispositivo y, apenas vuelve la conexión, se sincronizan automáticamente con la nube. Evita perder información por cortes de señal.</p>
+          </div>
+          <div class="card">
+            <div class="icon-badge"><svg class="icon icon-lg"><use href="#i-git-branch"/></svg></div>
+            <h3>GitHub <span class="tag">Control de versiones</span></h3>
+            <p>El "historial de cambios" del proyecto. Guarda cada modificación hecha al sistema, quién la hizo y cuándo, y permite revisar los cambios antes de que lleguen a la versión que usa el hospital.</p>
+          </div>
+          <div class="card">
+            <div class="icon-badge"><svg class="icon icon-lg"><use href="#i-rocket"/></svg></div>
+            <h3>Vercel <span class="tag">Publicación web</span></h3>
+            <p>El servicio que <b>publica automáticamente</b> la versión web del sistema en internet, cada vez que el equipo aprueba una mejora. Nadie sube archivos a mano: el proceso es automático.</p>
+          </div>
+          <div class="card">
+            <div class="icon-badge"><svg class="icon icon-lg"><use href="#i-bar-chart"/></svg></div>
+            <h3>Reportes PDF / Excel <span class="tag">Exportación</span></h3>
+            <p>La app transforma resultados de encuestas en <b>gráficos</b>, <b>PDF</b> listos para imprimir o adjuntar a una historia clínica, y <b>Excel</b> para quienes prefieran analizar los datos en planilla.</p>
+          </div>
+          <div class="card">
+            <div class="icon-badge"><svg class="icon icon-lg"><use href="#i-volume"/></svg></div>
+            <h3>Lectura en voz alta <span class="tag">Accesibilidad</span></h3>
+            <p>Algunas encuestas pueden leerse en voz alta desde la propia app, pensado para pacientes con dificultades de lectura o visión. Disponible solo en la versión para celular/tablet.</p>
+          </div>
+          <div class="card">
+            <div class="icon-badge"><svg class="icon icon-lg"><use href="#i-wifi"/></svg></div>
+            <h3>Detección de conexión <span class="tag">Conectividad</span></h3>
+            <p>La app sabe en todo momento si hay o no internet, y muestra indicadores visuales de qué datos están sincronizados y cuáles quedan pendientes de subir a la nube.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="arquitectura" data-title="Cómo está organizado">
+        <div class="eyebrow"><svg class="icon"><use href="#i-database"/></svg>General</div>
+        <h2>¿Cómo está organizado por dentro? <button class="anchor-link" data-copy="#arquitectura" aria-label="Copiar enlace"><svg class="icon"><use href="#i-link"/></svg></button></h2>
+        <p class="lede">Sin entrar en tecnicismos: la aplicación combina un "cuaderno local" en el dispositivo con una "caja fuerte" central en internet, y ambos se mantienen sincronizados.</p>
+
+        <div class="flow">
+          <div class="flow-step">
+            <div class="icon-badge"><svg class="icon icon-lg"><use href="#i-smartphone"/></svg></div>
+            <h4>Tu dispositivo</h4>
+            <p>App Flutter + guardado local (Hive)</p>
+          </div>
+          <div class="flow-arrow">
+            <svg class="icon h"><use href="#i-refresh"/></svg>
+            <svg class="icon v"><use href="#i-refresh"/></svg>
+          </div>
+          <div class="flow-step">
+            <div class="icon-badge"><svg class="icon icon-lg"><use href="#i-cloud"/></svg></div>
+            <h4>Nube (Supabase)</h4>
+            <p>Base de datos central + inicio de sesión</p>
+          </div>
+        </div>
+        <p style="text-align:center;font-size:13px;color:var(--text-faint);margin-top:-6px">La flecha doble representa la sincronización automática entre ambos lados.</p>
+
+        <div class="callout callout-info">
+          <svg class="icon"><use href="#i-info"/></svg>
+          <div><strong>¿Por qué dos lugares y no uno solo?</strong><p>Así la app sigue funcionando aunque falle internet (guarda en el dispositivo), y al mismo tiempo toda la información queda centralizada y respaldada en la nube para todo el equipo.</p></div>
+        </div>
+      </section>
+
+      <section id="funcionalidades" data-title="Funcionalidades">
+        <div class="eyebrow"><svg class="icon"><use href="#i-clipboard"/></svg>Uso diario</div>
+        <h2>¿Qué incluye la aplicación? <button class="anchor-link" data-copy="#funcionalidades" aria-label="Copiar enlace"><svg class="icon"><use href="#i-link"/></svg></button></h2>
+        <p class="lede">Resumen de los módulos disponibles hoy en el sistema.</p>
+
+        <div class="grid grid-2">
+          <div class="card module-card"><div class="icon-badge"><svg class="icon icon-lg"><use href="#i-users"/></svg></div><div><h3>Pacientes</h3><p>Registrar, editar y consultar pacientes atendidos.</p></div></div>
+          <div class="card module-card"><div class="icon-badge"><svg class="icon icon-lg"><use href="#i-clipboard"/></svg></div><div><h3>Encuestas clínicas</h3><p>19 instrumentos: depresión, ansiedad, calidad de vida, memoria, hábitos, barreras de asistencia, determinantes sociales, entre otros.</p></div></div>
+          <div class="card module-card"><div class="icon-badge"><svg class="icon icon-lg"><use href="#i-layers"/></svg></div><div><h3>Constructor de encuestas</h3><p>Crear encuestas propias, definiendo preguntas y niveles de interpretación, sin programar.</p></div></div>
+          <div class="card module-card"><div class="icon-badge"><svg class="icon icon-lg"><use href="#i-file-text"/></svg></div><div><h3>Investigaciones</h3><p>Agrupar pacientes, consentimiento informado y encuestas dentro de un estudio.</p></div></div>
+          <div class="card module-card"><div class="icon-badge"><svg class="icon icon-lg"><use href="#i-bar-chart"/></svg></div><div><h3>Reportes</h3><p>Estadísticas, gráficos y exportación en PDF o Excel, por encuesta o por investigación.</p></div></div>
+          <div class="card module-card"><div class="icon-badge"><svg class="icon icon-lg"><use href="#i-wifi"/></svg></div><div><h3>Modo offline</h3><p>Trabajar sin conexión; los datos se sincronizan solos al recuperar internet.</p></div></div>
+          <div class="card module-card"><div class="icon-badge"><svg class="icon icon-lg"><use href="#i-lock"/></svg></div><div><h3>Usuarios y accesos</h3><p>Inicio de sesión seguro, solo para personal autorizado del hospital.</p></div></div>
+          <div class="card module-card"><div class="icon-badge"><svg class="icon icon-lg"><use href="#i-smartphone"/></svg></div><div><h3>Multiplataforma</h3><p>Android y Web, con la misma información sincronizada.</p></div></div>
+        </div>
+
+      </section>
+
+      <section id="sincronizacion" data-title="Sincronización">
+        <div class="eyebrow"><svg class="icon"><use href="#i-refresh"/></svg>Uso diario</div>
+        <h2>Flujo de sincronización <button class="anchor-link" data-copy="#sincronizacion" aria-label="Copiar enlace"><svg class="icon"><use href="#i-link"/></svg></button></h2>
+        <p class="lede">Así es, paso a paso, cómo la app protege el trabajo diario incluso sin internet.</p>
+
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-dot"><svg class="icon"><use href="#i-users"/></svg></div>
+            <h4>1. Se completa un paciente o una encuesta</h4>
+            <p>Con o sin conexión a internet, el trabajo se puede realizar con normalidad.</p>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"><svg class="icon"><use href="#i-hard-drive"/></svg></div>
+            <h4>2. Guardado local automático</h4>
+            <p>Los datos quedan guardados en el propio dispositivo (Hive), sin depender de la red.</p>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"><svg class="icon"><use href="#i-wifi"/></svg></div>
+            <h4>3. Se recupera la conexión</h4>
+            <p>Cuando el dispositivo vuelve a tener internet, la app lo detecta automáticamente.</p>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"><svg class="icon"><use href="#i-cloud"/></svg></div>
+            <h4>4. Sincronización con la nube</h4>
+            <p>Los datos pendientes se suben a Supabase. También existe un botón para sincronizar manualmente cuando se desee.</p>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"><svg class="icon"><use href="#i-check"/></svg></div>
+            <h4>5. Datos confirmados</h4>
+            <p>La app muestra un indicador visual de que ya no quedan datos pendientes por sincronizar.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-warning">
+          <svg class="icon"><use href="#i-alert"/></svg>
+          <div><strong>Recomendación</strong><p>Antes de cerrar la app al final del día, conviene revisar que no queden datos marcados como "pendientes de sincronizar", sobre todo si se va a usar otro dispositivo a continuación.</p></div>
+        </div>
+      </section>
+
+      <section id="requisitos" data-title="Requisitos">
+        <div class="eyebrow"><svg class="icon"><use href="#i-monitor"/></svg>Uso diario</div>
+        <h2>Requisitos del sistema <button class="anchor-link" data-copy="#requisitos" aria-label="Copiar enlace"><svg class="icon"><use href="#i-link"/></svg></button></h2>
+        <p class="lede">Recomendaciones generales para que la aplicación funcione sin problemas.</p>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Elemento</th><th>Recomendación</th></tr></thead>
+            <tbody>
+              <tr><td><b>Android</b></td><td>Un sistema operativo Android relativamente actualizado (idealmente de los últimos años), instalado en un celular o tablet.</td></tr>
+              <tr><td><b>Navegador web</b></td><td>Última versión de Google Chrome o Microsoft Edge. Es la experiencia recomendada para la versión web.</td></tr>
+              <tr><td><b>Conexión a internet</b></td><td>No es obligatoria para el uso diario, pero sí recomendable para iniciar sesión por primera vez, sincronizar datos y recibir actualizaciones.</td></tr>
+              <tr><td><b>Pantalla</b></td><td>Celular, tablet o computadora. La interfaz se adapta al tamaño de pantalla disponible.</td></tr>
+              <tr><td><b>Espacio de almacenamiento</b></td><td>El habitual para una app estándar, más un margen para los datos guardados localmente (pacientes y encuestas pendientes de sincronizar).</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout-info">
+          <svg class="icon"><use href="#i-info"/></svg>
+          <div><strong>Esto es orientativo</strong><p>No son límites estrictos del sistema, sino recomendaciones generales para una buena experiencia de uso. Ante dudas sobre un dispositivo específico, se puede consultar al equipo técnico.</p></div>
+        </div>
+      </section>
+
+      <section id="actualizaciones" data-title="GitHub + Vercel">
+        <div class="eyebrow"><svg class="icon"><use href="#i-git-branch"/></svg>Actualizaciones</div>
+        <h2>¿Dónde se actualiza y publica el sistema? <button class="anchor-link" data-copy="#actualizaciones" aria-label="Copiar enlace"><svg class="icon"><use href="#i-link"/></svg></button></h2>
+        <p class="lede">Acá entran <b>GitHub</b> y <b>Vercel</b>, dos herramientas invisibles para el usuario final, pero que hacen posible que el sistema mejore con el tiempo de forma ordenada y segura.</p>
+
+        <h3><svg class="icon"><use href="#i-git-branch"/></svg>GitHub — el "historial de cambios" del proyecto</h3>
+        <p>Es como un <b>Google Drive especializado para código</b>, pero con superpoderes:</p>
+        <ul>
+          <li>Guarda <b>todo el historial</b> de cada cambio: qué se modificó, quién lo hizo y cuándo.</li>
+          <li>Permite que el equipo trabaje <b>ordenado y sin pisarse el trabajo</b>: cada mejora se prueba por separado antes de sumarse a la versión oficial.</li>
+          <li>Sirve como <b>respaldo permanente</b>: si algo se rompe, siempre se puede volver a una versión anterior que funcionaba bien.</li>
+        </ul>
+        <p>El equipo trabaja con una "versión oficial en uso" y "versiones de prueba". Los cambios nuevos solo pasan a producción después de ser <b>revisados por al menos otra persona</b> del equipo, lo que reduce mucho el riesgo de que un error llegue a la versión que usa el hospital.</p>
+
+        <h3><svg class="icon"><use href="#i-rocket"/></svg>Vercel — la publicación automática de la versión web</h3>
+        <p>Vercel es el servicio que <b>hospeda y publica automáticamente</b> la versión web de la aplicación (la que se usa desde el navegador, sin instalar nada).</p>
+
+        <div class="flow">
+          <div class="flow-step"><div class="icon-badge"><svg class="icon icon-lg"><use href="#i-users"/></svg></div><h4>1. Equipo dev</h4><p>Desarrolla y prueba una mejora</p></div>
+          <div class="flow-arrow"><svg class="icon h"><use href="#i-arrow-right"/></svg><svg class="icon v"><use href="#i-arrow-down"/></svg></div>
+          <div class="flow-step"><div class="icon-badge"><svg class="icon icon-lg"><use href="#i-git-branch"/></svg></div><h4>2. GitHub</h4><p>Revisión y aprobación del cambio</p></div>
+          <div class="flow-arrow"><svg class="icon h"><use href="#i-arrow-right"/></svg><svg class="icon v"><use href="#i-arrow-down"/></svg></div>
+          <div class="flow-step"><div class="icon-badge"><svg class="icon icon-lg"><use href="#i-rocket"/></svg></div><h4>3. Vercel</h4><p>Publica la web automáticamente</p></div>
+          <div class="flow-arrow"><svg class="icon h"><use href="#i-arrow-right"/></svg><svg class="icon v"><use href="#i-arrow-down"/></svg></div>
+          <div class="flow-step"><div class="icon-badge"><svg class="icon icon-lg"><use href="#i-monitor"/></svg></div><h4>4. Hospital</h4><p>Ve la versión nueva al entrar</p></div>
+        </div>
+
+        <div class="callout callout-tip">
+          <svg class="icon"><use href="#i-check"/></svg>
+          <div><strong>En resumen</strong><p><b>GitHub</b> es el lugar donde se controla y revisa el código, y <b>Vercel</b> es el servicio que toma esa versión aprobada y la publica automáticamente en internet. Es un proceso completamente automatizado: nadie "sube archivos a mano".</p></div>
+        </div>
+
+        <h3><svg class="icon"><use href="#i-smartphone"/></svg>¿Y la versión para Android?</h3>
+        <p>La versión para celular/tablet se genera como un archivo instalable (APK) a partir de esa misma versión oficial del código, y se comparte con el hospital para su instalación cuando corresponde a una nueva entrega.</p>
+      </section>
+
+      <section id="seguridad" data-title="Seguridad y privacidad">
+        <div class="eyebrow"><svg class="icon"><use href="#i-lock"/></svg>Seguridad</div>
+        <h2>Seguridad y privacidad de los datos <button class="anchor-link" data-copy="#seguridad" aria-label="Copiar enlace"><svg class="icon"><use href="#i-link"/></svg></button></h2>
+
+        <div class="callout callout-security">
+          <svg class="icon"><use href="#i-shield"/></svg>
+          <div><strong>El sistema es de acceso restringido</strong><p>No es de acceso público: se necesita usuario y contraseña creados específicamente para el hospital.</p></div>
+        </div>
+
+        <ul>
+          <li>La información de pacientes se guarda en un servicio en la nube (Supabase) con <b>reglas de seguridad que restringen quién puede ver o modificar cada dato</b>.</li>
+          <li>Las claves técnicas sensibles (las que permitirían administrar la base de datos completa) <b>nunca se incluyen en la aplicación ni en el navegador</b>; solo se usan del lado seguro del servidor.</li>
+          <li>Todo cambio de código pasa por una <b>revisión de al menos otra persona</b> del equipo antes de llegar a la versión que usa el hospital.</li>
+          <li>El acceso queda registrado por usuario, lo que permite trazabilidad de quién hizo qué dentro del sistema.</li>
+        </ul>
+      </section>
+
+      <section id="buenas-practicas" data-title="Buenas prácticas">
+        <div class="eyebrow"><svg class="icon"><use href="#i-check"/></svg>Seguridad</div>
+        <h2>Buenas prácticas de uso <button class="anchor-link" data-copy="#buenas-practicas" aria-label="Copiar enlace"><svg class="icon"><use href="#i-link"/></svg></button></h2>
+        <p class="lede">Recomendaciones simples para el equipo del consultorio, que ayudan a mantener los datos seguros y ordenados.</p>
+        <ul>
+          <li>Cerrar sesión al terminar de usar la app en dispositivos compartidos o públicos.</li>
+          <li>No compartir usuario ni contraseña entre distintas personas del equipo.</li>
+          <li>Antes de terminar la jornada, revisar que no queden datos marcados como "pendientes de sincronizar".</li>
+          <li>Si se usa la app en varios dispositivos, sincronizar seguido para evitar duplicados o información desactualizada.</li>
+          <li>Mantener la aplicación actualizada a la última versión entregada por el equipo de desarrollo.</li>
+          <li>Exportar reportes (PDF/Excel) periódicamente si el hospital necesita respaldos locales adicionales.</li>
+          <li>Ante cualquier comportamiento extraño del sistema, avisar al equipo técnico en vez de intentar "arreglarlo" manualmente.</li>
+        </ul>
+      </section>
+
+      <section id="problemas" data-title="Resolución de problemas">
+        <div class="eyebrow"><svg class="icon"><use href="#i-life-buoy"/></svg>Ayuda</div>
+        <h2>Resolución de problemas <button class="anchor-link" data-copy="#problemas" aria-label="Copiar enlace"><svg class="icon"><use href="#i-link"/></svg></button></h2>
+        <p class="lede">Pasos simples para los inconvenientes más comunes, antes de contactar al equipo técnico.</p>
+
+        <details class="accordion-item">
+          <summary><span><svg class="icon qi"><use href="#i-key"/></svg> No puedo iniciar sesión</span><svg class="icon chev"><use href="#i-chevron-down"/></svg></summary>
+          <div class="accordion-body">
+            <ol>
+              <li>Verificar que el usuario y la contraseña estén bien escritos.</li>
+              <li>Verificar que haya conexión a internet (necesaria para iniciar sesión).</li>
+              <li>Si el problema continúa, puede que el usuario no exista o haya sido dado de baja: contactar al equipo técnico.</li>
+            </ol>
+          </div>
+        </details>
+
+        <details class="accordion-item">
+          <summary><span><svg class="icon qi"><use href="#i-refresh"/></svg> La app no sincroniza</span><svg class="icon chev"><use href="#i-chevron-down"/></svg></summary>
+          <div class="accordion-body">
+            <ol>
+              <li>Revisar que el dispositivo tenga conexión a internet.</li>
+              <li>Revisar el indicador de sincronización pendiente dentro de la app.</li>
+              <li>Esperar unos segundos y usar el botón manual de sincronización.</li>
+              <li>Si el problema persiste, contactar al equipo técnico sin borrar datos.</li>
+            </ol>
+          </div>
+        </details>
+
+        <details class="accordion-item">
+          <summary><span><svg class="icon qi"><use href="#i-monitor"/></svg> La pantalla queda en blanco o no carga (versión web)</span><svg class="icon chev"><use href="#i-chevron-down"/></svg></summary>
+          <div class="accordion-body">
+            <ol>
+              <li>Recargar la página del navegador.</li>
+              <li>Probar con Chrome o Edge actualizados.</li>
+              <li>Borrar la caché del navegador y volver a intentar.</li>
+              <li>Verificar la conexión a internet.</li>
+            </ol>
+          </div>
+        </details>
+
+        <details class="accordion-item">
+          <summary><span><svg class="icon qi"><use href="#i-users"/></svg> No encuentro un paciente o una encuesta</span><svg class="icon chev"><use href="#i-chevron-down"/></svg></summary>
+          <div class="accordion-body">
+            <ol>
+              <li>Revisar si hay algún filtro o texto de búsqueda activo.</li>
+              <li>Confirmar que el registro se guardó correctamente en su momento.</li>
+              <li>Revisar el estado de sincronización del dispositivo donde se creó.</li>
+              <li>Verificar que se inició sesión con el usuario correcto.</li>
+            </ol>
+          </div>
+        </details>
+
+        <details class="accordion-item">
+          <summary><span><svg class="icon qi"><use href="#i-file-text"/></svg> El PDF o Excel no se descarga</span><svg class="icon chev"><use href="#i-chevron-down"/></svg></summary>
+          <div class="accordion-body">
+            <ol>
+              <li>Revisar si el navegador está bloqueando ventanas emergentes o descargas.</li>
+              <li>Verificar que haya espacio de almacenamiento disponible.</li>
+              <li>Intentar nuevamente o probar con otro navegador.</li>
+            </ol>
+          </div>
+        </details>
+
+        <details class="accordion-item">
+          <summary><span><svg class="icon qi"><use href="#i-lock"/></svg> Olvidé mi contraseña</span><svg class="icon chev"><use href="#i-chevron-down"/></svg></summary>
+          <div class="accordion-body">
+            <p>No existe un registro abierto al público, por lo que hay que contactar al equipo técnico o administrador del sistema para restablecerla de forma segura.</p>
+          </div>
+        </details>
+
+        <div class="callout callout-warning">
+          <svg class="icon"><use href="#i-alert"/></svg>
+          <div><strong>¿Sigue sin resolverse?</strong><p>Si el problema persiste después de estos pasos, contactar al equipo de desarrollo/soporte técnico del sistema, describiendo qué se intentó y en qué dispositivo ocurre.</p></div>
+        </div>
+      </section>
+
+      <section id="faq" data-title="Preguntas frecuentes">
+        <div class="eyebrow"><svg class="icon"><use href="#i-help"/></svg>Ayuda</div>
+        <h2>Preguntas frecuentes <button class="anchor-link" data-copy="#faq" aria-label="Copiar enlace"><svg class="icon"><use href="#i-link"/></svg></button></h2>
+
+        <details class="accordion-item" open>
+          <summary><span>¿Si se corta internet en el consultorio, se pierde el trabajo?</span><svg class="icon chev"><use href="#i-chevron-down"/></svg></summary>
+          <div class="accordion-body"><p>No. La app sigue funcionando y guardando todo localmente. Cuando vuelve la conexión, sincroniza sola.</p></div>
+        </details>
+        <details class="accordion-item">
+          <summary><span>¿Quién puede ver los datos de los pacientes?</span><svg class="icon chev"><use href="#i-chevron-down"/></svg></summary>
+          <div class="accordion-body"><p>Solo las personas que tengan un usuario y contraseña creados específicamente para el hospital.</p></div>
+        </details>
+        <details class="accordion-item">
+          <summary><span>¿Cómo se actualiza la aplicación?</span><svg class="icon chev"><use href="#i-chevron-down"/></svg></summary>
+          <div class="accordion-body"><p>La versión web se actualiza sola, automáticamente, cada vez que el equipo publica una mejora aprobada. La versión Android se actualiza instalando un nuevo archivo cuando el equipo entrega una nueva versión.</p></div>
+        </details>
+        <details class="accordion-item">
+          <summary><span>¿Se puede perder información al actualizar?</span><svg class="icon chev"><use href="#i-chevron-down"/></svg></summary>
+          <div class="accordion-body"><p>No debería: los cambios se prueban en un ambiente separado antes de aplicarse a la versión oficial, y todo el historial de versiones queda guardado por si hiciera falta volver atrás.</p></div>
+        </details>
+        <details class="accordion-item">
+          <summary><span>¿Necesito instalar algo para usar la versión web?</span><svg class="icon chev"><use href="#i-chevron-down"/></svg></summary>
+          <div class="accordion-body"><p>No. Solo se necesita un navegador (se recomienda Chrome o Edge) y conexión a internet la primera vez.</p></div>
+        </details>
+        <details class="accordion-item">
+          <summary><span>¿Puedo usar la app en varios dispositivos a la vez?</span><svg class="icon chev"><use href="#i-chevron-down"/></svg></summary>
+          <div class="accordion-body"><p>Sí. Mientras cada dispositivo tenga conexión para sincronizar, los datos se mantienen consistentes en la nube.</p></div>
+        </details>
+        <details class="accordion-item">
+          <summary><span>¿Los pacientes pueden acceder al sistema?</span><svg class="icon chev"><use href="#i-chevron-down"/></svg></summary>
+          <div class="accordion-body"><p>No. El sistema es de uso exclusivo del personal autorizado del hospital.</p></div>
+        </details>
+      </section>
+
+      <section id="glosario" data-title="Glosario">
+        <div class="eyebrow"><svg class="icon"><use href="#i-book"/></svg>Ayuda</div>
+        <h2>Glosario rápido <button class="anchor-link" data-copy="#glosario" aria-label="Copiar enlace"><svg class="icon"><use href="#i-link"/></svg></button></h2>
+        <p class="lede">Los términos técnicos más comunes, traducidos a lenguaje simple.</p>
+
+        <div class="mini-search">
+          <svg class="icon"><use href="#i-search"/></svg>
+          <input type="text" id="glossaryFilter" placeholder="Filtrar términos…">
+        </div>
+
+        <div class="table-wrap">
+          <table id="glossaryTable">
+            <thead><tr><th>Término</th><th>En simple</th></tr></thead>
+            <tbody>
+              <tr><td><b>Flutter</b></td><td>La herramienta con la que se construyó la app; permite que funcione en Android y en la Web con el mismo código.</td></tr>
+              <tr><td><b>Supabase</b></td><td>El servicio en la nube donde se guardan los datos y se maneja el inicio de sesión.</td></tr>
+              <tr><td><b>Hive</b></td><td>El "cuaderno local" donde la app guarda datos en el dispositivo cuando no hay internet.</td></tr>
+              <tr><td><b>GitHub</b></td><td>El sistema donde se guarda el historial de cambios del código y se revisan las mejoras antes de publicarlas.</td></tr>
+              <tr><td><b>Vercel</b></td><td>El servicio que publica automáticamente la versión web en internet.</td></tr>
+              <tr><td><b>Sincronización</b></td><td>El proceso de subir a la nube los datos que se guardaron localmente mientras no había internet.</td></tr>
+              <tr><td><b>PDF / Excel</b></td><td>Formatos de exportación para imprimir o analizar los resultados de las encuestas.</td></tr>
+              <tr><td><b>APK</b></td><td>El archivo instalable de la versión Android de la aplicación.</td></tr>
+              <tr><td><b>Nube (cloud)</b></td><td>Guardar información en servidores de internet en vez de solo en el dispositivo, para poder accederla desde cualquier lugar.</td></tr>
+              <tr><td><b>Base de datos</b></td><td>El lugar organizado donde se almacenan todos los registros: pacientes, encuestas y respuestas.</td></tr>
+              <tr><td><b>Acceso restringido (RLS)</b></td><td>Reglas técnicas que impiden que alguien sin permiso pueda leer o modificar datos que no le corresponden.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </article>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <p>© Hospital Regional de Alto Paraná y Encarnación — Departamento de Psicología. Documento de uso interno.</p>
+    <div class="footer-links">
+      <a href="#portada"><svg class="icon"><use href="#i-arrow-up"/></svg> Volver arriba</a>
+      <a href="#" id="printLink"><svg class="icon"><use href="#i-printer"/></svg> Imprimir / PDF</a>
+    </div>
+  </div>
+</footer>
+
+<button class="back-to-top" id="backToTop" aria-label="Volver arriba"><svg class="icon"><use href="#i-arrow-up"/></svg></button>
+<div class="toast" id="toast"><svg class="icon"><use href="#i-check"/></svg><span id="toastMsg">Enlace copiado</span></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var root = document.documentElement;
+  var saved = localStorage.getItem('hraepy-manual-theme');
+  var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if(saved){ root.setAttribute('data-theme', saved); }
+  else if(prefersDark){ root.setAttribute('data-theme','dark'); }
+  document.getElementById('themeToggle').addEventListener('click', function(){
+    var isDark = root.getAttribute('data-theme') === 'dark';
+    root.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    localStorage.setItem('hraepy-manual-theme', isDark ? 'light' : 'dark');
+  });
+
+  var sidebar = document.getElementById('sidebar');
+  var overlay = document.getElementById('sidebarOverlay');
+  var hamburger = document.getElementById('hamburgerBtn');
+  function openSidebar(){ sidebar.classList.add('open'); overlay.classList.add('show'); }
+  function closeSidebar(){ sidebar.classList.remove('open'); overlay.classList.remove('show'); }
+  hamburger.addEventListener('click', function(){
+    sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+  });
+  overlay.addEventListener('click', closeSidebar);
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeSidebar(); });
+  sidebar.querySelectorAll('nav a').forEach(function(a){
+    a.addEventListener('click', function(){ if(window.innerWidth <= 960) closeSidebar(); });
+  });
+
+  var fill = document.getElementById('progressFill');
+  function updateProgress(){
+    var h = document.documentElement;
+    var scrollTop = h.scrollTop || document.body.scrollTop;
+    var scrollHeight = (h.scrollHeight || document.body.scrollHeight) - h.clientHeight;
+    var pct = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
+    fill.style.width = pct + '%';
+  }
+  document.addEventListener('scroll', updateProgress, {passive:true});
+  updateProgress();
+
+  var backToTop = document.getElementById('backToTop');
+  document.addEventListener('scroll', function(){
+    backToTop.classList.toggle('show', window.scrollY > 600);
+  }, {passive:true});
+  backToTop.addEventListener('click', function(){
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+
+  var sections = Array.prototype.slice.call(document.querySelectorAll('.content section[id]'));
+  var navLinks = Array.prototype.slice.call(document.querySelectorAll('.sidebar nav a'));
+  var breadcrumbCurrent = document.getElementById('breadcrumbCurrent');
+  var linkById = {};
+  navLinks.forEach(function(a){ linkById[a.getAttribute('href').slice(1)] = a; });
+
+  var activeId = null;
+  function setActive(id){
+    if(id === activeId) return;
+    activeId = id;
+    navLinks.forEach(function(a){ a.classList.remove('active'); });
+    var link = linkById[id];
+    if(link){
+      link.classList.add('active');
+      if(sidebar.scrollHeight > sidebar.clientHeight){
+        var linkTop = link.offsetTop;
+        if(linkTop < sidebar.scrollTop || linkTop > sidebar.scrollTop + sidebar.clientHeight - 80){
+          sidebar.scrollTo({top: linkTop - 100, behavior:'smooth'});
+        }
+      }
+    }
+    var section = document.getElementById(id);
+    breadcrumbCurrent.textContent = section ? (section.dataset.title || section.id) : 'Inicio';
+  }
+
+  if('IntersectionObserver' in window){
+    var observer = new IntersectionObserver(function(entries){
+      var visible = entries.filter(function(e){ return e.isIntersecting; });
+      if(visible.length > 0){
+        visible.sort(function(a,b){ return a.boundingClientRect.top - b.boundingClientRect.top; });
+        setActive(visible[0].target.id);
+      }
+    }, { rootMargin: '-15% 0px -70% 0px', threshold: 0 });
+    sections.forEach(function(s){ observer.observe(s); });
+  }
+
+  var toast = document.getElementById('toast');
+  var toastMsg = document.getElementById('toastMsg');
+  var toastTimer = null;
+  function showToast(msg){
+    toastMsg.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toast.classList.remove('show'); }, 2200);
+  }
+  document.querySelectorAll('.anchor-link[data-copy]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var hash = btn.getAttribute('data-copy');
+      var url = location.origin + location.pathname + hash;
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(url).then(function(){ showToast('Enlace copiado'); });
+      } else {
+        window.prompt('Copiá el enlace:', url);
+      }
+      history.replaceState(null, '', hash);
+    });
+  });
+
+  var searchInput = document.getElementById('searchInput');
+  var noResults = document.getElementById('noResults');
+  var sectionText = {};
+  sections.forEach(function(s){ sectionText[s.id] = s.textContent.toLowerCase(); });
+
+  function runSearch(){
+    var q = searchInput.value.trim().toLowerCase();
+    var anyVisible = false;
+    document.querySelectorAll('.sidebar-group').forEach(function(group){
+      var groupHasVisible = false;
+      group.querySelectorAll('li').forEach(function(li){
+        var a = li.querySelector('a');
+        var id = a.getAttribute('href').slice(1);
+        var match = !q || a.textContent.toLowerCase().indexOf(q) !== -1 || (sectionText[id] || '').indexOf(q) !== -1;
+        li.classList.toggle('search-hidden', !match);
+        if(match){ groupHasVisible = true; anyVisible = true; }
+      });
+      group.classList.toggle('search-hidden', !groupHasVisible);
+    });
+    noResults.style.display = (q && !anyVisible) ? 'block' : 'none';
+  }
+  searchInput.addEventListener('input', runSearch);
+  searchInput.addEventListener('keydown', function(e){
+    if(e.key === 'Enter'){
+      var firstVisible = document.querySelector('.sidebar nav li:not(.search-hidden) a');
+      if(firstVisible){
+        firstVisible.click();
+        if(window.innerWidth <= 960) closeSidebar();
+      }
+    }
+  });
+  document.addEventListener('keydown', function(e){
+    if((e.key === '/' ) && document.activeElement !== searchInput){
+      e.preventDefault();
+      searchInput.focus();
+    }
+  });
+
+  var glossaryFilter = document.getElementById('glossaryFilter');
+  if(glossaryFilter){
+    glossaryFilter.addEventListener('input', function(){
+      var q = glossaryFilter.value.trim().toLowerCase();
+      document.querySelectorAll('#glossaryTable tbody tr').forEach(function(tr){
+        tr.style.display = tr.textContent.toLowerCase().indexOf(q) !== -1 ? '' : 'none';
+      });
+    });
+  }
+
+  function doPrint(){ window.print(); }
+  document.getElementById('printBtn').addEventListener('click', doPrint);
+  document.getElementById('printBtn2').addEventListener('click', doPrint);
+  document.getElementById('printLink').addEventListener('click', function(e){ e.preventDefault(); doPrint(); });
+
+  var openDetailsBeforePrint = [];
+  window.addEventListener('beforeprint', function(){
+    openDetailsBeforePrint = [];
+    document.querySelectorAll('details.accordion-item').forEach(function(d){
+      if(!d.open){ openDetailsBeforePrint.push(d); d.open = true; }
+    });
+  });
+  window.addEventListener('afterprint', function(){
+    openDetailsBeforePrint.forEach(function(d){ d.open = false; });
+    openDetailsBeforePrint = [];
+  });
+
+  if(location.hash){
+    var target = document.getElementById(location.hash.slice(1));
+    if(target){ setTimeout(function(){ target.scrollIntoView(); }, 50); }
+  }
+})();
+</script>
+</body>
+</html>
